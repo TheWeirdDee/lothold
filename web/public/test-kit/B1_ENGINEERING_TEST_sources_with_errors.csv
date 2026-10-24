@@ -1,0 +1,5 @@
+supplier_id,supplier_name,source_lot_ref,source_lot_declared_quantity,allocated_quantity,quantity_unit,producer_country,plot_refs
+ENG-KIT-SUP-B,ENGINEERING TEST - not a real supplier,ENG-KIT-LOT-B1,"1,000",600,kg,CI,ENG-KIT-B-P1
+ENG-KIT-SUP-B,ENGINEERING TEST - not a real supplier,ENG-KIT-LOT-B2,500,800,kg,CI,ENG-KIT-B-P2
+ENG-KIT-SUP-B,ENGINEERING TEST - not a real supplier,ENG-KIT-LOT-B3,2.5,0.4,t,XX,ENG-KIT-B-P3;ENG-KIT-B-P4;ENG-KIT-B-P5
+ENG-KIT-SUP-B,ENGINEERING TEST - not a real supplier,ENG-KIT-LOT-B4,300,100,kg,CI,
