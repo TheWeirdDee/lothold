@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { api, fmtDate } from '../api.ts';
 import { useAuth } from '../main.tsx';
-import { Badge, ENV_STATUS, useAsync } from '../components/ui.tsx';
+import { Badge, ENV_STATUS, useAsync, TableWrap } from '../components/ui.tsx';
 import { PixelMap } from '../components/PixelMap.tsx';
 
 // ---------------- public forest evidence inspector ----------------
@@ -64,11 +64,11 @@ export function InspectPage() {
       </p>
       <div className="split">
         <form className="panel stack" onSubmit={run} aria-describedby="inspect-help">
-          <div className="tabs" role="tablist" style={{ margin: 0 }}>
-            <button type="button" role="tab" aria-selected={mode === 'box'} onClick={() => setMode('box')}>
+          <div className="tabs" role="group" aria-label="Area input method" style={{ margin: 0 }}>
+            <button type="button" aria-pressed={mode === 'box'} onClick={() => setMode('box')}>
               Coordinate box
             </button>
-            <button type="button" role="tab" aria-selected={mode === 'geojson'} onClick={() => setMode('geojson')}>
+            <button type="button" aria-pressed={mode === 'geojson'} onClick={() => setMode('geojson')}>
               Paste GeoJSON
             </button>
           </div>
@@ -177,7 +177,7 @@ export function LossYears({ lossByYear }: { lossByYear: Record<string, { pixels:
   const preTotal = pre.reduce((s, y) => ({ pixels: s.pixels + lossByYear[y]!.pixels, areaHa: s.areaHa + lossByYear[y]!.areaHa }), { pixels: 0, areaHa: 0 });
   return (
     <div className="stack" style={{ gap: 8 }}>
-      <div className="table-wrap">
+      <TableWrap>
         <table className="data">
           <caption className="sr-only">Hansen annual tree-cover loss after the cut-off</caption>
           <thead>
@@ -206,13 +206,13 @@ export function LossYears({ lossByYear }: { lossByYear: Record<string, { pixels:
             ))}
           </tbody>
         </table>
-      </div>
+      </TableWrap>
       {pre.length > 0 && (
         <details>
           <summary className="small">
             Before the cut-off (context only): {preTotal.pixels} pixels, ≈{preTotal.areaHa.toFixed(2)} ha across {pre.length} year{pre.length === 1 ? '' : 's'} in 2001–2020
           </summary>
-          <div className="table-wrap" style={{ marginTop: 8 }}>
+          <TableWrap style={{ marginTop: 8 }}>
             <table className="data">
               <thead>
                 <tr>
@@ -231,7 +231,7 @@ export function LossYears({ lossByYear }: { lossByYear: Record<string, { pixels:
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         </details>
       )}
     </div>
@@ -407,7 +407,7 @@ export function VerifyPage() {
                     <strong>Engineering test, not commercial activity.</strong> One declarant and two authorised test reservers exercised the shared balance on {fmtDate(eng.runAt)}. The quantities (1,000 kg declared; 600 kg then 600 kg requested) are test inputs and describe no real cocoa.
                   </p>
                 </div>
-                <div className="table-wrap">
+                <TableWrap>
                   <table className="data">
                     <thead>
                       <tr>
@@ -436,7 +436,7 @@ export function VerifyPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </TableWrap>
               </>
             )}
           </div>
