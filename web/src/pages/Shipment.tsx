@@ -89,17 +89,17 @@ export function ShipmentDesk() {
 
   return (
     <div className="page">
-      <div className="row" style={{ marginBottom: 10 }}>
-        <Link to="/app" className="small">
-          ← Shipments
-        </Link>
-      </div>
-      <div className="row" style={{ alignItems: 'baseline', marginBottom: 12 }}>
-        <h1 className="mono break" style={{ margin: 0, fontSize: '1.5rem' }}>
-          {view.shipment.reference}
-        </h1>
-        <span className="muted small">Case opened {fmtDate(view.shipment.createdAt)}</span>
-      </div>
+      <Link to="/app" className="crumb">
+        ← Shipments
+      </Link>
+      <header className="page-head" style={{ paddingTop: 0 }}>
+        <div style={{ minWidth: 0 }}>
+          <p className="eyebrow">Shipment case · opened {fmtDate(view.shipment.createdAt)}</p>
+          <h1 className="break" style={{ fontSize: 'clamp(1.6rem, 1.2rem + 1.4vw, 2.3rem)', fontFamily: 'var(--mono)', letterSpacing: '-0.02em', fontWeight: 500 }}>
+            {view.shipment.reference}
+          </h1>
+        </div>
+      </header>
 
       <section className="status-strip" aria-label="Review status">
         <div className={`overall ${overall.cls}`}>
@@ -129,7 +129,7 @@ export function ShipmentDesk() {
         ))}
       </div>
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="tabpanel" key={tab}>
         {tab === 'review' && <FindingsTab view={view} goTo={goTo} onReview={setReviewKey} reload={load} />}
         {tab === 'details' && <DetailsTab view={view} reload={load} focus={focus} />}
         {tab === 'sources' && <SourcesTab view={view} reload={load} focus={focus} />}
@@ -185,21 +185,21 @@ function FindingsTab({ view, goTo, onReview, reload }: { view: View; goTo: (f: F
             <ol className="steps">
               <li>
                 <div>
-                  <button className="linkbtn" style={{ padding: 0, minHeight: 0, textDecoration: 'underline', color: 'var(--green)' }} onClick={() => goTo({ tab: 'details' })}>
+                  <button className="source-link" onClick={() => goTo({ tab: 'details' })}>
                     Enter or extract shipment details
                   </button>
                 </div>
               </li>
               <li>
                 <div>
-                  <button className="linkbtn" style={{ padding: 0, minHeight: 0, textDecoration: 'underline', color: 'var(--green)' }} onClick={() => goTo({ tab: 'sources' })}>
+                  <button className="source-link" onClick={() => goTo({ tab: 'sources' })}>
                     Upload the source-lot table (CSV)
                   </button>
                 </div>
               </li>
               <li>
                 <div>
-                  <button className="linkbtn" style={{ padding: 0, minHeight: 0, textDecoration: 'underline', color: 'var(--green)' }} onClick={() => goTo({ tab: 'plots' })}>
+                  <button className="source-link" onClick={() => goTo({ tab: 'plots' })}>
                     Upload plot boundaries (GeoJSON)
                   </button>
                 </div>
@@ -250,7 +250,7 @@ function FindingsTab({ view, goTo, onReview, reload }: { view: View; goTo: (f: F
                     {f.refs.map((ref: any, i: number) => {
                       const target = refToFocus(ref);
                       return target ? (
-                        <button key={i} className="linkbtn small" style={{ padding: '2px 0', minHeight: 30, color: 'var(--green)', textDecoration: 'underline' }} onClick={() => goTo(target)}>
+                        <button key={i} className="source-link" onClick={() => goTo(target)}>
                           {i === 0 ? 'Show source: ' : ''}
                           {refText(ref)}
                         </button>
