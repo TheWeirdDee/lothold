@@ -8,7 +8,7 @@ These are scripted checks. They catch rule violations and broken keyboard paths,
 
 | Check | Scope | Result |
 |---|---|---|
-| axe-core 4.13.0 (via `@axe-core/playwright` 4.13.0), WCAG 2.0/2.1/2.2 A and AA rules | Landing, method, forest inspector, registry, sign-in and registration at 1440 px and 390 px; empty workspace; new case; all seven shipment tabs at 1440 px and 390 px, after real uploads; the open review dialog | No violations after the fixes below |
+| axe-core 4.13.0 (via `@axe-core/playwright` 4.13.0), WCAG 2.0/2.1/2.2 A and AA rules | Landing, method, forest inspector, registry, engineering test kit, sign-in and registration at 1440 px and 390 px; empty workspace; new case; all seven shipment tabs at 1440 px and 390 px, after real uploads; the open review dialog | No violations after the fixes below |
 | Keyboard-only journey | Registration by Tab and typing only; case creation; tab switching; opening and closing the review dialog | Passes |
 | Focus order and visibility | Skip link is the first stop on a fresh load. After in-app navigation, focus moves to `#main`. The focused tab shows a visible outline. | Passes |
 | Tabs | Shipment and landing demo tabs follow the WAI-ARIA tabs pattern: one Tab stop, arrow keys, Home and End, `aria-selected`, `aria-controls` | Passes |
@@ -25,6 +25,8 @@ These are scripted checks. They catch rule violations and broken keyboard paths,
 - **Narrow tables:** table headers now wrap on screens narrower than 560 px. At 390 px the loss-year table fits instead of hiding its last column.
 - **Tabs:** arrow, Home and End keys and roving tabindex added. The forest inspector's "Coordinate box / Paste GeoJSON" switch was mislabelled as tabs and is now a toggle-button group (`aria-pressed`).
 - **Plots tab:** after the first plot upload in a new case, no plot was selected, so the evidence panel stayed empty until a click. The first plot is now shown by default. This affected all users, not only assistive technology.
+
+Demo video: the YouTube/Vimeo play control is a real `<button>` and works by keyboard (focus then moves into the player); video files use native controls with captions shown by default (`tests/e2e/demo-video.spec.ts`).
 
 ## Not yet tested (needs a person)
 
