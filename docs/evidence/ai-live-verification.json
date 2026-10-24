@@ -1,0 +1,43 @@
+{
+  "label": "ENGINEERING TEST - live AI extraction verification attempt with an invented, labelled document. No commercial data.",
+  "status": "NOT VERIFIED: provider quota exhausted (HTTP 429, Gemini free tier, 20 generate requests/day for gemini-3.8-flash). Stopped as instructed; no retries, no billing.",
+  "provider": "Google Gemini API (Google AI Studio key, user-confirmed) via OpenAI-compatible endpoint https://generativelanguage.googleapis.com/v1beta/openai",
+  "model": "gemini-3.8-flash (listed for this key by GET /models, HTTP 200, 60 models)",
+  "date": "2026-10-24",
+  "providerRequests": [
+    {
+      "purpose": "list models (authentication + model availability)",
+      "outcome": "HTTP 200; configured model present"
+    },
+    {
+      "purpose": "live extraction through the app (POST /api/shipments/:id/extract)",
+      "outcome": "provider call failed in ~1.8 s; app fell back to the label parser and labelled it"
+    },
+    {
+      "purpose": "fallback check with a nonexistent model name",
+      "outcome": "provider error; fallback labelled; error text contained no key"
+    },
+    {
+      "purpose": "diagnostic structured-output call",
+      "outcome": "client timeout after 90 s"
+    },
+    {
+      "purpose": "minimal diagnostic call",
+      "outcome": "HTTP 429 free-tier daily request quota exceeded"
+    }
+  ],
+  "verifiedThroughTheApp": {
+    "fallbackDisclosedInUiLabel": "Label parser (deterministic, not AI)",
+    "injectedValueNotAccepted": true,
+    "missingFieldsLeftMissing": true,
+    "everyAcceptedQuoteExistsInSource": true,
+    "noFieldAppliedBeforeHumanAcceptance": true,
+    "errorTextSanitized": true
+  },
+  "notYetVerified": [
+    "a successful model response",
+    "schema compatibility of the structured-output request with this provider",
+    "model-proposed values passing span verification"
+  ],
+  "toComplete": "After the free-tier quota resets (Google resets daily quotas at midnight Pacific time), run: node --env-file=.env scripts/ai-live-verify.ts"
+}
