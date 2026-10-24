@@ -41,10 +41,16 @@ test.afterAll(() => expect(errors, errors.join('\n')).toEqual([]));
 
 test('fresh visit: public pages work, links resolve, workspace starts honestly empty', async ({ page, request }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Hold a cocoa shipment');
-  await expect(page.getByText('LotHold ships no sample shipments')).toBeVisible();
-  await page.locator('img').first().scrollIntoViewIfNeeded();
-  const broken = await page.locator('img').evaluateAll((imgs) => imgs.filter((i) => !(i as HTMLImageElement).complete || (i as HTMLImageElement).naturalWidth === 0).map((i) => (i as HTMLImageElement).src));
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Catch missing plot evidence');
+  await expect(page.getByText('No sample shipments, no invented suppliers.')).toBeVisible();
+  // Demonstration captures are visibly labelled as engineering test records.
+  await expect(page.getByText('Engineering test records', { exact: true })).toBeVisible();
+  // Bring every (lazy-loaded) image into view and wait for it to decode before judging it broken.
+  for (const img of await page.locator('img').all()) {
+    await img.scrollIntoViewIfNeeded();
+    await img.evaluate((i) => (i as HTMLImageElement).decode().catch(() => undefined));
+  }
+  const broken = await page.locator('img').evaluateAll((imgs) => imgs.filter((i) => (i as HTMLImageElement).naturalWidth === 0).map((i) => (i as HTMLImageElement).src));
   expect(broken).toEqual([]);
   for (const path of ['/', '/inspect', '/method', '/verify', '/login', '/register']) {
     await page.goto(path);
@@ -176,7 +182,7 @@ test('mobile layout and keyboard access', async ({ page }) => {
   await page.goto('/');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByRole('link', { name: 'Method & sources' }).click();
+  await page.locator('#topnav').getByRole('link', { name: 'Evidence & methods' }).click();
   await expect(page).toHaveURL(/\/method/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
   // Keyboard: the skip link is the first focus stop and moves focus to main content.
@@ -189,6 +195,45 @@ test('mobile layout and keyboard access', async ({ page }) => {
   const focused = await page.evaluate(() => document.activeElement?.textContent ?? '');
   expect(focused.length).toBeGreaterThan(0);
   // Touch targets on key controls are at least 40px tall.
-  const h = await page.getByRole('link', { name: 'Create a workspace' }).evaluate((e) => e.getBoundingClientRect().height);
+  const h = await page.getByRole('link', { name: /Open the review desk/ }).first().evaluate((e) => e.getBoundingClientRect().height);
   expect(h).toBeGreaterThanOrEqual(40);
+});
+
+test('landing: demonstrations are labelled, live readings are real, reduced motion shows everything', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.getByText('Engineering test records', { exact: true })).toBeVisible();
+  await expect(page.getByText('ILLUSTRATION · NOT A SHIPMENT')).toBeVisible();
+  // The demo tabs switch between real captures.
+  await page.getByRole('tab', { name: 'Land evidence' }).click();
+  await expect(page.locator('#demo-stage img')).toHaveAttribute('src', '/demo/land-evidence.webp');
+  // Live forest reading comes from the real analysis endpoint (coordinates only, not a farm).
+  const live = page.locator('.live-reading');
+  await live.scrollIntoViewIfNeeded();
+  await expect(live.locator('.badge')).toBeVisible({ timeout: 30_000 });
+  await expect(live).toContainText('not a farm');
+  // Registry ledger shows real engineering outcomes, including a rejection that was never mined.
+  await expect(page.locator('.ledger')).toContainText('REJECTED · NOT MINED');
+  await expect(page.locator('.ledger')).toContainText('REVERTED ON-CHAIN');
+  // With reduced motion every reveal section is fully visible.
+  const hidden = await page.locator('.reveal').evaluateAll((els) => els.filter((e) => getComputedStyle(e).opacity !== '1').length);
+  expect(hidden).toBe(0);
+});
+
+test('extraction discloses the plain parser when no model is configured and needs human acceptance', async ({ page }) => {
+  await register(page, 'ENG E2E EXTRACT');
+  await page.getByLabel(/New case/).fill('ENG-E2E-EXTRACT');
+  await page.getByRole('button', { name: 'Create case' }).click();
+  await page.waitForURL('**/app/shipments/**');
+  await page.getByRole('tab', { name: 'Shipment details' }).click();
+  await expect(page.getByText('No AI model is configured on this server.')).toBeVisible();
+  const docForm = page.locator('form.file-drop').filter({ hasText: 'Shipping or supplier document' });
+  await docForm.locator('input[type=file]').setInputFiles({ name: 'ENGINEERING_TEST_document.txt', mimeType: 'text/plain', buffer: Buffer.from('ENGINEERING TEST DOCUMENT\nHS code: 1801\nNet mass: 600 kg\n') });
+  await docForm.getByRole('button', { name: 'Upload' }).click();
+  await page.getByRole('button', { name: 'Propose fields' }).click();
+  await expect(page.locator('.badge', { hasText: 'Label parser (deterministic, not AI)' })).toBeVisible();
+  await expect(page.locator('#field-hsCode input')).toHaveValue('');
+  await page.getByLabel('Accept hsCode').check();
+  await page.getByRole('button', { name: 'Accept selected fields' }).click();
+  await expect(page.locator('#field-hsCode')).toContainText('confirmed from ENGINEERING_TEST_document.txt');
 });
