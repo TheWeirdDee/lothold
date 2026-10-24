@@ -1,0 +1,41 @@
+{
+ "type": "FeatureCollection",
+ "name": "ENGINEERING TEST plots - scenario C",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_ref": "ENG-KIT-C-P1",
+    "ProducerCountry": "CI",
+    "note": "ENGINEERING PROBE AREA - coordinates only, not a farm"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -7.205,
+       5.745
+      ],
+      [
+       -7.195,
+       5.745
+      ],
+      [
+       -7.195,
+       5.755
+      ],
+      [
+       -7.205,
+       5.755
+      ],
+      [
+       -7.205,
+       5.745
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
