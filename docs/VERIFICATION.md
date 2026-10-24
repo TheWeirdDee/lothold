@@ -7,7 +7,8 @@ Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrom
 | Command | Result | Scope |
 |---|---|---|
 | `npm run typecheck` | 0 errors | server, core, web, scripts, tests (TypeScript 7.0.2, strict) |
-| `npm test` | **60 / 60 passed** | `tests/unit` (38) + `tests/integration` (22, incl. 3 against a local Anvil devnet) |
+| `npm test` | **66 / 66 passed** | `tests/unit` (40) + `tests/integration` (26, incl. 4 against a local Anvil devnet and 1 backup/restore) |
+| `python scripts/gis-crosscheck.py` | 0 failures (6 polygons) | Independent GDAL 3.12.2 / pyproj 3.8.0 recomputation; see METHOD.md |
 | `npm run test:contracts` | **18 / 18 passed** (fuzz: 512 runs) | `contracts/test/BatchReservations.t.sol` |
 | `npm run test:e2e` | **4 / 4 passed** | Playwright + Chrome, real server, throwaway database |
 | `npm run data:verify` | 3 / 3 SHA-256 match | raster snapshots |
@@ -78,7 +79,7 @@ Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrom
 | Local automated verification | Yes | All suites above |
 | Genuine external data | Yes | Hansen GFC v1.13 and JRC GFC2020 V4 tiles downloaded from their publishers, hash-pinned, read pixel by pixel; official DDS V3 XSDs from the EU WSDL |
 | Public testnet | Yes | Sepolia transactions listed in CHAIN.md (engineering quantities) |
-| Model provider | **No** | No API key available; adapters untested against a live model |
+| Model provider | **No** | No credential configured (environment, `.env` and CLI profile checked on 24 Oct 2026); adapters untested against a live model |
 | Actual user/commercial records | **No** | No permissioned shipment data available. Every end-to-end run used labelled engineering fixtures |
 
 ## Defects found and fixed during verification
@@ -96,6 +97,12 @@ Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrom
 | Medium (a11y) | Focus moved to main on initial load, skipping the skip link | Only on client navigation; test added |
 | Medium (UI) | Files in the built client other than /assets (landing image) were answered with the SPA shell, so the image was broken | All built files served before the SPA fallback; browser test asserts no broken images |
 | Medium (API) | Unknown /api GET paths returned the HTML shell with 200 instead of a JSON 404 | SPA fallback excludes /api; browser test added |
+| Medium (environment) | Areas used a spherical model and were 0.43 % high versus the WGS 84 ellipsoid, enough to flip a borderline 4 ha decision | Exact ellipsoidal cell and polygon areas; matched to pyproj within 0.02 % |
+| Low (environment) | Pixel centres exactly on a polygon edge were classified by floating-point noise | Closed-polygon rule with 1e-10° tolerance; identical results from two independent implementations |
+| High (security) | Behind a proxy, the first (client-controlled) X-Forwarded-For entry was trusted, re-opening the rate-limit bypass | Last entry or a platform single-value header; test added |
+| Medium (signing) | One anchoring request could queue an unbounded number of testnet transactions; no chain-ID or fee checks before signing | Per-request and daily per-organisation caps; chain-ID and fee ceiling checks; tests added |
+| Medium (environment) | The public analysis endpoint did not check that rasters passed hash verification | Returns UNAVAILABLE unless all three hashes verified |
+| Low (scope) | Product scope relied on an XML sample, not the legal text | Annex I and definitions read from the Official Journal; scope qualified in UI and docs |
 | Low | Self-intersecting polygons also reported "zero area" / "0 ha" | Area reported as unknown |
 | Low | Precision warning fired on 6-decimal coordinates (JSON drops trailing zeros) | Precision judged from raw file text |
 | Low | Supplier PDF listed the same over-allocation twice | Row-level duplicate suppressed |
