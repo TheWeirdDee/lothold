@@ -7,10 +7,10 @@ import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fromFile, type GeoTIFF, type GeoTIFFImage } from 'geotiff';
 import { pointInGeometry, type PlotGeometry } from '../../core/geometry.ts';
+import { cellAreaM2 } from '../../core/ellipsoid.ts';
 
-export const ANALYSIS_METHOD_VERSION = 'forest-analysis/2026-10-24.2';
+export const ANALYSIS_METHOD_VERSION = 'forest-analysis/2026-10-24.4';
 export const CUTOFF_YEAR = 2020;
-const AUTHALIC_RADIUS_M = 6_371_007.2;
 const MAX_BBOX_DEG = 0.25; // ~27 km; plots larger than this are refused rather than silently sampled.
 
 export type DatasetId = 'hansen_lossyear' | 'hansen_datamask' | 'jrc_gfc2020';
@@ -188,11 +188,8 @@ export async function closeDatasets() {
 const ha = (n: number) => (n >= 10 ? n.toFixed(1) : n.toFixed(2));
 
 function pixelAreaHa(latCentreDeg: number, pixelDeg: number): number {
-  const rad = Math.PI / 180;
-  const lat1 = (latCentreDeg - pixelDeg / 2) * rad;
-  const lat2 = (latCentreDeg + pixelDeg / 2) * rad;
-  const a = AUTHALIC_RADIUS_M ** 2 * pixelDeg * rad * (Math.sin(lat2) - Math.sin(lat1));
-  return a / 10_000;
+  // Exact WGS 84 ellipsoidal area of a lon/lat cell.
+  return cellAreaM2(latCentreDeg - pixelDeg / 2, latCentreDeg + pixelDeg / 2, pixelDeg) / 10_000;
 }
 
 function geometryBbox(g: PlotGeometry): [number, number, number, number] {
