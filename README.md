@@ -17,8 +17,8 @@ The EU Deforestation Regulation names cocoa among seven “commodities associate
 | Capability | Status | Evidence |
 |---|---|---|
 | Upload → parse → preview → confirm (CSV source table, GeoJSON plots) | Working | Browser + integration tests |
-| Deterministic rules: required fields, HS 1801 scope, ISO countries, exact fixed-point quantities, unit conversion, allocation conservation, geometry validity (EUDR GeoJSON rules), coverage, staleness | Working | 38 unit tests |
-| Environmental analysis on **real** pinned rasters (Hansen GFC v1.13 annual loss 2001–2025; JRC GFC2020 V4 forest 2020) with pixel-level intersection | Working for lon −10…0, lat 0…10 (Côte d’Ivoire and western Ghana) | Unit tests on real rasters; [method](docs/METHOD.md) |
+| Deterministic rules: required fields, HS 1801 scope, ISO countries, exact fixed-point quantities, unit conversion, allocation conservation, geometry validity (EUDR GeoJSON rules), coverage, staleness | Working | 40 unit tests |
+| Environmental analysis on **real** pinned rasters (Hansen GFC v1.13 annual loss 2001–2025; JRC GFC2020 V4 forest 2020) with pixel-level intersection and WGS 84 ellipsoidal areas | Working for lon −10…0, lat 0…10 (Côte d’Ivoire and western Ghana) | Unit tests on real rasters; independent GDAL/pyproj cross-check; [method](docs/METHOD.md) |
 | Review decisions (rationale + evidence required), sign-off bound to an evidence snapshot digest, automatic invalidation | Working | Integration + browser tests |
 | One-page supplier evidence request PDF; review draft PDF | Working, rendered and visually inspected | [screenshot](docs/screenshots/supplier-request-pdf.png) |
 | DDS V3 `SubmitDdsRequest` XML, validated against the **official XSD set** (7 schemas, imports resolved) | Working; only after sign-off; marked `DRAFT_NOT_SUBMITTED` in the filename | XSD positive/negative tests |
@@ -60,13 +60,14 @@ Public pages need no login: **Inspect forest evidence** (runs the real analysis 
 
 ```bash
 npm run typecheck        # TypeScript (tsc 7) over server, core, web, scripts, tests
-npm test                 # vitest: unit + integration (60 tests; includes real-raster and Anvil chain tests)
+npm test                 # vitest: unit + integration (66 tests; includes real-raster, backup/restore and Anvil chain tests)
 npm run test:contracts   # forge: 18 contract tests incl. 512-run fuzz (first: cd contracts && forge install foundry-rs/forge-std --no-git)
 npm run test:e2e         # Playwright (Chrome): 4 browser journeys on a throwaway database
 npm run data:verify      # re-hashes the raster snapshots against the pinned SHA-256 values
+python scripts/gis-crosscheck.py   # independent GDAL/pyproj recomputation (pip install rasterio pyproj shapely numpy)
 ```
 
-Results, scope and what each layer does and does not prove are listed in [docs/VERIFICATION.md](docs/VERIFICATION.md).
+Results, scope and what each layer does and does not prove are listed in [docs/VERIFICATION.md](docs/VERIFICATION.md) and classified in [docs/EVIDENCE.md](docs/EVIDENCE.md).
 
 ## Documentation
 
@@ -77,7 +78,13 @@ Results, scope and what each layer does and does not prove are listed in [docs/V
 - [Allocation registry: contract, addresses, transactions, trust assumptions](docs/CHAIN.md)
 - [Verification record and known limitations](docs/VERIFICATION.md)
 - [Requirement checklist](docs/CHECKLIST.md)
+- [Evidence classification](docs/EVIDENCE.md)
+- [Deployment plan, costs, backup and recovery](docs/DEPLOYMENT.md)
 - [Hackathon submission materials and recording script](docs/SUBMISSION.md)
+
+## Scope
+
+Product scope is verified against the Official Journal texts of Regulation (EU) 2023/1115 and Regulation (EU) 2025/2650 (Publications Office, retrieved 24 October 2026). Annex I lists cocoa under HS 1801–1806. LotHold supports **only HS 1801 (cocoa beans)** and only the plot-geolocation path. It does not support the postal-address option that Art. 4a(5) gives micro and small primary operators, or the July 2026 Delegated Act on Annex I (which was under scrutiny at retrieval). A schema-valid geometry or XML file passes a format check; it is not a compliance determination.
 
 ## Limitations
 
