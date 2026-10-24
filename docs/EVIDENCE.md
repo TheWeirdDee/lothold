@@ -8,10 +8,11 @@ Machine-checked on every run; pass or fail without human judgement.
 
 | Suite | Count | Covers |
 |---|---|---|
-| `tests/unit` | 41 | Runtime-dependency guard for the production image, quantities, product scope, geometry rules, parsers, decision engine, ellipsoidal areas, edge rule, extraction span checks, official-XSD validation, real-raster analysis on probe areas |
+| `tests/unit` | 55 | Demo-video configuration and CSP, runtime-dependency guard for the production image, quantities, product scope, geometry rules, parsers, decision engine, ellipsoidal areas, edge rule, extraction span checks, official-XSD validation, real-raster analysis on probe areas |
 | `tests/integration` | 26 | HTTP API: auth, CSRF/Origin, rate limits (direct and behind a proxy), isolation, uploads, ledger, append-only history, jobs, full review workflow, review-integrity bypass attempts, approval binding, extraction fallback, hostile PDFs, backup/restore, Anvil chain lifecycle and signing safeguards |
 | `contracts/test` | 18 | Registry authorisation, conservation (512-run fuzz), duplicates, zero values, events |
-| `tests/e2e` | 11 | Browser journeys in Chrome on a throwaway server, including labelled landing demonstrations, live readings, reduced motion and AI/parser disclosure; plus axe WCAG 2.2 A/AA scans, keyboard-only use, dialog focus and live regions |
+| `tests/integration/test-kit.test.ts` | 4 | Every downloadable engineering-test kit file produces the outcomes promised in docs/AUDIT_GUIDE.md |
+| `tests/e2e` | 15 | Browser journeys in Chrome on a throwaway server, including labelled landing demonstrations, live readings, reduced motion and AI/parser disclosure; demo-video playback (generated engineering test clip, captions, keyboard) and YouTube facade; test-kit downloads; plus axe WCAG 2.2 A/AA scans, keyboard-only use, dialog focus and live regions |
 | `scripts/container-verify.ts` | 16 + 10 checks | Production container: datasets, auth, uploads, analysis, exports; recovery after restart, redeploy and hard kill (`docs/evidence/container-verification.json`) |
 | `scripts/gis-crosscheck.py` | 6 polygons × 9 checks | Independent GDAL/pyproj recomputation of the environmental analysis (`docs/evidence/gis-crosscheck.json`) |
 
@@ -52,5 +53,6 @@ Real transactions on a test network with **engineering quantities**. They prove 
 ## Isolation of engineering (ENG) records
 
 - Engineering fixtures live only in `tests/fixtures/engineering/` and are loaded only into temporary databases (test harnesses, `scripts/e2e-server.ts`, `scripts/render-documents.ts`, `scripts/app-anchoring-sepolia.ts` all create `mkdtemp` directories).
+- The downloadable reviewer kit (`web/public/test-kit/`, page `/test-kit`) is a set of static files with `ENGINEERING_TEST` names and `ENG-KIT-` identifiers. It is never loaded automatically; it enters a workspace only if a reviewer uploads it. `docs/AUDIT_GUIDE.md` asks reviewers to use a dedicated test workspace.
 - Scripts that drive a running server (`scripts/ui-walkthrough.ts`, `tests/smoke-api.ts`) refuse to run unless `/api/health` reports `instance: "engineering"`, which is set only by `LOTHOLD_INSTANCE=engineering`.
 - The local operational database (`data/lothold.sqlite`) was checked read-only on 24 Oct 2026 (about 16:20 UTC). It holds one organisation, one user and one shipment, created through the UI at 15:10 UTC, and no uploads. None of these records match the engineering fixture patterns (`ENG…` references, `@example.test` emails); the agent's scripts write only to temporary databases. These records were left untouched.
