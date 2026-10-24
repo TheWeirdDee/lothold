@@ -7,10 +7,11 @@ Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrom
 | Command | Result | Scope |
 |---|---|---|
 | `npm run typecheck` | 0 errors | server, core, web, scripts, tests (TypeScript 7.0.2, strict) |
-| `npm test` | **66 / 66 passed** | `tests/unit` (40) + `tests/integration` (26, incl. 4 against a local Anvil devnet and 1 backup/restore) |
+| `npm test` | **67 / 67 passed** | `tests/unit` (41, incl. the runtime-dependency guard) + `tests/integration` (26, incl. 4 against a local Anvil devnet and 1 backup/restore) |
 | `python scripts/gis-crosscheck.py` | 0 failures (6 polygons) | Independent GDAL 3.12.2 / pyproj 3.8.0 recomputation; see METHOD.md |
 | `npm run test:contracts` | **18 / 18 passed** (fuzz: 512 runs) | `contracts/test/BatchReservations.t.sol` |
-| `npm run test:e2e` | **6 / 6 passed** | Playwright + Chrome, real server, throwaway database |
+| `npm run test:e2e` | **11 / 11 passed** | Playwright + Chrome, real server, throwaway database: 6 workflow journeys + 5 accessibility checks (axe WCAG 2.2 A/AA, keyboard-only, dialog focus, live regions; see `docs/ACCESSIBILITY.md`) |
+| Production container | **Passed** | Built from `deploy/Dockerfile` and checked with `scripts/container-verify.ts`: datasets, auth, uploads, analysis, exports, restart, redeploy and hard-kill recovery (`docs/evidence/container-verification.json`) |
 | `npm run data:verify` | 3 / 3 SHA-256 match | raster snapshots |
 | `node scripts/chain-engineering-verify.ts --network sepolia` | PASS | public testnet; see CHAIN.md |
 | `node scripts/app-anchoring-sepolia.ts` | 6 confirmed tx, read-back matches | public testnet, app code path |
@@ -79,7 +80,7 @@ Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrom
 | Local automated verification | Yes | All suites above |
 | Genuine external data | Yes | Hansen GFC v1.13 and JRC GFC2020 V4 tiles downloaded from their publishers, hash-pinned, read pixel by pixel; official DDS V3 XSDs from the EU WSDL |
 | Public testnet | Yes | Sepolia transactions listed in CHAIN.md (engineering quantities) |
-| Model provider | **No** (blocked by quota) | Gemini key configured and authenticated; live extraction hit the free-tier daily quota (HTTP 429); fallback verified live; see `docs/evidence/ai-live-verification.json` |
+| Model provider | **No** (blocked by quota) | Gemini key configured and authenticated; in-app extraction got HTTP 503, then a diagnostic call got HTTP 429 (free-tier daily quota exhausted); fallback verified live; see `docs/evidence/ai-live-verification.json` |
 | Actual user/commercial records | **No** | No permissioned shipment data available. Every end-to-end run used labelled engineering fixtures |
 
 ## Defects found and fixed during verification
