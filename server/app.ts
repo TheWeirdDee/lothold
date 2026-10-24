@@ -20,6 +20,7 @@ import { generateDocument, documentList } from './documents.ts';
 import { extractionStatus, runExtraction, acceptExtraction } from './ai/extract.ts';
 import { chainStatus, queueAnchoring, publicVerify } from './chain/anchor.ts';
 import { swapAxesCorrection } from './corrections.ts';
+import { demoVideoFromEnv, contentSecurityPolicy } from './demo-video.ts';
 
 type Env = { Variables: { user: SessionUser | null; db: DB } };
 
@@ -28,6 +29,9 @@ const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ t: now(
 export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?: boolean } = {}) {
   const app = new Hono<Env>();
   const secure = opts.secureCookies ?? process.env.NODE_ENV === 'production';
+  const demoVideo = demoVideoFromEnv();
+  if (demoVideo.error) log({ event: 'config_warning', setting: 'DEMO_VIDEO', message: demoVideo.error });
+  const csp = contentSecurityPolicy(demoVideo);
   const allowedOrigins = new Set([opts.publicOrigin ?? process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173', 'http://localhost:8787', 'http://127.0.0.1:8787', 'http://127.0.0.1:5173']);
 
   app.use('*', async (c, next) => {
@@ -39,7 +43,7 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
     c.header('Referrer-Policy', 'same-origin');
     c.header('X-Frame-Options', 'DENY');
     if (!c.req.path.startsWith('/api/'))
-      c.header('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+      c.header('Content-Security-Policy', csp);
     if (c.req.path.startsWith('/api/')) c.header('Cache-Control', 'no-store');
     // Privacy-conscious request log: no bodies, no query strings, no cookies.
     log({ event: 'http', method: c.req.method, path: c.req.routePath ?? c.req.path, status: c.res.status, ms: Date.now() - started, user: c.get('user')?.id ?? null });
@@ -132,6 +136,8 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
     log({ event: 'public.forest_check', status: analysis.status });
     return c.json({ report, analysis, stored: false });
   });
+
+  app.get('/api/public/demo-video', (c) => c.json(demoVideo.video));
 
   app.get('/api/public/verify', async (c) => c.json(await publicVerify(db, c.req.query('batchKey') ?? null)));
 
