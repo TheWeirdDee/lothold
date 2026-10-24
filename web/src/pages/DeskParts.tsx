@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { api, download, fmtBytes, fmtDate } from '../api.ts';
 import { useAuth } from '../main.tsx';
-import { Badge, Dialog, ENV_STATUS, useAsync, useToast } from '../components/ui.tsx';
+import { Badge, Dialog, ENV_STATUS, useAsync, useToast, TableWrap } from '../components/ui.tsx';
 import { PixelMap } from '../components/PixelMap.tsx';
 import { LossYears } from './Public.tsx';
 import type { Focus, View } from './Shipment.tsx';
@@ -97,7 +97,7 @@ function UploadPreview({ uploadId, reload, onDone, replaces }: { uploadId: strin
         Parsed by <code>{data.parser}</code> ({data.parserVersion}). SHA-256 <code className="break">{data.sha256}</code>. {data.kind === 'sources_csv' ? `${p.rows.length} rows` : `${p.features.length} features`}; {holdCount} problem(s) found. Confirming makes this the active source{replaces ? `, replacing ${replaces}` : ''}. Existing sign-offs and documents become out of date.
       </p>
       {data.kind === 'sources_csv' ? (
-        <div className="table-wrap">
+        <TableWrap>
           <table className="data">
             <thead>
               <tr>
@@ -126,9 +126,9 @@ function UploadPreview({ uploadId, reload, onDone, replaces }: { uploadId: strin
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       ) : (
-        <div className="table-wrap">
+        <TableWrap>
           <table className="data">
             <thead>
               <tr>
@@ -151,7 +151,7 @@ function UploadPreview({ uploadId, reload, onDone, replaces }: { uploadId: strin
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
       <div className="btn-row">
         <button
@@ -354,7 +354,7 @@ function ExtractionPanel({ view, reload, onAccepted }: { view: View; reload: Rel
             <Badge cls={latest.provider === 'label-parser' ? 'neutral' : 'review'}>{latest.method}</Badge> on <strong className="break">{latest.filename}</strong>, {fmtDate(latest.createdAt)} · config {latest.configVersion}
           </p>
           {latest.error && <p className="callout amber small" style={{ margin: 0 }}>{latest.error}</p>}
-          <div className="table-wrap">
+          <TableWrap>
             <table className="data">
               <thead>
                 <tr>
@@ -387,7 +387,7 @@ function ExtractionPanel({ view, reload, onAccepted }: { view: View; reload: Rel
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
           <div>
             <button
               className="btn small"
@@ -435,7 +435,7 @@ export function SourcesTab({ view, reload, focus }: { view: View; reload: Reload
       ) : (
         <>
           <ActiveFile upload={s.upload} label="source table" />
-          <div className="table-wrap">
+          <TableWrap>
             <table className="data">
               <caption className="sr-only">Confirmed source rows</caption>
               <thead>
@@ -484,7 +484,7 @@ export function SourcesTab({ view, reload, focus }: { view: View; reload: Reload
                 })}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         </>
       )}
     </div>
@@ -504,7 +504,8 @@ export function PlotsTab({ view, reload, focus, onReview }: { view: View; reload
   useEffect(() => {
     if (initial !== null) setSel(initial);
   }, [focus]); // eslint-disable-line react-hooks/exhaustive-deps
-  const f = features.find((x: any) => x.featureIndex === sel);
+  // Falls back to the initial plot when nothing valid is selected (e.g. the first upload arrived after mount).
+  const f = features.find((x: any) => x.featureIndex === sel) ?? features.find((x: any) => x.featureIndex === initial);
   const envKey = f?.plotRef ? `ENV:${f.plotRef}` : null;
   const envFinding = view.evaluation.findings.find((x: any) => x.key === envKey);
   const decision = view.decisions.find((d: any) => d.active && d.findingKey === envKey);
@@ -638,9 +639,9 @@ export function PlotsTab({ view, reload, focus, onReview }: { view: View; reload
                   {features.map((x: any) => {
                     const st = ENV_STATUS[statusOf(x)];
                     return (
-                      <tr key={x.featureIndex} className={x.featureIndex === sel ? 'highlight' : ''}>
+                      <tr key={x.featureIndex} className={x.featureIndex === f?.featureIndex ? 'highlight' : ''}>
                         <td>
-                          <button className="source-link" onClick={() => setSel(x.featureIndex)} aria-pressed={x.featureIndex === sel}>
+                          <button className="source-link" onClick={() => setSel(x.featureIndex)} aria-pressed={x.featureIndex === f?.featureIndex}>
                             <span className="break">{x.plotRef ?? `Feature ${x.featureIndex + 1}`}</span>
                           </button>
                           <span className="small muted" style={{ display: 'block' }}>
@@ -832,7 +833,7 @@ export function AllocationTab({ view, reload, goTo }: { view: View; reload: Relo
             )}
             {chain.data.jobs.some((j: any) => j.status === 'failed') && <p className="callout rust small">Anchoring stopped: {chain.data.jobs.find((j: any) => j.status === 'failed').error}. The ledger reservation is unaffected.</p>}
             {chain.data.transactions.length > 0 && (
-              <div className="table-wrap">
+              <TableWrap>
                 <table className="data">
                   <thead>
                     <tr>
@@ -860,7 +861,7 @@ export function AllocationTab({ view, reload, goTo }: { view: View; reload: Relo
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableWrap>
             )}
             {chain.data.onChain.length > 0 && (
               <p className="small" style={{ margin: 0 }}>
@@ -934,7 +935,7 @@ export function DocumentsTab({ view, reload }: { view: View; reload: Reload }) {
         {view.documents.length === 0 ? (
           <p className="small muted">None yet.</p>
         ) : (
-          <div className="table-wrap">
+          <TableWrap>
             <table className="data">
               <thead>
                 <tr>
@@ -967,7 +968,7 @@ export function DocumentsTab({ view, reload }: { view: View; reload: Reload }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
       </section>
     </div>
@@ -980,7 +981,7 @@ export function ActivityTab({ view }: { view: View }) {
   if (loading && !data) return <p>Loading activity…</p>;
   if (error) return <p role="alert">{error.message}</p>;
   return (
-    <div className="table-wrap">
+    <TableWrap>
       <table className="data">
         <caption className="sr-only">Append-only activity log</caption>
         <thead>
@@ -1002,7 +1003,7 @@ export function ActivityTab({ view }: { view: View }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrap>
   );
 }
 
