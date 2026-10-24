@@ -95,14 +95,42 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
   );
 }
 
+/** LotHold mark: a plot boundary held by a bracket. */
 export function Logo() {
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="4" fill="#1D2924" />
-      <path d="M9 7v18h14" fill="none" stroke="#F8F7F3" strokeWidth="3.2" />
-      <path d="M15 7h8v8" fill="none" stroke="#B86C27" strokeWidth="3.2" />
+      <rect width="32" height="32" rx="8" fill="#edeae1" />
+      <path d="M10.5 9.5 19.5 8 23.5 15 20 23.5 11 22.5 8.5 15.5Z" fill="none" stroke="#141816" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M6 6v20h4" fill="none" stroke="#2c6a4c" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+}
+
+/** Adds the "in" class when an element scrolls into view (content is visible by default without JS). */
+export function useReveal() {
+  useEffect(() => {
+    const els = [...document.querySelectorAll<HTMLElement>('.reveal:not(.in)')];
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach((e) => e.classList.add('in'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((en) => {
+        if (en.isIntersecting) {
+          en.target.classList.add('in');
+          io.unobserve(en.target);
+        }
+      }),
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+    );
+    els.forEach((e) => io.observe(e));
+    // Safety net: never leave content hidden.
+    const t = window.setTimeout(() => els.forEach((e) => e.classList.add('in')), 2500);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(t);
+    };
+  });
 }
 
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
