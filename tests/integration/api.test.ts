@@ -13,7 +13,7 @@ const { DATASETS } = await import('../../server/env/forest.ts');
 
 const db = openDb(env.dbPath);
 const app = createApp(db);
-const haveData = Object.values(DATASETS).every((d) => existsSync(`data/snapshots/${d.file}`));
+const haveData = Object.values(DATASETS).every((d) => existsSync(`${process.env.DATA_DIR ?? 'data/snapshots'}/${d.file}`));
 let worker: ReturnType<typeof startWorker>;
 
 beforeAll(async () => {
@@ -357,7 +357,14 @@ describe('extraction', () => {
 });
 
 describe('append-only history', () => {
-  it('audit events and review decisions cannot be edited or deleted', () => {
+  it('audit events and review decisions cannot be edited or deleted', async () => {
+    // Self-contained: create one decision row directly so the triggers have something to protect.
+    const c = client(app);
+    await c.register('ENG ORG APPEND');
+    const sid = await newShipment(c);
+    const uid = get<{ id: string }>(db, `SELECT u.id FROM users u JOIN orgs o ON o.id = u.org_id WHERE o.name = 'ENG ORG APPEND'`)!.id;
+    run(db, `INSERT INTO review_decisions (id, shipment_id, finding_key, decision, rationale, evidence_upload_id, reviewer_id, snapshot_digest, created_at) VALUES ('rd-append-test', ?, 'ENV:X', 'keep_on_hold', 'engineering test row', NULL, ?, 'x', ?)`, sid, uid, new Date().toISOString());
+    expect(() => run(db, `UPDATE review_decisions SET rationale = 'changed' WHERE id = 'rd-append-test'`)).toThrow(/append-only/);
     expect(() => run(db, 'DELETE FROM audit_events')).toThrow(/append-only/);
     expect(() => run(db, `UPDATE audit_events SET type = 'x'`)).toThrow(/append-only/);
     expect(() => run(db, 'DELETE FROM review_decisions')).toThrow(/append-only/);
