@@ -208,6 +208,7 @@ table.data tbody tr:hover { background: #fbfaf6; }
 table.data td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.data tr.highlight td { background: #fff4d6; }
 table.data tr.issue td:first-child { box-shadow: inset 3px 0 0 var(--rust); }
+@media (max-width: 560px) { table.data th { white-space: normal; } table.data th, table.data td { padding: 9px 10px; } }
 td .orig { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); display: block; margin-top: 2px; }
 .cell-issue { color: var(--rust-ink); font-size: 0.82rem; display: block; margin-top: 3px; }
 
@@ -248,7 +249,7 @@ td .orig { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); di
   font: inherit; font-size: 0.92rem; background: none; border: 0; padding: 11px 14px; min-height: 46px; cursor: pointer; color: var(--muted);
   border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; transition: color var(--t-fast), border-color var(--t-fast);
 }
-.tabs button[aria-selected='true'] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.tabs button[aria-selected='true'], .tabs button[aria-pressed='true'] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
 .tabs button:hover { color: var(--ink); }
 .tabs .count { font-family: var(--mono); font-size: 0.72rem; margin-left: 7px; padding: 1px 7px; border-radius: var(--r-pill); background: var(--paper-3); color: var(--ink-2); }
 .tabs .count.hold { background: var(--rust-soft); color: var(--rust-ink); }
@@ -274,7 +275,7 @@ td .orig { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); di
 .split { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .split.even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 960px) { .split, .split.even { grid-template-columns: 1fr; } .plot-list { order: -1; } }
-.stack { display: grid; gap: 16px; }
+.stack { display: grid; gap: 16px; align-content: start; }
 .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .spacer { flex: 1; }
 .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
@@ -479,7 +480,7 @@ dialog .dlg-foot { padding: 14px 20px; border-top: 1px solid var(--line); displa
 /* statements (rhythm break; principles, not testimonials) */
 .statement { text-align: center; }
 .statement blockquote { margin: 0 auto; max-width: 22ch; font-family: var(--display); font-size: clamp(1.9rem, 1.1rem + 3.2vw, 3.6rem); font-weight: 560; letter-spacing: -0.04em; line-height: 1.04; color: var(--ink); text-wrap: balance; }
-.statement blockquote .soft { color: var(--line-strong); }
+.statement blockquote .soft { color: var(--slate); }
 .statement .attrib { margin-top: 20px; font-family: var(--mono); font-size: 0.76rem; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
 
 /* workflow */
