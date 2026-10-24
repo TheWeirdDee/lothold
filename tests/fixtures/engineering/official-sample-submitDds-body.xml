@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Extracted verbatim from the official EUDR DDS V3 samples page (retrieved 2026-10-23); namespace declarations moved from the SOAP envelope onto this element. OFFICIAL TEST SAMPLE, not a trade declaration. -->
+<dds:SubmitDdsRequest xmlns:dds="http://ec.europa.eu/tracesnt/certificate/eudr/due-diligence-statement/v3" xmlns:eudrCommon="http://ec.europa.eu/tracesnt/certificate/eudr/common/v3">
+            <dds:operatorRole>OPERATOR</dds:operatorRole>
+            <dds:statement>
+                <dds:internalReferenceNumber></dds:internalReferenceNumber>
+                <dds:activityType>IMPORT</dds:activityType>
+                <dds:countryOfActivity>BE</dds:countryOfActivity>
+                <dds:borderCrossCountry>BE</dds:borderCrossCountry>
+                <dds:commodities>
+                    <dds:position>1</dds:position>
+                    <dds:descriptors>
+                        <eudrCommon:descriptionOfGoods>Test wood product</eudrCommon:descriptionOfGoods>
+                        <eudrCommon:goodsMeasure>
+                            <eudrCommon:netWeight>200</eudrCommon:netWeight>
+                            <eudrCommon:supplementaryUnit>20</eudrCommon:supplementaryUnit>
+                            <eudrCommon:supplementaryUnitQualifier>MTQ</eudrCommon:supplementaryUnitQualifier>
+                        </eudrCommon:goodsMeasure>
+                    </dds:descriptors>
+                    <dds:hsHeading>4410</dds:hsHeading>
+                    <dds:speciesInfo>
+                        <dds:scientificName>Bifora testiculata</dds:scientificName>
+                        <dds:commonName>Test Name</dds:commonName>
+                    </dds:speciesInfo>
+                    <dds:producers>
+                        <dds:position>1</dds:position>
+                        <dds:country>FR</dds:country>
+                        <dds:name>Producer Name</dds:name>
+                        <dds:geometryGeojson>BASE64_ENCODED_GEOJSON</dds:geometryGeojson>
+                    </dds:producers>
+                </dds:commodities>
+                <dds:geoLocationConfidential>false</dds:geoLocationConfidential>
+            </dds:statement>
+        </dds:SubmitDdsRequest>
