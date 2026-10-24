@@ -407,14 +407,16 @@ export function MethodPage() {
           <li>Loss in 2021–2025 sets <em>Land-change signal</em>. No loss on fully covered land sets <em>No post-2020 loss observed</em>. Missing data or out-of-tile areas give <em>Partial coverage</em> or <em>Outside coverage</em>, never a clear result.</li>
           <li>A reviewer can only set a signal aside with a written rationale (at least 40 characters) <em>and</em> an attached evidence file. A new analysis result invalidates earlier decisions.</li>
         </ol>
-        <p className="small muted">Area figures are pixel-count approximations on a spherical authalic earth model. They are not statistically valid area estimates.</p>
+        <p className="small muted">Areas are computed exactly on the WGS 84 ellipsoid (checked against pyproj to within 0.02 %), but pixel-count totals are approximations of the mapped extent, not statistically valid area estimates.</p>
       </section>
       <section className="section">
         <h2>Regulatory context checked for this build</h2>
         <ul className="small">
-          <li>European Commission, 13 July 2026: the EUDR applies from 30 December 2026 for large and medium operators and from 30 June 2027 for other micro and small operators. Retrieved 23 October 2026.</li>
-          <li>The cut-off date is 31 December 2020. Polygons are required for plots over 4 ha (except cattle). Source: EUDR Information System DDS V3 API reference and GeoJSON file description (updated 17 August 2026).</li>
-          <li>Scope here is cocoa beans, HS 1801, only. LotHold does not determine scope, risk classification or compliance.</li>
+          <li>Regulation (EU) 2023/1115 as amended by Regulation (EU) 2025/2650 (Official Journal texts retrieved from the EU Publications Office on 24 October 2026): obligations apply from 30 December 2026, and from 30 June 2027 for micro and small operators established by 31 December 2024.</li>
+          <li>“Deforestation-free” refers to land not subject to deforestation after 31 December 2020 (Art. 2(13)). Geolocation needs at least six decimal digits, with polygons for plots over 4 ha other than cattle (Art. 2(28)).</li>
+          <li>Annex I lists cocoa under HS 1801–1806. LotHold supports only <strong>1801 (cocoa beans)</strong>; other cocoa products are outside this tool’s scope, not outside the Regulation.</li>
+          <li>Not supported: the option for micro and small primary operators to give a postal address instead of geolocation (Art. 4a(5), inserted by Regulation (EU) 2025/2650), and the July 2026 Delegated Act on Annex I, which was under scrutiny at retrieval.</li>
+          <li>A schema-valid geometry or XML file passes a format check only. LotHold does not determine scope, risk classification or compliance.</li>
         </ul>
       </section>
       <section className="section">
