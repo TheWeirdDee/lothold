@@ -5,130 +5,6 @@ import { useAuth } from '../main.tsx';
 import { Badge, ENV_STATUS, useAsync } from '../components/ui.tsx';
 import { PixelMap } from '../components/PixelMap.tsx';
 
-export function Landing() {
-  const { user } = useAuth();
-  return (
-    <div className="page">
-      <section className="hero">
-        <div>
-          <h1>Hold a cocoa shipment until its plot evidence holds up.</h1>
-          <p className="lede">
-            LotHold is a review desk for people preparing EU deforestation due-diligence paperwork for cocoa. Upload the shipment’s source-lot table and plot boundaries. LotHold shows which plot or lot record is missing or contradictory, where published satellite data records tree-cover loss after 2020, and which source lots are allocated beyond their declared quantity. It then drafts the exact evidence request for the supplier.
-          </p>
-          <div className="btn-row" style={{ marginTop: 16 }}>
-            {user ? (
-              <Link className="btn" to="/app">
-                Open your shipments
-              </Link>
-            ) : (
-              <>
-                <Link className="btn" to="/register">
-                  Create a workspace
-                </Link>
-                <Link className="btn secondary" to="/login">
-                  Sign in
-                </Link>
-              </>
-            )}
-            <Link className="btn secondary" to="/inspect">
-              Inspect an area’s forest evidence
-            </Link>
-          </div>
-          <p className="small muted" style={{ marginTop: 14 }}>
-            Workspaces start empty. LotHold ships no sample shipments, suppliers or farms: every case is built from records you upload.
-          </p>
-        </div>
-        <div className="panel">
-          <h2 style={{ fontSize: '1rem' }}>Why it matters for forests</h2>
-          <p className="small">
-            The EU Deforestation Regulation names cocoa among seven “commodities associated with deforestation” (European Commission, 13 July 2026). When a shipment’s plot list is incomplete, or a boundary is wrong, nobody can check what happened on that land. LotHold makes those gaps visible and turns them into specific requests before the paperwork moves on.
-          </p>
-          <p className="small" style={{ marginBottom: 0 }}>
-            It does <strong>not</strong> decide whether a shipment is compliant or deforestation-free. A satellite loss signal is a reason to ask questions, and a clean result is not proof.
-          </p>
-        </div>
-      </section>
-
-      <section className="section">
-        <figure style={{ margin: 0 }}>
-          <img src="/review-desk.png" alt="The LotHold review desk showing a held shipment: a missing plot geometry, a self-intersecting boundary and a land-change signal, each linked to its source row or plot." width={1440} height={944} style={{ width: '100%', height: 'auto', border: '1px solid var(--line)', borderRadius: 4, background: '#fff' }} loading="lazy" />
-          <figcaption className="small muted" style={{ marginTop: 6 }}>
-            The review desk as it runs, showing <strong>engineering test fixtures</strong> (records prefixed ENG-). The plots are coordinate test boxes, not farms; the land-change result is a real dataset reading for those coordinates.
-          </figcaption>
-        </figure>
-      </section>
-
-      <section className="section">
-        <div className="cols3">
-          <div>
-            <h3>1. Upload what you already have</h3>
-            <p className="small">
-              A CSV of source lots (supplier, lot, declared and allocated quantity, country, plot references) and a GeoJSON file of plot boundaries in WGS 84. Shipping documents (PDF or text) are optional; their fields can be proposed for you to confirm.
-            </p>
-            <a className="small" href="/api/templates/sources.csv">
-              Download the blank source-table template
-            </a>
-          </div>
-          <div>
-            <h3>2. See exactly why a case is held</h3>
-            <p className="small">
-              Every hold points to the file, row, column or plot that causes it. Original values are shown next to their interpretation. Allocation, record completeness and land evidence are tracked separately, so a missing dataset never looks like approval.
-            </p>
-          </div>
-          <div>
-            <h3>3. Leave with paperwork you can use</h3>
-            <p className="small">
-              A one-page supplier evidence request (PDF), a human-readable review draft with provenance, and, once a reviewer signs off, an EUDR DDS V3 XML draft. The XML is validated against the official schema and marked not submitted.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <h2>What is real here</h2>
-        <div className="table-wrap">
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Input</th>
-                <th>Status</th>
-                <th>What it can and cannot show</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Tree-cover loss, Hansen/UMD GFC v1.13</td>
-                <td>Real public dataset, local pinned copy (SHA-256 verified)</td>
-                <td>Annual loss years 2001–2025 at 30 m for lon −10…0, lat 0…10. These are not near-real-time alerts and not legal findings.</td>
-              </tr>
-              <tr>
-                <td>Forest cover 2020, JRC GFC2020 V4</td>
-                <td>Real public dataset, local pinned copy</td>
-                <td>Forest or non-forest around the EUDR cut-off date. Single epoch; has map error.</td>
-              </tr>
-              <tr>
-                <td>EUDR DDS V3 schema</td>
-                <td>Official XSD set from the EU Information System WSDL</td>
-                <td>Structural validity only. EU business rules apply on an authorised submission, which LotHold never performs.</td>
-              </tr>
-              <tr>
-                <td>Shipments, suppliers, plots, quantities</td>
-                <td>Only what you upload</td>
-                <td>LotHold contains no commercial records of its own.</td>
-              </tr>
-              <tr>
-                <td>Allocation registry (Ethereum Sepolia testnet)</td>
-                <td>Real testnet contract</td>
-                <td>Prevents over-reserving a registered batch within the registry. It does not prove that any cocoa exists.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 // ---------------- public forest evidence inspector ----------------
 export function InspectPage() {
   const [mode, setMode] = useState<'box' | 'geojson'>('box');
@@ -177,8 +53,13 @@ export function InspectPage() {
   const st = a ? ENV_STATUS[a.status] : null;
   return (
     <div className="page">
-      <h1>Inspect forest evidence for an area</h1>
-      <p className="muted" style={{ maxWidth: '70ch' }}>
+      <header className="page-head">
+        <div>
+          <p className="eyebrow">Public tool · nothing is stored</p>
+          <h1>Inspect forest evidence for an area</h1>
+        </div>
+      </header>
+      <p className="muted" style={{ maxWidth: '72ch', marginTop: -6 }}>
         This runs the same pixel-level analysis LotHold applies to shipment plots, on the locally installed Hansen GFC v1.13 and JRC GFC2020 V4 tile (longitude −10° to 0°, latitude 0° to 10°, which covers Côte d’Ivoire and western Ghana). Your geometry is not stored. <strong>An area you query is just coordinates. It is not a farm, and it tells you nothing about who produced what.</strong>
       </p>
       <div className="split">
@@ -362,7 +243,12 @@ export function MethodPage() {
   const { data, error, loading } = useAsync(() => api('GET', '/api/public/method'), []);
   return (
     <div className="page narrow">
-      <h1>Method, sources and limits</h1>
+      <header className="page-head">
+        <div>
+          <p className="eyebrow">Evidence &amp; methods</p>
+          <h1>Method, sources and limits</h1>
+        </div>
+      </header>
       <p>
         LotHold separates four kinds of information and never lets one stand in for another: <strong>declared business records</strong> (what a supplier or exporter states), <strong>environmental observations</strong> (published satellite-derived datasets), <strong>human review decisions</strong> (with rationale and evidence), and <strong>allocation commitments</strong> (database ledger, optionally anchored on a public testnet).
       </p>
@@ -438,7 +324,12 @@ export function VerifyPage() {
   const eng = data?.engineering;
   return (
     <div className="page">
-      <h1>Testnet allocation registry</h1>
+      <header className="page-head">
+        <div>
+          <p className="eyebrow">Ethereum Sepolia · test network</p>
+          <h1>Testnet allocation registry</h1>
+        </div>
+      </header>
       <p className="muted" style={{ maxWidth: '75ch' }}>
         A small contract on the Ethereum Sepolia <strong>test network</strong>. A registered batch can never be reserved beyond its declared mass, and an allocation identifier can only be used once. It holds no tokens and moves no money. It records hashes and gram quantities only: no supplier names, farmer data or plot coordinates.
       </p>
