@@ -186,7 +186,7 @@ function ActiveFile({ upload, label }: { upload: any; label: string }) {
   return (
     <p className="small" style={{ margin: 0 }}>
       Active {label}: <strong className="break">{upload.filename}</strong> · <span className="mono">sha256 {upload.sha256.slice(0, 16)}…</span> · parser {upload.parserVersion} ·{' '}
-      <button className="linkbtn small" style={{ padding: 0, minHeight: 0, textDecoration: 'underline', color: 'var(--green)' }} onClick={() => download(`/api/uploads/${upload.id}/download-link`).catch((e) => toast(e.message, 'error'))}>
+      <button className="source-link" onClick={() => download(`/api/uploads/${upload.id}/download-link`).catch((e) => toast(e.message, 'error'))}>
         download original
       </button>
     </p>
@@ -381,7 +381,7 @@ function ExtractionPanel({ view, reload, onAccepted }: { view: View; reload: Rel
                         '—'
                       )}
                       {c.reason && <span className="cell-issue">{c.reason}</span>}
-                      {c.accepted && <span className="small" style={{ color: 'var(--green)', display: 'block' }}>Quote found in document</span>}
+                      {c.accepted && <span className="small" style={{ color: 'var(--forest)', display: 'block' }}>Quote found in document</span>}
                     </td>
                   </tr>
                 ))}
@@ -640,7 +640,7 @@ export function PlotsTab({ view, reload, focus, onReview }: { view: View; reload
                     return (
                       <tr key={x.featureIndex} className={x.featureIndex === sel ? 'highlight' : ''}>
                         <td>
-                          <button className="linkbtn" style={{ padding: 0, minHeight: 32, textAlign: 'left', color: 'var(--green)', textDecoration: 'underline' }} onClick={() => setSel(x.featureIndex)} aria-pressed={x.featureIndex === sel}>
+                          <button className="source-link" onClick={() => setSel(x.featureIndex)} aria-pressed={x.featureIndex === sel}>
                             <span className="break">{x.plotRef ?? `Feature ${x.featureIndex + 1}`}</span>
                           </button>
                           <span className="small muted" style={{ display: 'block' }}>
@@ -741,12 +741,12 @@ export function AllocationTab({ view, reload, goTo }: { view: View; reload: Relo
             <div className="balance">
               <div className="bar" aria-hidden="true">
                 <span style={{ width: `${pct(a.reservedByOthersGrams)}%`, background: '#8c958f' }} />
-                <span style={{ width: `${pct(Math.min(a.requestedGrams, Math.max(0, a.availableGrams ?? 0)))}%`, background: a.reservedHereGrams ? 'var(--green)' : '#9bb5a6' }} />
+                <span style={{ width: `${pct(Math.min(a.requestedGrams, Math.max(0, a.availableGrams ?? 0)))}%`, background: a.reservedHereGrams ? 'var(--forest)' : '#9bb5a6' }} />
                 {a.excessGrams > 0 && <span style={{ width: `${Math.min(100, pct(a.excessGrams))}%`, background: 'repeating-linear-gradient(45deg, var(--rust), var(--rust) 4px, #e8bdb6 4px, #e8bdb6 8px)' }} />}
               </div>
               <div className="legend">
                 <span><i style={{ background: '#8c958f' }} />Other shipments {a.display.others}</span>
-                <span><i style={{ background: a.reservedHereGrams ? 'var(--green)' : '#9bb5a6' }} />This shipment {a.display.requested} {a.reservedHereGrams ? '(reserved)' : '(requested, not reserved)'}</span>
+                <span><i style={{ background: a.reservedHereGrams ? 'var(--forest)' : '#9bb5a6' }} />This shipment {a.display.requested} {a.reservedHereGrams ? '(reserved)' : '(requested, not reserved)'}</span>
                 {a.excessGrams > 0 && <span><i style={{ background: 'var(--rust)' }} />Excess {a.display.excess}</span>}
               </div>
             </div>
@@ -756,7 +756,7 @@ export function AllocationTab({ view, reload, goTo }: { view: View; reload: Relo
             </p>
             <div className="row small">
               {a.rows.map((row: number) => (
-                <button key={row} className="linkbtn small" style={{ padding: 0, minHeight: 30, color: 'var(--green)', textDecoration: 'underline' }} onClick={() => goTo({ tab: 'sources', row })}>
+                <button key={row} className="source-link" onClick={() => goTo({ tab: 'sources', row })}>
                   row {row}
                 </button>
               ))}
