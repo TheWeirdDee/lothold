@@ -34,3 +34,6 @@ Raw copies of these public pages were retrieved on 2026-10-23 (UTC) and kept loc
 | `wsdl/xsd5.xml` | `d974fb587e297b211d87dfd0795e6a685abfc8fa972654b05ba362ae58fca7ed` | 2158 |
 | `wsdl/xsd6.xml` | `d62c439be9ccb875e262d6ede6e064a943e9e0773d642d1bd7ed9a42bed8a3ac` | 89187 |
 | `wsdl/xsd7.xml` | `3e48fd745361560e63a4df25595f3c143a69022291a1ed69beb1538328a21901` | 62325 |
+| `legal/cellar-xhtml.out` | `fc30a30a1b6701800ad8abeb63e1d606769a4128bc97ddb2e481ee4bf6057259` | 387997 |
+| `legal/cellar-pdf.out` | `68e3648811d0447166234bcffab463a9a77b2b5626fa809e21be316787d94fac` | 783482 |
+| `legal/amend-cellar.out` | `f9a2440227c4231d359e2816d9fc17bf59643dd1f3c7fa6ff31320180037ae27` | 182765 |
