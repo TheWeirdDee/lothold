@@ -39,7 +39,7 @@ npm run build          # builds the web client into dist/
 npm start              # http://127.0.0.1:8787
 ```
 
-For development, `npm run dev:server` (API on :8787) and `npm run dev:web` (Vite on :5173, proxying /api) run in two terminals.
+For development, run `npm run dev` and open http://localhost:5173. It starts the API (port 8787, reloads on change) and the Vite web server (port 5173, proxying /api) together; Ctrl+C stops both. Run `npm run setup` and `npm run data:fetch` once beforehand.
 
 The database is created and migrated on first start (`data/lothold.sqlite`, SQLite with WAL and foreign keys). Uploaded evidence is encrypted (AES-256-GCM) under `data/evidence/`. Back up `EVIDENCE_ENCRYPTION_KEY`: evidence cannot be decrypted without it.
 
