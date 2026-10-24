@@ -146,8 +146,16 @@ const LIMITATIONS = [
 let tiffs: Partial<Record<DatasetId, { tiff: GeoTIFF; image: GeoTIFFImage }>> = {};
 let datasetHashes: Partial<Record<DatasetId, string>> = {};
 
+let verificationDone = false;
 export function setDatasetHashes(h: Partial<Record<DatasetId, string>>) {
   datasetHashes = { ...datasetHashes, ...h };
+}
+/** Marks the startup hash verification as finished (successfully or not). */
+export function markVerificationDone() {
+  verificationDone = true;
+}
+export function isVerificationDone() {
+  return verificationDone;
 }
 
 export function datasetAvailability(): { id: DatasetId; present: boolean; sizeMatches: boolean; sha256: string | null }[] {
