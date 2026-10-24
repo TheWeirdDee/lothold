@@ -3,6 +3,12 @@
 import { readFileSync } from 'node:fs';
 
 const base = process.argv[2] ?? 'http://127.0.0.1:8799';
+// Engineering fixtures must never reach an operational workspace.
+const health = (await (await fetch(`${base}/api/health`)).json()) as { instance?: string };
+if (health.instance !== 'engineering') {
+  console.error(`Refusing to run: ${base} is not an engineering instance (start it with LOTHOLD_INSTANCE=engineering and a throwaway DATABASE_PATH).`);
+  process.exit(2);
+}
 let cookie = '';
 let csrf = '';
 async function call(method: string, path: string, body?: unknown, form?: FormData) {
