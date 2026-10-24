@@ -1,0 +1,150 @@
+{
+  "label": "ENGINEERING TEST — shared allocation constraint. Not commercial inventory; quantities are test inputs.",
+  "network": "local-devnet",
+  "chainId": 31337,
+  "rpcHost": "127.0.0.1:8546",
+  "contract": {
+    "address": "0x1645604d915c55cfd61cf1492ad58ab5e4150b57",
+    "compiler": "0.8.28+commit.7893614a",
+    "deployTx": "0x866d4a16b51daf2fabf963a40ce6061fc0c8cd7137112c133d87ecdce8ee38d3",
+    "source": "contracts/src/BatchReservations.sol"
+  },
+  "actors": {
+    "registrarAndDeclarant": "0x9f5E6057606bC655E6dB8a6aDab40CB11217FA44",
+    "reserverA": "0x330D1bC6B9db359FeFed4bB754a21Ded89AE6113",
+    "reserverB": "0xeD7a68B3F2d96fAb6BaE926B6F3B84816fc1c058"
+  },
+  "runAt": "2026-10-23T14:30:40.279Z",
+  "deployerBalanceAfterEth": "9.99806939368230861",
+  "steps": [
+    {
+      "step": "deploy",
+      "outcome": "confirmed",
+      "txHash": "0x866d4a16b51daf2fabf963a40ce6061fc0c8cd7137112c133d87ecdce8ee38d3",
+      "explorer": null,
+      "contractAddress": "0x1645604d915c55cfd61cf1492ad58ab5e4150b57",
+      "blockNumber": "1"
+    },
+    {
+      "step": "registrar-authorises-declarant",
+      "outcome": "confirmed",
+      "txHash": "0xa6144171fff2de59595fe7efa8a16aeb9d059844d2330ba85299f16c1f32c5ab",
+      "explorer": null,
+      "blockNumber": "2",
+      "gasUsed": "45638"
+    },
+    {
+      "step": "unauthorised-registration-attempt (actor A is not a declarant)",
+      "outcome": "preflight_rejected",
+      "revert": {
+        "name": "NotDeclarant",
+        "message": "Signer is not an authorised declarant."
+      }
+    },
+    {
+      "step": "declarant-registers-test-batch (1,000,000 g)",
+      "batchKey": "0xb8a5fb15195fee5a3544bac7e8e2b6d8115f9a377d968dc90f42f57d37c16101",
+      "evidenceHash": "0x09bc351b58c60231b192cb850d3295bc394ae7b8187cdb6e242fbad726b2457d",
+      "outcome": "confirmed",
+      "txHash": "0x23063e3c964a001e5a4153b17ed55366daaf8c79be8ff8a162efb8a997ada63e",
+      "explorer": null,
+      "blockNumber": "3",
+      "gasUsed": "116031"
+    },
+    {
+      "step": "declarant-authorises-actor-A",
+      "actor": "0x330D1bC6B9db359FeFed4bB754a21Ded89AE6113",
+      "outcome": "confirmed",
+      "txHash": "0xda82b3b5de98aef1529655e24027b33ff02e186913bdd37da25e22efe7172c44",
+      "explorer": null,
+      "blockNumber": "4",
+      "gasUsed": "48975"
+    },
+    {
+      "step": "declarant-authorises-actor-B",
+      "actor": "0xeD7a68B3F2d96fAb6BaE926B6F3B84816fc1c058",
+      "outcome": "confirmed",
+      "txHash": "0xa690d5c8236ba218d9177b0a8df2b61efe6a7e887cace12c71d2c7eb1ff72a3e",
+      "explorer": null,
+      "blockNumber": "5",
+      "gasUsed": "48975"
+    },
+    {
+      "step": "actor-A-reserves-600000g",
+      "allocationKey": "0x9056fd9283450951f0ef8a40df4ff3007ecc8d2f6429d1322a5869e0b1e685d2",
+      "outcome": "confirmed",
+      "txHash": "0xceca7ccc865f001a51ddea216820182f165e9c55d9c8c51c0a76ac6a6685fafb",
+      "explorer": null,
+      "blockNumber": "6",
+      "gasUsed": "150764"
+    },
+    {
+      "step": "actor-B-requests-600000g (preflight)",
+      "allocationKey": "0x833f20511cacbd5fcca0b0ea4c68747cc478cce94a5d97bcc431a1da64f739ac",
+      "outcome": "preflight_rejected",
+      "revert": {
+        "name": "ExceedsAvailable",
+        "message": "Request of 600000 g exceeds the 400000 g still available on the registered batch."
+      }
+    },
+    {
+      "step": "actor-B-submits-600000g-without-preflight (mined)",
+      "allocationKey": "0x833f20511cacbd5fcca0b0ea4c68747cc478cce94a5d97bcc431a1da64f739ac",
+      "outcome": "reverted",
+      "txHash": "0x2139aac671d14ba628a71ef3bf8e33f03b779f0d16f0782c2bbf5f8ccb4ab4df",
+      "explorer": null,
+      "blockNumber": "7",
+      "gasUsed": "32139"
+    },
+    {
+      "step": "state-after-rejection",
+      "readAtBlocks": {
+        "afterA": "6",
+        "afterB": "7"
+      },
+      "reservedGramsBefore": "600000",
+      "reservedGramsAfter": "600000",
+      "unchanged": true,
+      "actorBAllowance": "1000000",
+      "actorBReservationRecorded": false
+    },
+    {
+      "step": "actor-A-retries-same-allocation-id",
+      "outcome": "preflight_rejected",
+      "revert": {
+        "name": "AllocationAlreadyUsed",
+        "message": "This allocation identifier has already been reserved; a retry cannot reserve it twice."
+      }
+    },
+    {
+      "step": "concurrent-A-300000g",
+      "outcome": "confirmed",
+      "txHash": "0xc3ef274c9be9252ec7652bdea9fb02b68ad8af73f2d5e259239920b3ffe46cff",
+      "explorer": null,
+      "blockNumber": "8",
+      "gasUsed": "150776"
+    },
+    {
+      "step": "concurrent-B-300000g",
+      "outcome": "reverted",
+      "txHash": "0x0477c97eec407b0697d31b9bcb586cf6a21e37d9066367a3a11c68e809635f8a",
+      "explorer": null,
+      "blockNumber": "8",
+      "gasUsed": "32127"
+    },
+    {
+      "step": "actor-B-reserves-exact-remainder-100000g",
+      "outcome": "confirmed",
+      "txHash": "0x3664353babc60f04639155a7178b297d5dff72e750824b2501b2818b81e6242e",
+      "explorer": null,
+      "blockNumber": "9",
+      "gasUsed": "150776"
+    },
+    {
+      "step": "final-state",
+      "declaredGrams": "1000000",
+      "reservedGrams": "1000000",
+      "conserved": true
+    }
+  ]
+}
