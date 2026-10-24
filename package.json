@@ -19,7 +19,8 @@
     "data:verify": "node scripts/fetch-datasets.ts --verify-only",
     "setup": "node scripts/setup.ts",
     "admin": "node --env-file-if-exists=.env scripts/admin.ts",
-    "verify": "node scripts/verify-all.ts"
+    "verify": "node scripts/verify-all.ts",
+    "backup": "node --env-file-if-exists=.env scripts/backup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.1.0",
@@ -53,5 +54,6 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
-  }
+  },
+  "packageManager": "pnpm@11.5.0"
 }
