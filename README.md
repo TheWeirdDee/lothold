@@ -22,7 +22,7 @@ The EU Deforestation Regulation names cocoa among seven “commodities associate
 | Review decisions (rationale + evidence required), sign-off bound to an evidence snapshot digest, automatic invalidation | Working | Integration + browser tests |
 | One-page supplier evidence request PDF; review draft PDF | Working, rendered and visually inspected | [screenshot](docs/screenshots/supplier-request-pdf.png) |
 | DDS V3 `SubmitDdsRequest` XML, validated against the **official XSD set** (7 schemas, imports resolved) | Working; only after sign-off; marked `DRAFT_NOT_SUBMITTED` in the filename | XSD positive/negative tests |
-| Field extraction from documents | **Label parser (deterministic, not AI)** verified. Model providers (Anthropic, OpenAI-compatible) are implemented but **no model call has been verified**, because no API key is available | [docs/AI.md](docs/AI.md) |
+| Field extraction from documents | **Label parser (deterministic, not AI)** verified. A Gemini key (OpenAI-compatible endpoint) is configured and authenticates, but live model extraction is **not yet verified**: the free-tier daily quota was exhausted (HTTP 429). The labelled fallback was verified live | [docs/AI.md](docs/AI.md) |
 | Allocation registry contract | Deployed on **Ethereum Sepolia** `0x1645604d915c55cfd61cf1492ad58ab5e4150b57`; two-actor excess rejection verified on the public testnet | [docs/CHAIN.md](docs/CHAIN.md) |
 | In-app anchoring of ledger reservations on Sepolia | Verified with engineering fixtures (6 confirmed transactions, read back from the contract) | `docs/evidence/app-anchoring-sepolia.json` |
 | Real commercial shipment records | **Not available.** The workspace starts empty; no real shipment has been processed | — |
@@ -62,7 +62,7 @@ Public pages need no login: **Inspect forest evidence** (runs the real analysis 
 npm run typecheck        # TypeScript (tsc 7) over server, core, web, scripts, tests
 npm test                 # vitest: unit + integration (66 tests; includes real-raster, backup/restore and Anvil chain tests)
 npm run test:contracts   # forge: 18 contract tests incl. 512-run fuzz (first: cd contracts && forge install foundry-rs/forge-std --no-git)
-npm run test:e2e         # Playwright (Chrome): 4 browser journeys on a throwaway database
+npm run test:e2e         # Playwright (Chrome): 6 browser journeys on a throwaway database
 npm run data:verify      # re-hashes the raster snapshots against the pinned SHA-256 values
 python scripts/gis-crosscheck.py   # independent GDAL/pyproj recomputation (pip install rasterio pyproj shapely numpy)
 ```
