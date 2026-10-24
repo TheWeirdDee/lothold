@@ -114,6 +114,14 @@ export function queueAnchoring(db: DB, user: SessionUser, shipmentId: string) {
   const st = computeState(db, user, shipmentId);
   if (st.evaluation.readiness.allocation !== 'RESERVED') throw new HttpError(409, 'not_reserved', 'Reserve the allocations in the ledger before anchoring them on the testnet.');
   const allocs = all<{ id: string }>(db, `SELECT id FROM allocations WHERE shipment_id = ? AND status = 'reserved' AND sources_upload_id = ?`, shipmentId, st.sourcesUpload!.id);
+  // Bound what one organisation can make the shared test signer do: each allocation costs up to 3 transactions.
+  const maxAlloc = Number(process.env.CHAIN_MAX_ALLOCATIONS_PER_REQUEST ?? 10);
+  const dailyTx = Number(process.env.CHAIN_DAILY_TX_LIMIT ?? 30);
+  if (allocs.length > maxAlloc) throw new HttpError(422, 'too_many_allocations', `This shipment has ${allocs.length} allocations; testnet anchoring is limited to ${maxAlloc} per request on this server.`);
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const usedTx = get<{ n: number }>(db, `SELECT COUNT(*) AS n FROM chain_txs WHERE org_id = ? AND created_at >= ?`, user.orgId, since)!.n;
+  const pendingJobs = get<{ n: number }>(db, `SELECT COUNT(*) AS n FROM jobs WHERE type = 'chain_anchor' AND status IN ('queued','running') AND json_extract(payload_json, '$.allocationId') IN (SELECT id FROM allocations WHERE org_id = ?)`, user.orgId)!.n;
+  if (usedTx + 3 * (pendingJobs + allocs.length) > dailyTx) throw new HttpError(429, 'chain_budget', `Your organisation's testnet transaction budget (${dailyTx} per 24 h) would be exceeded. Try again later.`);
   const jobs = allocs.map((a) => enqueue(db, 'chain_anchor', { allocationId: a.id }, `chain_anchor:${a.id}`, 5));
   audit(db, { orgId: user.orgId, shipmentId, actorId: user.id, type: 'chain.anchor_queued', data: { allocations: allocs.length } });
   return { queued: jobs.length };
