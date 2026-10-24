@@ -1,0 +1,2 @@
+supplier_id,supplier_name,source_lot_ref,source_lot_declared_quantity,allocated_quantity,quantity_unit,producer_country,plot_refs
+ENG-KIT-SUP-A,ENGINEERING TEST - not a real supplier,ENG-KIT-LOT-A,1000,600,kg,CI,ENG-KIT-A-P1;ENG-KIT-A-P2
