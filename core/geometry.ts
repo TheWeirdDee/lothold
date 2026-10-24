@@ -1,6 +1,6 @@
 // Deterministic GeoJSON plot validation following the EUDR Information System GeoJSON description
 // (retrieved 2026-10-23, "Updated 17 August 2026"). Coordinates are never silently swapped or repaired.
-import area from '@turf/area';
+import { ringAreaM2 } from './ellipsoid.ts';
 import kinks from '@turf/kinks';
 import { polygon as turfPolygon } from '@turf/helpers';
 
@@ -296,7 +296,7 @@ export function validatePlotGeometry(
         path: `${prefix}[0]`,
       });
     }
-    const a = area(poly) / 10_000;
+    const a = ringAreaM2(ring.map((pt) => [pt[0], pt[1]] as [number, number])) / 10_000; // WGS 84 ellipsoid (holes are rejected above)
     if (!(a > 0) && k.features.length === 0) issues.push({ code: 'zero_area', severity: 'hold', message: 'The polygon encloses no area (all points on a line).', path: `${prefix}[0]` });
     total += a;
   });
@@ -309,8 +309,23 @@ export function geometryFromValidated(raw: unknown): PlotGeometry {
   return raw as PlotGeometry;
 }
 
-/** Ray-casting point-in-ring test in planar lon/lat (adequate at plot scale). */
+const EDGE_EPS_DEG = 1e-10; // ~0.01 mm: points this close to an edge are treated as on it
+
+function onSegment(x: number, y: number, a: Position, b: Position): boolean {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / len2));
+  const px = a[0] + t * dx - x, py = a[1] + t * dy - y;
+  return px * px + py * py <= EDGE_EPS_DEG * EDGE_EPS_DEG;
+}
+
+/**
+ * Point-in-ring test in planar lon/lat (adequate at plot scale). The polygon is treated as a closed set:
+ * a point on (or within 1e-10° of) the boundary counts as inside, so pixel centres that fall exactly on an
+ * edge are classified deterministically instead of by floating-point noise.
+ */
 export function pointInRing(x: number, y: number, ring: Position[]): boolean {
+  for (let i = 0; i < ring.length - 1; i++) if (onSegment(x, y, ring[i]!, ring[i + 1]!)) return true;
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const xi = ring[i]![0], yi = ring[i]![1], xj = ring[j]![0], yj = ring[j]![1];
