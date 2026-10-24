@@ -73,6 +73,21 @@ describe('authentication and request protection', () => {
     expect((await c.req('POST', '/api/auth/login', { email: 'nobody@example.test', password: 'whatever-123' })).status).toBe(401);
     expect((await c.req('POST', '/api/auth/register', { email: 'weak@example.test', password: 'short', name: 'a', organisation: 'b' })).status).toBe(422);
   });
+  it('behind a trusted proxy, a client-supplied first X-Forwarded-For entry cannot reset the rate limit', async () => {
+    process.env.TRUST_PROXY = 'true';
+    process.env.REGISTER_RATE_LIMIT = '2';
+    run(db, `DELETE FROM rate_events WHERE bucket LIKE 'register:%'`);
+    const statuses: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      // The proxy appends the real client address (203.0.113.7); the attacker rotates the first entry.
+      const r = await app.request('/api/auth/register', { method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': `198.51.100.${i}, 203.0.113.7` }, body: JSON.stringify({ email: `xff-${i}-${Date.now()}@example.test`, password: 'engineering-test-pw', name: 'x', organisation: 'ENG XFF' }) });
+      statuses.push(r.status);
+    }
+    delete process.env.TRUST_PROXY;
+    process.env.REGISTER_RATE_LIMIT = '1000';
+    run(db, `DELETE FROM rate_events WHERE bucket LIKE 'register:%'`);
+    expect(statuses).toEqual([201, 201, 429]);
+  });
   it('refuses oversized JSON bodies, including on public endpoints', async () => {
     const big = JSON.stringify({ geometry: { type: 'Polygon', coordinates: [[Array.from({ length: 200_000 }, () => [1.123456, 2.123456])]] } });
     const r = await app.request('/api/public/forest-check', { method: 'POST', headers: { 'content-type': 'application/json', 'content-length': String(big.length) }, body: big });
@@ -292,6 +307,48 @@ describe.skipIf(!haveData)('end-to-end review: findings, environment, sign-off, 
     // Audit trail recorded every step.
     const types = (await c.req('GET', `/api/shipments/${sid}/audit`)).json.events.map((e: any) => e.type);
     for (const t of ['upload.confirmed', 'review.decision', 'review.approved', 'document.generated', 'shipment.fields_changed', 'allocations.reserved']) expect(types).toContain(t);
+  });
+  it('a rationale and attachment cannot clear non-environmental holds; sign-off binds to the exact source files', async () => {
+    const c = client(app);
+    await c.register('ENG ORG INTEGRITY');
+    const sid = await newShipment(c);
+    await c.req('PATCH', `/api/shipments/${sid}/fields`, fields);
+    await uploadAndConfirm(c, sid, 'sources_csv', 'src.csv', `${CSV_HEADER}
+ENG-S,,ENG-LI,1000,600,kg,CI,ENG-P1;ENG-P2
+`);
+    await uploadAndConfirm(c, sid, 'plots_geojson', 'p.geojson', plotsFile([{ ref: 'ENG-P1', geometry: SIGNAL_PROBE }]));
+    let v = await waitEnv(c, sid);
+    const ev = await c.upload(sid, 'review_evidence', 'ENGINEERING_TEST_evidence.txt', 'ENGINEERING TEST evidence');
+    const body = (findingKey: string) => ({ findingKey, decision: 'investigated_not_blocking', rationale: 'Engineering test rationale long enough to pass the minimum length check.', evidenceUploadId: ev.json.uploadId });
+    // A hold (missing plot geometry) cannot be waived by review, whatever the explanation.
+    expect((await c.req('POST', `/api/shipments/${sid}/decisions`, body('PLOT-MISSING:ENG-P2'))).status).toBe(409);
+    // An unknown or fabricated finding key is refused.
+    expect((await c.req('POST', `/api/shipments/${sid}/decisions`, body('ENV:NOT-A-PLOT'))).status).toBe(404);
+    // Reviewing the environmental signal leaves the unrelated hold in place; sign-off stays impossible.
+    expect((await c.req('POST', `/api/shipments/${sid}/decisions`, body('ENV:ENG-P1'))).status).toBe(201);
+    await c.req('POST', `/api/shipments/${sid}/reserve`);
+    v = await view(c, sid);
+    expect(v.evaluation.readiness.overall).toBe('HOLD');
+    expect((await c.req('POST', `/api/shipments/${sid}/approve`, { digest: v.digest })).status).toBe(409);
+    // Supply the missing plot, reach sign-off, then swap in a different source file with the same numbers.
+    await uploadAndConfirm(c, sid, 'plots_geojson', 'p2.geojson', plotsFile([{ ref: 'ENG-P1', geometry: SIGNAL_PROBE }, { ref: 'ENG-P2', geometry: CLEAR_PROBE }]));
+    v = await waitEnv(c, sid);
+    expect(v.evaluation.readiness.overall).toBe('READY_FOR_SIGN_OFF');
+    expect((await c.req('POST', `/api/shipments/${sid}/approve`, { digest: v.digest })).status).toBe(201);
+    const snap = JSON.parse(get<{ snapshot_json: string }>(db, 'SELECT snapshot_json FROM approvals WHERE shipment_id = ?', sid)!.snapshot_json);
+    expect(snap.sources.sha256).toHaveLength(64);
+    expect(snap.plots.sha256).toHaveLength(64);
+    expect(snap.datasetsKey).toBeTruthy();
+    expect(Object.keys(snap.allocations)).toEqual(['ENG-S::ENG-LI']);
+    expect(snap.environment['ENG-P1'].resultId).toBeTruthy();
+    await uploadAndConfirm(c, sid, 'sources_csv', 'src-v2.csv', `${CSV_HEADER}
+ENG-S,,ENG-LI,1000,600,kg,CI,ENG-P1;ENG-P2
+
+`);
+    v = await view(c, sid);
+    expect(v.approval.state).toBe('stale');
+    // The new source table released the old reservation, so allocation is no longer reserved either.
+    expect(v.evaluation.readiness.allocation).toBe('NOT_RESERVED');
   });
   it('an axis swap is never auto-applied; the correction is a new upload that must be confirmed', async () => {
     const c = client(app);
