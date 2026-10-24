@@ -1,5 +1,6 @@
-# LotHold production image. NOT YET BUILT: Docker was unavailable in the build environment.
-# Build context is the repository root:  docker build -f deploy/Dockerfile -t lothold .
+# LotHold production image. Built and verified locally (Docker 29 in WSL2) with scripts/container-verify.ts;
+# see docs/DEPLOYMENT.md. Build context is the repository root:  docker build -f deploy/Dockerfile -t lothold .
+# Rasters are not baked in: they live on the /data volume (npm run data:fetch, hash-pinned).
 FROM node:24.13.1-bookworm-slim
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
