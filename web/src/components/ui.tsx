@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 
 export const OVERALL: Record<string, { label: string; cls: string }> = {
   HOLD: { label: 'HOLD', cls: 'hold' },
@@ -68,6 +68,41 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 export const useToast = () => useContext(ToastCtx);
+
+// ---------- tables ----------
+/** Horizontal scroll container for tables. Becomes a focusable, labelled region only while it actually overflows,
+ *  so keyboard users can scroll it without adding a Tab stop to tables that fit. */
+export function TableWrap({ children, label = 'Table', style }: { children: ReactNode; label?: string; style?: CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scrolls, setScrolls] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setScrolls(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="table-wrap" style={style} {...(scrolls ? { tabIndex: 0, role: 'region', 'aria-label': `${label} (scrolls sideways)` } : {})}>
+      {children}
+    </div>
+  );
+}
+
+// ---------- tabs ----------
+/** Arrow, Home and End keys for a role="tablist" (WAI-ARIA tabs pattern, automatic activation). Tabs use roving
+ *  tabindex: only the selected tab is in the Tab order, and each tab's id is `${idPrefix}${key}`. */
+export function tabKeys<K extends string>(e: KeyboardEvent<HTMLElement>, keys: readonly K[], current: K, select: (k: K) => void, idPrefix: string) {
+  const i = keys.indexOf(current);
+  const next = e.key === 'ArrowRight' ? keys[(i + 1) % keys.length] : e.key === 'ArrowLeft' ? keys[(i - 1 + keys.length) % keys.length] : e.key === 'Home' ? keys[0] : e.key === 'End' ? keys[keys.length - 1] : undefined;
+  if (next === undefined) return;
+  e.preventDefault();
+  select(next);
+  document.getElementById(`${idPrefix}${next}`)?.focus();
+}
 
 // ---------- dialog ----------
 export function Dialog({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode }) {
