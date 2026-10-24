@@ -1,0 +1,113 @@
+# Verification record
+
+Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrome 155, Foundry 1.8.6.
+
+## Commands and results
+
+| Command | Result | Scope |
+|---|---|---|
+| `npm run typecheck` | 0 errors | server, core, web, scripts, tests (TypeScript 7.0.2, strict) |
+| `npm test` | **60 / 60 passed** | `tests/unit` (38) + `tests/integration` (22, incl. 3 against a local Anvil devnet) |
+| `npm run test:contracts` | **18 / 18 passed** (fuzz: 512 runs) | `contracts/test/BatchReservations.t.sol` |
+| `npm run test:e2e` | **4 / 4 passed** | Playwright + Chrome, real server, throwaway database |
+| `npm run data:verify` | 3 / 3 SHA-256 match | raster snapshots |
+| `node scripts/chain-engineering-verify.ts --network sepolia` | PASS | public testnet; see CHAIN.md |
+| `node scripts/app-anchoring-sepolia.ts` | 6 confirmed tx, read-back matches | public testnet, app code path |
+| `node scripts/ui-walkthrough.ts` | 0 console errors; no horizontal overflow at 360/390/768/1024/1440 on 5 pages | visual walkthrough (screenshots reviewed manually) |
+| `node scripts/render-documents.ts` + `scripts/render-pdf.py` | Supplier requests 1 page; review drafts 1–2 pages; XML XSD-valid | PDFs rasterised (colour and greyscale) and read |
+
+## What each layer covers
+
+**Core rules (unit)**
+- Quantity parsing: exact unit conversion, no floating point, rejection of commas/negatives/zero/over-precision/unknown units.
+- HS 1801 scope.
+- Geometry: valid polygon, self-intersection (no fake zero area), open ring, holes, LineString, empty, out of bounds, axis swap against the country box and by latitude range (correction proposed, never applied), point area rules, projected CRS refusal, 6-decimal truncation collapse.
+- CSV/GeoJSON parsing: missing columns, per-cell issues, raw-text precision.
+- Decision engine: ready only when all dimensions clear; excess allocation arithmetic with row links; first declaration kept; unavailable/outside/partial/pending never clear; land-change signal requires rationale **and** evidence; keep-on-hold becomes a hold; missing geometry; unsupported product; net-mass mismatch; determinism.
+
+**Extraction (unit)**
+- Accepts quotes found on the cited page.
+- Rejects fabricated values, values outside their quote, wrong pages, ambiguous candidates, and quotes without a field label (embedded-instruction case).
+- The label parser is deterministic and flags conflicting values.
+
+**XML (unit)**
+- The official sample validates (positive control).
+- Generated XML validates and keeps exact quantities, with no draft markers or reference numbers inside.
+- Four malformed variants fail (description > 150 characters, invalid activity type, malformed HS code, non-EU country of activity).
+
+**Environmental (unit, real rasters)**
+- Outside tile → outside coverage; tile edge → never clear; invalid geometry not analysed; pixel arithmetic consistent (1,600 pixels for a 0.01° box); years within 2001–2025; a point samples exactly one pixel.
+
+**HTTP integration**
+- CSRF and Origin enforcement.
+- Registration rate limit that ignores spoofed `X-Forwarded-For`.
+- Weak passwords and bad logins rejected.
+- No secrets in public responses; oversized JSON refused (413).
+- **Cross-organisation isolation** on every protected route, including signed links (issued to one user, refused for another).
+- Expired and tampered links refused.
+- Upload limits: size, extension, fake PDF, non-UTF-8, empty, malformed JSON. Rejected files cannot be confirmed; duplicate uploads are idempotent.
+- Evidence encrypted at rest.
+- Over-allocation across shipments rejected with balances unchanged; retries do not double-reserve.
+- Concurrent reservations: exactly one succeeds. Within one process the synchronous SQLite driver serialises requests; across connections, `BEGIN IMMEDIATE` provides the lock.
+- First declaration immutable; append-only tables refuse UPDATE/DELETE.
+- Abandoned jobs resume after an expired lease; failing jobs stop after bounded attempts.
+- Full workflow: holds, environmental signal, one-page PDF, XML refused before sign-off, missing boundary supplied, decision without evidence refused, reserve, stale-digest sign-off refused, sign-off, XSD-valid XML, review draft, field change → stale sign-off and documents, geometry change → environmental decision voided.
+- Axis-swap correction creates a new upload that must be confirmed.
+- Extraction: label parser labelled, nothing auto-applied, unverified fields not acceptable, document text not logged; model output failing the schema falls back; invented model values rejected.
+- Hostile cell values (quotes, CJK, emoji, 400-character values) still give a one-page supplier PDF.
+
+**Chain (Anvil integration)**
+- Full anchoring confirmed.
+- Crash after submission is reconciled without resending (signer nonce unchanged).
+- Re-runs idempotent.
+- Read-back matches the ledger.
+- On-chain quantity disagreement stops anchoring with the ledger untouched.
+- Organisations without enablement get 403.
+
+**Browser (Playwright)**
+- Public pages and every internal link return 200.
+- Honest empty workspace; blank template exact.
+- Field entry, CSV upload/preview/confirm, malformed GeoJSON rejected with message, source-to-finding navigation (row highlighted), boundary correction, real pixel map, supplier PDF download (`%PDF-`), XML disabled before sign-off, evidence-required review dialog, reserve, sign-off, XML download, persistence after reload, invalidation after edit, list shows "Sign-off out of date".
+- Public inspection: clear and outside-coverage results.
+- 360 px layout with menu; skip link is the first focus stop; 40 px touch targets.
+
+## Distinguishing kinds of verification
+
+| Kind | Done | Notes |
+|---|---|---|
+| Local automated verification | Yes | All suites above |
+| Genuine external data | Yes | Hansen GFC v1.13 and JRC GFC2020 V4 tiles downloaded from their publishers, hash-pinned, read pixel by pixel; official DDS V3 XSDs from the EU WSDL |
+| Public testnet | Yes | Sepolia transactions listed in CHAIN.md (engineering quantities) |
+| Model provider | **No** | No API key available; adapters untested against a live model |
+| Actual user/commercial records | **No** | No permissioned shipment data available. Every end-to-end run used labelled engineering fixtures |
+
+## Defects found and fixed during verification
+
+| Severity | Defect | Fix |
+|---|---|---|
+| High (security) | Per-IP rate limits trusted client `X-Forwarded-For`, allowing unlimited rotation | Socket address used; XFF only with `TRUST_PROXY=true`; test added |
+| High (correctness) | A quote copied from an embedded instruction could support an extracted value | Quote must contain a field label; test added |
+| Medium (security) | No request body limit on JSON endpoints, including public analysis | 1 MB JSON / 26 MB upload limits; test added |
+| Medium (security) | No Content-Security-Policy on HTML | Strict same-origin CSP |
+| Medium (crash) | Plex Mono font crashed fontkit on certain glyph sequences (review draft 500) | Built-in Courier for monospace; hostile-input PDF test |
+| Medium (documents) | Review draft footers spilled onto blank extra pages | Footer drawn inside a lifted bottom margin |
+| Medium (chain) | Public RPC returned stale state right after a confirmed write | Reads pinned to the confirming block with bounded wait |
+| Medium (chain test) | Forced-revert transactions ran out of gas (Sepolia charges ~4× Anvil), masking contract reverts | Gas limit raised; out-of-gas distinguished from contract revert |
+| Medium (a11y) | Focus moved to main on initial load, skipping the skip link | Only on client navigation; test added |
+| Medium (UI) | Files in the built client other than /assets (landing image) were answered with the SPA shell, so the image was broken | All built files served before the SPA fallback; browser test asserts no broken images |
+| Medium (API) | Unknown /api GET paths returned the HTML shell with 200 instead of a JSON 404 | SPA fallback excludes /api; browser test added |
+| Low | Self-intersecting polygons also reported "zero area" / "0 ha" | Area reported as unknown |
+| Low | Precision warning fired on 6-decimal coordinates (JSON drops trailing zeros) | Precision judged from raw file text |
+| Low | Supplier PDF listed the same over-allocation twice | Row-level duplicate suppressed |
+| Low | Startup "database is locked" when a stale process held the DB | `busy_timeout` set before WAL pragma |
+| Low | Dependency: `unicode-properties@1.4.0` broken `exports` path broke pdfkit | pnpm override to 1.4.1 |
+
+## Known limitations and residual risk
+
+- Single-tile environmental coverage; annual data only; no near-real-time alerts (GFW key unavailable).
+- No live model verification.
+- No real shipment records processed.
+- SQLite single-writer architecture; adequate for a pilot, not for multi-instance deployment.
+- PDF typography for non-Latin text: characters outside the embedded Latin subset are substituted with "?" and shown in full in the app.
+- Testnet trust model as described in CHAIN.md.
+- Not externally penetration-tested.
