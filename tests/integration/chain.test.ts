@@ -40,10 +40,6 @@ describe.skipIf(!existsSync(anvilBin))('testnet anchoring lifecycle (local Anvil
     await pub.waitForTransactionReceipt({ hash: t });
     Object.assign(process.env, { CHAIN_ANCHORING: 'on', CHAIN_NETWORK: 'local-devnet', CHAIN_RPC_URL: `http://127.0.0.1:${PORT}`, REGISTRY_ADDRESS: registry, CHAIN_DEPLOYER_KEY: declarant, CHAIN_ACTOR_A_KEY: reserver });
   });
-  afterAll(() => {
-    anvil?.kill();
-    db.close();
-  });
 
   async function reservedShipment(org: string, grams = '600') {
     const c = client(app);
@@ -104,4 +100,41 @@ describe.skipIf(!existsSync(anvilBin))('testnet anchoring lifecycle (local Anvil
     const r = await c.req('POST', `/api/shipments/${sid}/chain/anchor`);
     expect(r.status).toBe(403);
   });
+});
+
+describe.skipIf(!existsSync(anvilBin))('signing safeguards (local Anvil)', () => {
+  it('refuses to sign when the RPC reports a different chain or fees exceed the ceiling, and enforces per-org limits', async () => {
+    const { writeRegistry, chainConfigFromEnv, accountFromEnv } = await import('../../server/chain/registry.ts');
+    // RPC is Anvil (chain 31337) but configuration says Sepolia (11155111): must refuse before signing.
+    const wrong = { ...chainConfigFromEnv({ ...process.env, CHAIN_NETWORK: 'sepolia', CHAIN_RPC_URL: `http://127.0.0.1:${PORT}` }) };
+    const acct = accountFromEnv('CHAIN_DEPLOYER_KEY')!;
+    const o = await writeRegistry({ cfg: wrong, account: acct, functionName: 'setDeclarant', args: [acct.address, true] });
+    expect(o.kind).toBe('rpc_error');
+    expect('error' in o && o.error).toMatch(/Refusing to sign/);
+    process.env.CHAIN_MAX_FEE_GWEI = '0.000000001';
+    const fee = await writeRegistry({ cfg: chainConfigFromEnv(), account: acct, functionName: 'setDeclarant', args: [acct.address, true] });
+    delete process.env.CHAIN_MAX_FEE_GWEI;
+    expect('error' in fee && fee.error).toMatch(/ceiling/);
+    // Per-request allocation cap and per-organisation daily budget.
+    const c = client(app);
+    await c.register('ENG CHAIN LIMITS');
+    const sid = (await c.req('POST', '/api/shipments', { reference: 'ENG-LIMITS' })).json.id;
+    const up = await c.upload(sid, 'sources_csv', 's.csv', `${CSV_HEADER}\nENG-S,,ENG-LA,1000,100,kg,CI,ENG-P\nENG-S,,ENG-LB,1000,100,kg,CI,ENG-P\n`);
+    await c.req('POST', `/api/uploads/${up.json.uploadId}/confirm`);
+    expect((await c.req('POST', `/api/shipments/${sid}/reserve`)).status).toBe(200);
+    run(db, `UPDATE orgs SET chain_enabled = 1 WHERE name = 'ENG CHAIN LIMITS'`);
+    process.env.CHAIN_MAX_ALLOCATIONS_PER_REQUEST = '1';
+    expect((await c.req('POST', `/api/shipments/${sid}/chain/anchor`)).status).toBe(422);
+    process.env.CHAIN_MAX_ALLOCATIONS_PER_REQUEST = '10';
+    process.env.CHAIN_DAILY_TX_LIMIT = '5';
+    expect((await c.req('POST', `/api/shipments/${sid}/chain/anchor`)).status).toBe(429);
+    delete process.env.CHAIN_DAILY_TX_LIMIT;
+    delete process.env.CHAIN_MAX_ALLOCATIONS_PER_REQUEST;
+    expect(all(db, `SELECT 1 FROM jobs WHERE type = 'chain_anchor' AND payload_json IN (SELECT json_object('allocationId', id) FROM allocations WHERE shipment_id = ?)`, sid)).toHaveLength(0);
+  });
+});
+
+afterAll(() => {
+  anvil?.kill();
+  db.close();
 });
