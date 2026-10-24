@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../api.ts';
 import { useAuth } from '../main.tsx';
-import { Badge, ENV_STATUS, useReveal } from '../components/ui.tsx';
+import { Badge, ENV_STATUS, tabKeys, useReveal } from '../components/ui.tsx';
 import { PixelMap } from '../components/PixelMap.tsx';
 
 /* Every visual on this page is either an abstract illustration (labelled as such), a capture of the running
@@ -22,7 +22,7 @@ function EvidenceTrace() {
         <span>HOW ONE HOLD IS TRACED</span>
         <span>ILLUSTRATION · NOT A SHIPMENT</span>
       </div>
-      <div className="trace-scroll">
+      <div className="trace-scroll" tabIndex={0} role="region" aria-label="Evidence trace diagram, scrolls sideways on narrow screens">
       <svg viewBox="0 0 560 316" role="img" aria-labelledby="trace-title trace-desc">
         <title id="trace-title">How LotHold traces a hold</title>
         <desc id="trace-desc">A source-table row that references a plot is linked to the plot file, where that plot has no boundary, and to a satellite reading for another plot. Both feed numbered items in a supplier evidence request.</desc>
@@ -98,9 +98,9 @@ function DemoPanel() {
   const cur = DEMO.find((d) => d.id === tab)!;
   return (
     <section className="demo enter d4" aria-label="Product demonstration">
-      <div className="demo-tabs" role="tablist" aria-label="Demonstration views">
+      <div className="demo-tabs" role="tablist" aria-label="Demonstration views" onKeyDown={(e) => tabKeys(e, DEMO.map((d) => d.id), tab, setTab, 'demo-tab-')}>
         {DEMO.map((d) => (
-          <button key={d.id} role="tab" id={`demo-tab-${d.id}`} aria-selected={tab === d.id} aria-controls="demo-stage" onClick={() => setTab(d.id)}>
+          <button key={d.id} role="tab" id={`demo-tab-${d.id}`} aria-selected={tab === d.id} aria-controls="demo-stage" tabIndex={tab === d.id ? 0 : -1} onClick={() => setTab(d.id)}>
             {d.label}
           </button>
         ))}
