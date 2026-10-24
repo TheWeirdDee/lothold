@@ -14,7 +14,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'npm run build && node scripts/e2e-server.ts',
-    url: 'http://127.0.0.1:8798/api/health',
+    url: 'http://127.0.0.1:8798/api/ready',
     timeout: 180_000,
     reuseExistingServer: false,
   },
