@@ -20,16 +20,22 @@ if (existsSync('dist/index.html')) {
   app.get('*', async (c, next) => (c.req.path.startsWith('/api/') ? next() : serveStatic({ path: './dist/index.html' })(c, next)));
 }
 
-const datasetsOk = await verifyDatasets();
-const worker = startWorker(db, createJobHandlers(db, { datasetsOk }));
 
 const port = Number(process.env.PORT ?? 8787);
 const server = serve({ fetch: app.fetch, port, hostname: process.env.HOST ?? '127.0.0.1' }, (info) => {
-  console.log(JSON.stringify({ event: 'listening', url: `http://${info.address}:${info.port}`, datasetsVerified: datasetsOk }));
+  console.log(JSON.stringify({ event: 'listening', url: `http://${info.address}:${info.port}` }));
+});
+
+// Listen first; verify the raster hashes in the background. Until verification finishes, public analysis
+// returns UNAVAILABLE and no analysis job runs, because the worker only starts afterwards.
+let worker: ReturnType<typeof startWorker> | null = null;
+void verifyDatasets().then((datasetsOk) => {
+  console.log(JSON.stringify({ event: 'datasets.verified', ok: datasetsOk }));
+  worker = startWorker(db, createJobHandlers(db, { datasetsOk }));
 });
 
 async function shutdown() {
-  await worker.stop();
+  await worker?.stop();
   server.close();
   db.close();
   process.exit(0);
