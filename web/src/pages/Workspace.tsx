@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api, fmtDate } from '../api.ts';
 import { useAuth } from '../main.tsx';
-import { Badge, OVERALL, useAsync, useToast } from '../components/ui.tsx';
+import { Badge, OVERALL, useAsync, useToast, TableWrap } from '../components/ui.tsx';
 
 export function Workspace() {
   const { user } = useAuth();
@@ -98,7 +98,7 @@ export function Workspace() {
         </div>
       )}
       {rows.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap>
           <table className="data">
             <thead>
               <tr>
@@ -136,7 +136,7 @@ export function Workspace() {
               })}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
     </div>
   );
