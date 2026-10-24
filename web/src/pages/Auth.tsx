@@ -1,10 +1,30 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { api, setCsrf } from '../api.ts';
 import { useAuth } from '../main.tsx';
 
 function safeNext(n: string | null) {
   return n && n.startsWith('/app') && !n.startsWith('//') ? n : '/app';
+}
+
+function AuthLayout({ title, intro, children }: { title: string; intro: ReactNode; children: ReactNode }) {
+  return (
+    <div className="auth">
+      <aside className="auth-side">
+        <div>
+          <p className="eyebrow" style={{ color: 'var(--forest-glow)' }}>LotHold review desk</p>
+          <h2>Hold the case until the evidence holds.</h2>
+          {intro}
+        </div>
+        <ol className="auth-steps small">
+          <li>Create a case with your internal shipment reference.</li>
+          <li>Upload the source-lot CSV and plot GeoJSON; confirm the parsed preview.</li>
+          <li>Work through holds and land-change signals, then send the supplier request.</li>
+        </ol>
+      </aside>
+      <div className="auth-main">{children}</div>
+    </div>
+  );
 }
 
 export function LoginPage() {
@@ -16,10 +36,8 @@ export function LoginPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
-    <div className="page narrow" style={{ maxWidth: 440 }}>
-      <h1>Sign in</h1>
+    <AuthLayout title="Sign in" intro={<p>Your organisation’s shipments, evidence files and reviews are private to its members.</p>}>
       <form
-        className="panel stack"
         onSubmit={async (e) => {
           e.preventDefault();
           setErr(null);
@@ -36,6 +54,12 @@ export function LoginPage() {
           }
         }}
       >
+        <div>
+          <h1 style={{ fontSize: 'var(--fs-h2)' }}>Sign in</h1>
+          <p className="muted small" style={{ margin: 0 }}>
+            No account? <Link to="/register">Create a workspace</Link>.
+          </p>
+        </div>
         <label className="field">
           Email
           <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -44,15 +68,16 @@ export function LoginPage() {
           Password
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
-        {err && <p role="alert" className="callout rust small">{err}</p>}
+        {err && (
+          <p role="alert" className="callout rust small">
+            {err}
+          </p>
+        )}
         <button className="btn" disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-      <p className="small" style={{ marginTop: 14 }}>
-        No account? <Link to="/register">Create a workspace</Link>.
-      </p>
-    </div>
+    </AuthLayout>
   );
 }
 
@@ -64,11 +89,11 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
   return (
-    <div className="page narrow" style={{ maxWidth: 480 }}>
-      <h1>Create a workspace</h1>
-      <p className="muted small">A workspace belongs to one organisation. Its shipments and evidence are private to its members. It starts empty.</p>
+    <AuthLayout
+      title="Create a workspace"
+      intro={<p>A workspace belongs to one organisation and starts empty: LotHold has no sample shipments. Uploaded files are encrypted at rest and visible only to your organisation.</p>}
+    >
       <form
-        className="panel stack"
         onSubmit={async (e) => {
           e.preventDefault();
           setErr(null);
@@ -85,6 +110,12 @@ export function RegisterPage() {
           }
         }}
       >
+        <div>
+          <h1 style={{ fontSize: 'var(--fs-h2)' }}>Create a workspace</h1>
+          <p className="muted small" style={{ margin: 0 }}>
+            Already have one? <Link to="/login">Sign in</Link>.
+          </p>
+        </div>
         <label className="field">
           Your name
           <input type="text" autoComplete="name" value={f.name} onChange={set('name')} required maxLength={200} />
@@ -102,11 +133,15 @@ export function RegisterPage() {
           <span className="hint">At least 10 characters.</span>
           <input type="password" autoComplete="new-password" minLength={10} value={f.password} onChange={set('password')} required />
         </label>
-        {err && <p role="alert" className="callout rust small">{err}</p>}
+        {err && (
+          <p role="alert" className="callout rust small">
+            {err}
+          </p>
+        )}
         <button className="btn" disabled={busy}>
           {busy ? 'Creating…' : 'Create workspace'}
         </button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
