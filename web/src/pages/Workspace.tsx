@@ -32,53 +32,69 @@ export function Workspace() {
   const rows = data?.shipments ?? [];
   return (
     <div className="page">
-      <div className="row" style={{ alignItems: 'baseline' }}>
-        <h1 style={{ margin: 0 }}>Shipments</h1>
-        <span className="muted small">{user?.organisation}</span>
-      </div>
-      <form className="row" onSubmit={create} style={{ margin: '16px 0 20px', alignItems: 'flex-end' }}>
-        <label className="field" style={{ flex: '1 1 240px', maxWidth: 360 }}>
-          New case: your internal shipment reference
-          <input type="text" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. your lot or booking number" required maxLength={50} />
-        </label>
-        <button className="btn" disabled={busy}>
-          {busy ? 'Creating…' : 'Create case'}
-        </button>
-      </form>
+      <header className="page-head">
+        <div>
+          <p className="eyebrow">{user?.organisation}</p>
+          <h1>Shipments</h1>
+          <p className="sub">Each case holds one shipment’s records, plot evidence, findings and review history.</p>
+        </div>
+        <form className="row" onSubmit={create} style={{ alignItems: 'flex-end', gap: 10 }}>
+          <label className="field" style={{ flex: '1 1 260px', minWidth: 0 }}>
+            New case: your internal shipment reference
+            <input type="text" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. your lot or booking number" required maxLength={50} />
+          </label>
+          <button className="btn" disabled={busy}>
+            {busy ? 'Creating…' : 'Create case'}
+          </button>
+        </form>
+      </header>
       {err && <p role="alert" className="callout rust small">{err}</p>}
-      {loading && !data && <p>Loading shipments…</p>}
+      {loading && !data && <div className="skeleton" role="status" style={{ minHeight: 160 }}>Loading shipments…</div>}
       {error && (
         <p role="alert" className="callout rust small">
           Could not load shipments: {error.message} <button className="btn small secondary" onClick={() => reload()}>Retry</button>
         </p>
       )}
       {data && rows.length === 0 && (
-        <div className="empty">
-          <h2>No shipments yet</h2>
-          <p>LotHold includes no sample shipments. To review one of yours:</p>
-          <ol className="steps" style={{ maxWidth: 680 }}>
-            <li>
-              <div>
-                Create a case above using your internal shipment reference.
-              </div>
-            </li>
-            <li>
-              <div>
-                Enter the shipment details (activity, HS code 1801, description, net mass, operator). You can type them, or have them proposed from a shipping document and confirm each one.
-              </div>
-            </li>
-            <li>
-              <div>
-                Upload the source-lot table (CSV). <a href="/api/templates/sources.csv">Blank template</a> · <Link to="/method">field definitions</Link>
-              </div>
-            </li>
-            <li>
-              <div>Upload plot boundaries as GeoJSON (WGS 84 longitude/latitude, one Feature per plot with a <code>plot_ref</code> property).</div>
-            </li>
-          </ol>
-          <p className="small muted" style={{ marginTop: 14, marginBottom: 0 }}>
-            Uploaded files are encrypted at rest and visible only to your organisation.
-          </p>
+        <div className="empty" style={{ display: 'grid', gap: 24 }}>
+          <div>
+            <h2 style={{ fontSize: 'var(--fs-h2)', letterSpacing: '-0.03em' }}>No shipments yet</h2>
+            <p className="muted" style={{ maxWidth: '62ch', margin: 0 }}>
+              LotHold includes no sample shipments. A case is built only from records you upload. Uploaded files are encrypted at rest and visible only to your organisation.
+            </p>
+          </div>
+          <div className="split even">
+            <div>
+              <p className="eyebrow" style={{ marginBottom: 10 }}>What you need</p>
+              <ol className="steps">
+                <li>
+                  <div>
+                    <strong>Source-lot table (CSV).</strong> Supplier, source lot, declared and allocated quantity, producer country, plot references.{' '}
+                    <a href="/api/templates/sources.csv">Blank template</a> · <Link to="/method">field definitions</Link>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <strong>Plot boundaries (GeoJSON).</strong> WGS 84 longitude/latitude, one Feature per plot with a <code>plot_ref</code> property.
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <strong>Shipment details.</strong> Activity, HS code 1801, description, net mass, operator. Type them, or have them proposed from a shipping document and confirm each one.
+                  </div>
+                </li>
+              </ol>
+            </div>
+            <div>
+              <p className="eyebrow" style={{ marginBottom: 10 }}>What happens next</p>
+              <ol className="steps">
+                <li><div>You preview every parsed row and feature before it counts.</div></li>
+                <li><div>Each hold links to the exact file, row or plot that causes it.</div></li>
+                <li><div>Valid plots are checked against published forest data; signals need investigation with evidence.</div></li>
+                <li><div>You send the supplier a one-page request, then sign off the snapshot.</div></li>
+              </ol>
+            </div>
+          </div>
         </div>
       )}
       {rows.length > 0 && (
