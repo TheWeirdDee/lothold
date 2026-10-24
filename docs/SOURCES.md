@@ -12,7 +12,13 @@ All retrievals were made from the build environment on **23 October 2026 (UTC)**
 | DDS V3 WSDL + XSD set | https://eudr.webcloud.ec.europa.eu/tracesnt/ws/EUDRDueDiligenceStatementServiceV3?wsdl (and `?xsd=1…7`) | 2026-10-23 | 7 schemas across 7 namespaces fetched recursively; vendored in `server/dds/schema/` with only `schemaLocation` rewritten to local names (original SHA-256 values in `MANIFEST.json`) | XML validation |
 | EUDR GeoJSON file description ("Updated 17 August 2026") | …/operator/geojson-description.html | 2026-10-23 | WGS 84 lon/lat; accepted types; no holes or crossings; truncation to 6 decimals; point Area defaults to 4 ha; 25 MB limit; property names | Geometry rules |
 | EUDR API and UI validation rules | …/operator/validation-rules.html | 2026-10-23 | Positive quantities; net mass mandatory for IMPORT/EXPORT; EORI required for IMPORT/EXPORT; ≤ 100 commodities per DDS | Rules and notes |
-| Regulation (EU) 2023/1115 / amending Regulation (EU) 2025/2650 (EUR-Lex) | https://eur-lex.europa.eu/eli/reg/2023/1115/oj | **Not retrieved** (EUR-Lex returned a bot challenge, HTTP 202 with an empty body) | — | Annex I cocoa entry (HS 1801) taken from the official DDS sample and stated as such |
+| Regulation (EU) 2023/1115, Official Journal L 150, 9.6.2023 | Publications Office cellar: https://publications.europa.eu/resource/celex/32023R1115 (XHTML and PDF; EUR-Lex itself returned a bot challenge) | 2026-10-24 | Annex I cocoa entries HS 1801–1806; Art. 2(3) deforestation, (4) forest, (13) deforestation-free with the 31 Dec 2020 cut-off, (27) plot of land, (28) geolocation (≥ 6 decimals; polygons > 4 ha except cattle) | Product scope, definitions |
+| Regulation (EU) 2025/2650, OJ L series, 23.12.2025 | https://publications.europa.eu/resource/celex/32025R2650 | 2026-10-24 | Amends Art. 38: obligations from 30 Dec 2026, from 30 Jun 2027 for micro/small operators established by 31 Dec 2024. Inserts Art. 4a (simplified declaration; postal address may replace geolocation for micro/small **primary** operators). Annex I: only the printed-products line deleted; cocoa entries unchanged | Dates; scope qualification |
+| Consolidated version | https://publications.europa.eu/resource/celex/02023R1115-20251223 | 2026-10-24 | **Not found** (404). The two acts above were read together instead | — |
+
+### Scope qualification
+
+LotHold supports one Annex I entry (HS 1801, cocoa beans) and the geolocation path only. It does not support HS 1802–1806, the postal-address alternative for micro and small primary operators (Art. 4a(5)), or the July 2026 Delegated Act on Annex I (sent for scrutiny; not applied). Schema validity of XML or GeoJSON is a format check, not a compliance determination.
 
 ### Discrepancies recorded
 
