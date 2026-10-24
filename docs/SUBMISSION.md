@@ -5,7 +5,11 @@
 ## Rules check (retrieved 23 October 2026)
 
 - **Deadline** shown on Devpost: *25 October 2026, 5:00 pm +03* (= 14:00 UTC = 15:00 Lagos).
-- **Eligibility contradiction persists.** The overview sidebar says *"Students only"* and *"Companies/professional organizations excluded from participation"*. The detailed rules list *Students, Academic researchers and faculty, Independent developers and startups, Environmental professionals and climate scientists, International participants (with country restrictions noted)*. The entrant has **stated** that they are a student. This is self-reported and has not been verified, and no organiser has confirmed eligibility. If accurate, a student would fit both the overview ("Students only") and the detailed rules. Organiser confirmation remains outstanding and should be requested via the Devpost Discussion tab. The detailed rules also mention country restrictions without listing them in the retrieved text; confirm the entrant's country is not excluded.
+- **Eligibility contradiction persists.** The overview sidebar says *"Students only"* and *"Companies/professional organizations excluded from participation"*. The detailed rules list *Students, Academic researchers and faculty, Independent developers and startups, Environmental professionals and climate scientists, International participants (with country restrictions noted)*. **Eligibility status: unresolved.**
+  - The entrant told the build agent on 24 Oct 2026 that they are a student. Nothing else about their status has been checked, and no organiser has confirmed eligibility.
+  - The overview and the detailed rules contradict each other. Which one governs has not been confirmed.
+  - The detailed rules mention country restrictions without listing them in the retrieved text. The entrant's country has not been checked against them.
+  - To resolve: ask the organisers (Devpost Discussion tab or the contact in the rules) to confirm both points before submitting.
 - **Schedule oddity:** the overview shows *"October 25 at 10:00am EDT to deadline"*. 10:00 EDT is the same instant as the 17:00 +03 deadline. The organiser update of 5 October says submissions opened on 5 October. Submit well before the deadline.
 - **Required:** track alignment, a 3–5 minute demo video, and a public code repository link. Individual submissions are allowed; one person per team.
 - **Judging criteria:** Climate Impact; Innovation & Creativity; Technical Execution; Practical Usefulness; Presentation & Storytelling.
