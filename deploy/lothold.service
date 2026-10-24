@@ -1,0 +1,21 @@
+# systemd unit for a single VPS (alternative to Fly.io). Install to /etc/systemd/system/lothold.service.
+[Unit]
+Description=LotHold
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=lothold
+WorkingDirectory=/opt/lothold
+EnvironmentFile=/opt/lothold/.env
+Environment=NODE_ENV=production HOST=127.0.0.1 PORT=8787 TRUST_PROXY=true
+ExecStart=/usr/bin/node server/main.ts
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/lothold/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
