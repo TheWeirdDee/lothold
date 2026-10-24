@@ -11,7 +11,7 @@ Machine-checked on every run; pass or fail without human judgement.
 | `tests/unit` | 40 | Quantities, product scope, geometry rules, parsers, decision engine, ellipsoidal areas, edge rule, extraction span checks, official-XSD validation, real-raster analysis on probe areas |
 | `tests/integration` | 26 | HTTP API: auth, CSRF/Origin, rate limits (direct and behind a proxy), isolation, uploads, ledger, append-only history, jobs, full review workflow, review-integrity bypass attempts, approval binding, extraction fallback, hostile PDFs, backup/restore, Anvil chain lifecycle and signing safeguards |
 | `contracts/test` | 18 | Registry authorisation, conservation (512-run fuzz), duplicates, zero values, events |
-| `tests/e2e` | 4 | Browser journeys in Chrome on a throwaway server |
+| `tests/e2e` | 6 | Browser journeys in Chrome on a throwaway server, including labelled landing demonstrations, live readings, reduced motion and AI/parser disclosure |
 | `scripts/gis-crosscheck.py` | 6 polygons × 9 checks | Independent GDAL/pyproj recomputation of the environmental analysis (`docs/evidence/gis-crosscheck.json`) |
 
 ## B. Manually inspected results (human review of rendered output)
@@ -41,7 +41,7 @@ Real transactions on a test network with **engineering quantities**. They prove 
 | Behaviour | Why | What would verify it |
 |---|---|---|
 | Processing a real exporter's shipment | No permissioned records available | An anonymised source CSV and plot GeoJSON from an exporter, with permission |
-| Live model extraction (Anthropic or OpenAI-compatible) | No API credential configured (checked: none in environment, `.env` or CLI profile) | Set `AI_PROVIDER`/`AI_API_KEY`, run *Propose fields* on a permitted document, record the result |
+| Live model extraction | A Gemini key is configured and authenticates, but the free-tier daily request quota was exhausted (HTTP 429) before a successful extraction; fallback behaviour was verified live | After the quota resets: `node --env-file=.env scripts/ai-live-verify.ts` (see `docs/evidence/ai-live-verification.json`) |
 | Near-real-time disturbance alerts | GFW Data API requires a key | GFW API key and an adapter |
 | Container image build and hosted deployment | Docker unavailable locally; no deployment authorised | First `fly deploy` (see DEPLOYMENT.md) |
 | EU Information System acceptance of the XML | Requires operator credentials and authorisation | Acceptance-environment submission by an authorised operator |
