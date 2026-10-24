@@ -156,6 +156,17 @@ export async function writeRegistry(w: WriteArgs): Promise<WriteOutcome> {
   if (!cfg.registryAddress) throw new Error('REGISTRY_ADDRESS is not configured');
   const pub = publicClientFor(cfg);
   const wallet = createWalletClient({ account, chain: cfg.chain, transport: http(cfg.rpcUrl, { timeout: 20_000 }) });
+  // Never sign for a different chain than configured (e.g. an RPC URL pointing at mainnet) and never pay
+  // more than the configured fee ceiling. Both checks run before any signature is produced.
+  try {
+    const id = await pub.getChainId();
+    if (id !== cfg.chain.id) return { kind: 'rpc_error', stage: 'preflight', error: `RPC reports chain ${id}; expected ${cfg.chain.id}. Refusing to sign.` };
+    const fees = await pub.estimateFeesPerGas();
+    const capWei = BigInt(Math.round(Number(process.env.CHAIN_MAX_FEE_GWEI ?? 50) * 1e9));
+    if ((fees.maxFeePerGas ?? 0n) > capWei) return { kind: 'rpc_error', stage: 'preflight', error: `Network fee ${fees.maxFeePerGas} wei/gas exceeds the configured ceiling (CHAIN_MAX_FEE_GWEI).` };
+  } catch (e) {
+    return { kind: 'rpc_error', stage: 'preflight', error: shortError(e) };
+  }
   let request: Parameters<typeof wallet.writeContract>[0];
   if (w.forceSubmitGas) {
     request = {
