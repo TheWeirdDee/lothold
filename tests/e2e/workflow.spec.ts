@@ -204,9 +204,12 @@ test('landing: demonstrations are labelled, live readings are real, reduced moti
   await page.goto('/');
   await expect(page.getByText('Engineering test records', { exact: true })).toBeVisible();
   await expect(page.getByText('ILLUSTRATION · NOT A SHIPMENT')).toBeVisible();
-  // The demo tabs switch between real captures.
-  await page.getByRole('tab', { name: 'Land evidence' }).click();
-  await expect(page.locator('#demo-stage img')).toHaveAttribute('src', '/demo/land-evidence.webp');
+  // No recording is configured on this server: an honest "coming soon" state with no play control or player.
+  await expect(page.getByRole('heading', { name: 'Demo video coming soon' })).toBeVisible();
+  await expect(page.locator('.demo').getByRole('button', { name: /play/i })).toHaveCount(0);
+  await expect(page.locator('.demo video, .demo iframe')).toHaveCount(0);
+  await expect(page.locator('.demo-note')).toContainText('engineering test records');
+  await expect(page.locator('.demo-note')).toContainText('genuine Sepolia testnet transactions');
   // Live forest reading comes from the real analysis endpoint (coordinates only, not a farm).
   const live = page.locator('.live-reading');
   await live.scrollIntoViewIfNeeded();
@@ -236,4 +239,20 @@ test('extraction discloses the plain parser when no model is configured and need
   await page.getByLabel('Accept hsCode').check();
   await page.getByRole('button', { name: 'Accept selected fields' }).click();
   await expect(page.locator('#field-hsCode')).toContainText('confirmed from ENGINEERING_TEST_document.txt');
+});
+
+test('engineering test kit: every file downloads, is labelled, and the coming-soon video links to it', async ({ page, request }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Get the engineering test kit' }).click();
+  await expect(page).toHaveURL(/\/test-kit$/);
+  await expect(page.getByRole('heading', { name: 'Audit LotHold with labelled test files' })).toBeVisible();
+  await expect(page.getByRole('note')).toContainText('invented engineering test data');
+  const links = page.locator('.kit-files a[download]');
+  await expect(links).toHaveCount(10);
+  for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')!))) {
+    const r = await request.get(href);
+    expect(r.status(), href).toBe(200);
+    expect(href).toContain('ENGINEERING_TEST');
+    expect(await r.text()).toContain('ENGINEERING TEST');
+  }
 });
