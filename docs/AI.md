@@ -17,7 +17,22 @@ It never proposes coordinates, farms, certifications or compliance conclusions, 
 
 When a model is configured but fails, the stored record says so ("Model extraction failed (…); the label parser (not AI) was used instead").
 
-**Status on 24 Oct 2026:** the label parser is verified by unit and integration tests. Both model adapters are implemented, and the orchestration around them (schema validation, fallback, span checks) is tested with injected outputs. **No real model call has been made**, because no API key was available, so model extraction must not be described as verified.
+**Status on 24 Oct 2026:**
+
+- The label parser is verified by unit, integration and browser tests.
+- A Google AI Studio (Gemini) key is configured through the OpenAI-compatible adapter:
+  - `AI_PROVIDER=openai-compatible`
+  - `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`
+  - `AI_MODEL=gemini-3.8-flash`
+- The key authenticates (`GET /models` returned HTTP 200 and listed the model).
+- A live extraction through the application did **not** complete. The provider returned HTTP 429: the free tier's 20 generate requests per day for this model were exhausted. Work stopped there, with no retries and no billing.
+- During those attempts, the app's fallback was verified live:
+  - The result was labelled "Label parser (deterministic, not AI)".
+  - Injected values were refused.
+  - Missing fields stayed missing.
+  - Nothing applied before human acceptance.
+  - Error text contained no key.
+- Model extraction itself is **not yet verified**. The record is in `docs/evidence/ai-live-verification.json`. To complete it after the daily quota resets, run `node --env-file=.env scripts/ai-live-verify.ts` (at most 2 provider requests).
 
 ## Output contract (enforced server-side)
 
@@ -46,7 +61,18 @@ AI_MODEL=claude-opus-5-5        # default if omitted
 AI_API_KEY=<your key>           # or set ANTHROPIC_API_KEY, which the SDK reads automatically
 ```
 
-**OpenAI-compatible endpoint** (any provider implementing `/chat/completions` with `response_format: json_schema`):
+**Google Gemini (Google AI Studio key)**, using Google's OpenAI-compatible endpoint (https://ai.google.dev/gemini-api/docs/openai, page updated 2026-10-22; structured output is supported there through `response_format`):
+
+```
+AI_PROVIDER=openai-compatible
+AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+AI_MODEL=gemini-3.8-flash
+AI_API_KEY=<your Google AI Studio key>
+```
+
+Free-tier limits are low (20 generate requests per day for this model at the time of testing), and Google may use free-tier requests to improve its products. Only send documents you are permitted to share.
+
+**Other OpenAI-compatible endpoints** (any provider implementing `/chat/completions` with `response_format: json_schema`):
 
 ```
 AI_PROVIDER=openai-compatible
