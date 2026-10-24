@@ -61,8 +61,8 @@ await page.getByText(/Saved \d field/).waitFor();
 
 // Sources
 await page.getByRole('tab', { name: 'Source lots' }).click();
-await page.locator('input[type=file]').setInputFiles('tests/fixtures/engineering/ENGINEERING_TEST_sources.csv');
-await page.getByRole('button', { name: 'Upload' }).click();
+await page.locator('#panel-sources form.file-drop input[type=file]').setInputFiles('tests/fixtures/engineering/ENGINEERING_TEST_sources.csv');
+await page.locator('#panel-sources form.file-drop').getByRole('button', { name: 'Upload' }).click();
 await page.getByRole('button', { name: 'Preview and confirm' }).click();
 await shot(page, 'sources-preview-1440');
 await page.getByRole('button', { name: /Confirm/ }).first().click();
@@ -71,8 +71,8 @@ await shot(page, 'sources-1440');
 
 // Plots
 await page.getByRole('tab', { name: /Plots/ }).click();
-await page.locator('input[type=file]').setInputFiles('tests/fixtures/engineering/ENGINEERING_TEST_plots.geojson');
-await page.getByRole('button', { name: 'Upload' }).click();
+await page.locator('#panel-plots form.file-drop input[type=file]').setInputFiles('tests/fixtures/engineering/ENGINEERING_TEST_plots.geojson');
+await page.locator('#panel-plots form.file-drop').getByRole('button', { name: 'Upload' }).click();
 await page.getByRole('button', { name: 'Preview and confirm' }).click();
 await page.getByRole('button', { name: /Confirm/ }).first().click();
 await page.getByText('Active plot file').waitFor();
