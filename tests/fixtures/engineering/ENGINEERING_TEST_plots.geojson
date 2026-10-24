@@ -1,0 +1,4 @@
+{"type":"FeatureCollection","features":[
+{"type":"Feature","properties":{"plot_ref":"ENG-PLOT-A","ProducerCountry":"CI","note":"ENGINEERING PROBE AREA - not a farm"},"geometry":{"type":"Polygon","coordinates":[[[-7.560000,6.240000],[-7.550000,6.240000],[-7.550000,6.250000],[-7.560000,6.250000],[-7.560000,6.240000]]]}},
+{"type":"Feature","properties":{"plot_ref":"ENG-PLOT-B","ProducerCountry":"CI","note":"ENGINEERING PROBE AREA - not a farm"},"geometry":{"type":"Polygon","coordinates":[[[-7.205000,5.745000],[-7.195000,5.755000],[-7.195000,5.745000],[-7.205000,5.755000],[-7.205000,5.745000]]]}}
+]}
