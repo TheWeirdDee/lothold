@@ -1,10 +1,10 @@
 // LIVE AI VERIFICATION (engineering): runs the application's real extraction path against the configured provider
 // with a clearly labelled engineering document, in a throwaway database. Makes at most 2 provider requests:
 //   1. the configured model (expects model extraction with verified quotes, missing fields left missing);
-//   2. a deliberately unknown model name (expects an accurate fallback to the label parser).
+//   2. a deliberately unknown model name (expects an accurate fallback to the label parser); skipped if (1) got 429/5xx.
 // Writes sanitized evidence to docs/evidence/ai-live-verification.json (no key, no document text).
 //   node --env-file=.env scripts/ai-live-verify.ts
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -69,6 +69,8 @@ const checks = {
   missingEoriNotAccepted: !(byField.operatorEori?.accepted),
   missingCountryOfActivityNotAccepted: !(byField.countryOfActivity?.accepted),
   everyAcceptedQuoteExistsInSource: ex.candidates.filter((c: any) => c.accepted).every((c: any) => DOC.includes(c.quote)),
+  // Source references: every accepted candidate cites page 1 (the only page) and a quote containing its value.
+  sourceReferencesChecked: ex.candidates.filter((c: any) => c.accepted).every((c: any) => c.page === 1 && typeof c.quote === 'string' && c.quote.includes(c.value)),
 };
 // Nothing is applied until a human accepts it.
 const before = (await req('GET', `/api/shipments/${sid}`)).json.fields;
@@ -78,28 +80,44 @@ const acc = acceptable.length ? await req('POST', `/api/extractions/${ex.id}/acc
 const after = (await req('GET', `/api/shipments/${sid}`)).json.fields;
 const accepted = { status: acc.status, provenance: Object.fromEntries(Object.entries(after).map(([k, v]: any) => [k, v.source])) };
 
-// Failure path: an unknown model must fall back to the label parser and say so.
-process.env.AI_MODEL = 'lothold-nonexistent-model-check';
-const user = get<any>(db, `SELECT u.id, u.org_id AS orgId, o.name AS orgName, u.email, u.name, u.role, '' AS csrf, 0 AS chainEnabled FROM users u JOIN orgs o ON o.id = u.org_id LIMIT 1`);
-const fb = await runExtraction(db, user, sid, up.uploadId, { config: providerFromEnv() });
-const fallback = { method: fb.method, provider: fb.provider, errorMentionsFallback: /label parser/.test(fb.error ?? ''), errorSanitized: !(fb.error ?? '').includes(KEY) };
+// Failure path: an unknown model must fall back to the label parser and say so. Skipped when the provider is
+// already refusing (quota, overload) so no request is spent against an exhausted quota.
+const providerRefused = /provider HTTP (429|5\d\d)/.test(ex.error ?? '');
+let fallback: Record<string, unknown> = { skipped: 'provider refused the first request; no further requests sent' };
+if (!providerRefused) {
+  process.env.AI_MODEL = 'lothold-nonexistent-model-check';
+  const user = get<any>(db, `SELECT u.id, u.org_id AS orgId, o.name AS orgName, u.email, u.name, u.role, '' AS csrf, 0 AS chainEnabled FROM users u JOIN orgs o ON o.id = u.org_id LIMIT 1`);
+  const fb = await runExtraction(db, user, sid, up.uploadId, { config: providerFromEnv() });
+  fallback = { method: fb.method, provider: fb.provider, error: fb.error, errorMentionsFallback: /label parser/.test(fb.error ?? ''), errorSanitized: !(fb.error ?? '').includes(KEY) };
+}
+// Live AI counts as verified only when the model itself produced schema-valid output through the app and every
+// check on its proposals passed.
+const verified = checks.requestSucceeded && checks.schemaValid && checks.hsCodeVerified && checks.netMassVerified && checks.injectedValueNotAccepted
+  && checks.missingEoriNotAccepted && checks.missingCountryOfActivityNotAccepted && checks.everyAcceptedQuoteExistsInSource && checks.sourceReferencesChecked
+  && (checks as any).noFieldAppliedBeforeAcceptance === true;
+const OUT = 'docs/evidence/ai-live-verification.json';
+const previous = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : null;
 
 const evidence = {
   label: 'ENGINEERING TEST - live AI extraction verification with an invented, labelled document. No commercial data.',
+  status: verified ? 'LIVE AI VERIFIED through the application (model output schema-valid; proposals and source references checked)' : `LIVE AI UNVERIFIED: ${ex.error ?? 'checks did not all pass'}`,
+  verified,
   provider: 'Google Gemini API via OpenAI-compatible endpoint (generativelanguage.googleapis.com/v1beta/openai)',
   model: ex.model,
   configVersion: ex.configVersion,
   startedAt,
   latencyMs: ms,
-  providerRequests: 2,
+  providerRequests: providerRefused ? 1 : 2,
+  extractionError: ex.error ?? null,
   candidates: ex.candidates.map((c: any) => ({ field: c.field, status: c.status, page: c.page, accepted: c.accepted, reason: c.reason })),
   checks,
   humanAcceptance: accepted,
   fallbackCheck: fallback,
+  previousAttempts: previous ? [...(previous.previousAttempts ?? []), { ...previous, previousAttempts: undefined }] : [],
 };
 mkdirSync('docs/evidence', { recursive: true });
 const text = JSON.stringify(evidence, null, 2);
 if (text.includes(KEY)) throw new Error('key leaked into evidence; not writing');
-writeFileSync('docs/evidence/ai-live-verification.json', text + '\n');
+writeFileSync(OUT, text + '\n');
 console.log(text);
 db.close();
