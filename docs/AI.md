@@ -25,14 +25,19 @@ When a model is configured but fails, the stored record says so ("Model extracti
   - `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`
   - `AI_MODEL=gemini-3.8-flash`
 - The key authenticates (`GET /models` returned HTTP 200 and listed the model).
-- A live extraction through the application did **not** complete. The provider returned HTTP 429: the free tier's 20 generate requests per day for this model were exhausted. Work stopped there, with no retries and no billing.
+- A live extraction through the application did **not** succeed:
+  - The app's extraction request got **HTTP 503** (Google: "temporarily overloaded or down").
+  - A diagnostic structured-output call then timed out after 90 s.
+  - A minimal diagnostic call got **HTTP 429**: `generate_content_free_tier_requests, limit: 20` per day for `gemini-3.8-flash`. The limit is non-zero, so this is an exhausted daily quota, not a project with no free-tier access.
+  - Limits are per Google Cloud project, and this work sent only 4 generate requests, so other usage in the same project probably used most of the quota.
+  - Work stopped there, with no retries and no billing.
 - During those attempts, the app's fallback was verified live:
   - The result was labelled "Label parser (deterministic, not AI)".
   - Injected values were refused.
   - Missing fields stayed missing.
   - Nothing applied before human acceptance.
   - Error text contained no key.
-- Model extraction itself is **not yet verified**. The record is in `docs/evidence/ai-live-verification.json`. To complete it after the daily quota resets, run `node --env-file=.env scripts/ai-live-verify.ts` (at most 2 provider requests).
+- **Live AI is unverified**, and stays so until a model extraction succeeds through the application and its page and quote references are checked. The script only reports `verified: true` in that case. The record is in `docs/evidence/ai-live-verification.json`. Daily quotas reset at midnight Pacific time (Google rate-limits page, updated 2026-10-15), which is 07:00 UTC on 25 Oct 2026. After that, run `node --env-file=.env scripts/ai-live-verify.ts` once. It sends at most 2 provider requests, and only 1 if the provider refuses the first.
 
 ## Output contract (enforced server-side)
 
