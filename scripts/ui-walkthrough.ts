@@ -7,6 +7,13 @@ import { mkdirSync } from 'node:fs';
 const base = process.argv[2] ?? 'http://127.0.0.1:8799';
 const out = process.argv[3] ?? 'shots';
 mkdirSync(out, { recursive: true });
+// Engineering fixtures must never reach an operational workspace.
+const health = (await (await fetch(`${base}/api/health`)).json()) as { instance?: string };
+if (health.instance !== 'engineering') {
+  console.error(`Refusing to run: ${base} is not an engineering instance (start it with LOTHOLD_INSTANCE=engineering and a throwaway DATABASE_PATH).`);
+  process.exit(2);
+}
+
 const browser = await chromium.launch({ channel: 'chrome' });
 const consoleErrors: string[] = [];
 const watch = (p: Page) => {
