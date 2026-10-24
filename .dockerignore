@@ -1,0 +1,12 @@
+node_modules
+dist
+data
+.env
+.env.*
+research/raw
+test-results
+playwright-report
+contracts/out
+contracts/cache
+contracts/lib
+02_LotHold_Full_PRD.md
