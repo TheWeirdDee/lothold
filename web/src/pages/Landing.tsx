@@ -1,19 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { api } from '../api.ts';
 import { useAuth } from '../main.tsx';
-import { Badge, ENV_STATUS, tabKeys, useReveal } from '../components/ui.tsx';
+import { Badge, ENV_STATUS, Logo, useReveal } from '../components/ui.tsx';
 import { PixelMap } from '../components/PixelMap.tsx';
 
-/* Every visual on this page is either an abstract illustration (labelled as such), a capture of the running
-   application with clearly labelled engineering-test records, or a live reading from a real dataset/testnet.
+/* Every visual on this page is either an abstract illustration (labelled as such), a capture or recording of the
+   running application with clearly labelled engineering-test records, or a live reading from a real dataset/testnet.
    No exporter, shipment, farm, quantity, review or finding is invented for presentation. */
-
-const DEMO = [
-  { id: 'findings', label: 'Findings', src: '/demo/findings.webp', alt: 'Review desk showing a held engineering-test case: a plot declared without geometry, a self-intersecting boundary and a land-change signal, each linked to its source row or plot.', note: 'Every hold names the file, row, column or plot that causes it, next to the supplier request it generates.' },
-  { id: 'land', label: 'Land evidence', src: '/demo/land-evidence.webp', alt: 'Plot evidence view: the dataset pixels inside an engineering probe box, coloured by forest status in 2020 and loss year, with dates and coverage.', note: 'Real Hansen and JRC pixels for a coordinate test box (not a farm), with loss years, coverage and caveats.' },
-  { id: 'request', label: 'Supplier request', src: '/demo/supplier-request.webp', alt: 'One-page supplier evidence request PDF generated for an engineering-test case, listing each missing item with its source row.', note: 'A one-page PDF titled “NOT a regulatory determination”, built from the current evidence snapshot.' },
-] as const;
 
 function EvidenceTrace() {
   return (
@@ -93,30 +87,111 @@ function EvidenceTrace() {
   );
 }
 
-function DemoPanel() {
-  const [tab, setTab] = useState<(typeof DEMO)[number]['id']>('findings');
-  const cur = DEMO.find((d) => d.id === tab)!;
+type DemoVideoState =
+  | { status: 'coming_soon' }
+  | { status: 'ready'; kind: 'youtube' | 'vimeo'; provider: string; embedUrl: string; poster: string | null }
+  | { status: 'ready'; kind: 'file'; src: string; type: string; poster: string | null; captions: string | null };
+
+/** The poster drawn in CSS/SVG when no poster image is configured: sharp at any size, and not a screenshot. */
+function DesignedPoster({ soon }: { soon: boolean }) {
   return (
-    <section className="demo enter d4" aria-label="Product demonstration">
-      <div className="demo-tabs" role="tablist" aria-label="Demonstration views" onKeyDown={(e) => tabKeys(e, DEMO.map((d) => d.id), tab, setTab, 'demo-tab-')}>
-        {DEMO.map((d) => (
-          <button key={d.id} role="tab" id={`demo-tab-${d.id}`} aria-selected={tab === d.id} aria-controls="demo-stage" tabIndex={tab === d.id ? 0 : -1} onClick={() => setTab(d.id)}>
-            {d.label}
-          </button>
-        ))}
+    <div className="video-poster" aria-hidden="true">
+      <div className="vp-mark">
+        <Logo />
+        <span>LotHold</span>
+      </div>
+      <p className="vp-title">Evidence review walkthrough</p>
+      <p className="vp-sub">{soon ? 'Recording in progress' : 'Upload · findings · land evidence · supplier request · sign-off'}</p>
+    </div>
+  );
+}
+
+/** Landing demo video. Shows "coming soon" until a real recording is configured (docs/DEMO_VIDEO.md); embedded
+ *  players load only after the visitor presses play, and nothing plays with sound on its own. */
+function DemoVideo() {
+  const [cfg, setCfg] = useState<DemoVideoState | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    api<DemoVideoState>('GET', '/api/public/demo-video')
+      .then(setCfg)
+      .catch(() => setCfg({ status: 'coming_soon' }));
+  }, []);
+  useEffect(() => {
+    if (playing) frameRef.current?.focus();
+  }, [playing]);
+
+  let stage: ReactNode;
+  if (!cfg) stage = <div className="video-frame skeleton" aria-busy="true" aria-label="Loading the demo video" />;
+  else if (cfg.status === 'coming_soon')
+    stage = (
+      <div className="video-frame soon">
+        <DesignedPoster soon />
+        <div className="video-soon-card">
+          <h3>Demo video coming soon</h3>
+          <p>A recorded walkthrough of the review desk will appear here. Until then you can try the desk yourself with your own files or the labelled engineering test kit.</p>
+          <div className="row">
+            <Link className="btn light small" to="/test-kit">
+              Get the engineering test kit
+            </Link>
+            <Link className="btn ghost-dark small" to="/register">
+              Open the desk
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  else if (cfg.kind === 'file')
+    stage = (
+      <div className="video-frame">
+        <video controls preload="none" playsInline poster={cfg.poster ?? undefined} aria-label="LotHold demo video" crossOrigin={cfg.captions ? 'anonymous' : undefined}>
+          <source src={cfg.src} type={cfg.type} />
+          {cfg.captions && <track kind="captions" src={cfg.captions} srcLang="en" label="English" default />}
+          <p>
+            Your browser cannot play this video. <a href={cfg.src}>Download the demo video</a>.
+          </p>
+        </video>
+      </div>
+    );
+  else
+    stage = playing ? (
+      <div className="video-frame">
+        <iframe
+          ref={frameRef}
+          src={cfg.embedUrl}
+          title="LotHold demo video"
+          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      </div>
+    ) : (
+      <div className="video-frame">
+        <button type="button" className="video-facade" onClick={() => setPlaying(true)} aria-describedby="demo-provider">
+          {cfg.poster ? <img src={cfg.poster} alt="" width={1280} height={720} decoding="async" /> : <DesignedPoster soon={false} />}
+          <span className="video-play-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5.5v13l11-6.5z" fill="currentColor" />
+            </svg>
+            <span>Play demo video</span>
+          </span>
+        </button>
+        <span id="demo-provider" className="video-provider">
+          Loads {cfg.provider} when you press play
+        </span>
+      </div>
+    );
+
+  return (
+    <section className="demo enter d4" aria-labelledby="demo-heading">
+      <div className="demo-head">
+        <h2 id="demo-heading">Product walkthrough</h2>
         <span className="eng-tag">Engineering test records</span>
       </div>
-      <div className="demo-stage" id="demo-stage" role="tabpanel" aria-labelledby={`demo-tab-${tab}`}>
-        <a href={cur.src} target="_blank" rel="noopener" aria-label={`Open the ${cur.label.toLowerCase()} capture at full size`}>
-          <img key={cur.id} src={cur.src} alt={cur.alt} width={1440} height={900} loading={tab === 'findings' ? 'eager' : 'lazy'} decoding="async" className="tabpanel" />
-        </a>
-      </div>
-      <div className="demo-note">
-        <span>
-          <strong>{cur.label}.</strong> {cur.note}
-        </span>
-        <span className="mono" style={{ fontSize: '0.72rem' }}>Captured from the running app · records prefixed ENG- are test fixtures</span>
-      </div>
+      {stage}
+      <p className="demo-note">
+        The walkthrough uses <strong>engineering test records</strong>: invented, labelled cases, suppliers and plots (references start with ENG-). The forest data it reads (Hansen GFC v1.13, JRC GFC2020 V4) is genuine, and any registry transactions shown are genuine Sepolia testnet transactions.
+      </p>
     </section>
   );
 }
@@ -264,7 +339,7 @@ export function Landing() {
             </div>
             <EvidenceTrace />
           </div>
-          <DemoPanel />
+          <DemoVideo />
         </div>
       </section>
 
