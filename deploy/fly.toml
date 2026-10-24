@@ -1,0 +1,26 @@
+# Fly.io configuration (template). Replace APP_NAME. Deploy from the repo root:
+#   fly deploy --config deploy/fly.toml --dockerfile deploy/Dockerfile
+app = "APP_NAME"
+primary_region = "jnb"          # Johannesburg; choose the region closest to reviewers
+
+[env]
+  PUBLIC_ORIGIN = "https://APP_NAME.fly.dev"
+  TRUST_PROXY = "true"
+  TRUST_PROXY_HEADER = "fly-client-ip"
+  REGISTRATION_OPEN = "true"
+  CHAIN_ANCHORING = "off"       # public instances: keep the shared test signer disabled unless explicitly needed
+
+[[mounts]]
+  source = "lothold_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "off"    # the durable job worker must keep running
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
