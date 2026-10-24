@@ -1,0 +1,721 @@
+{
+ "tool": "rasterio 1.5.2 / GDAL 3.12.2; pyproj Geod WGS84",
+ "metadata": {
+  "loss": {
+   "crs": "EPSG:4326",
+   "transform": [
+    0.00025,
+    0.0,
+    -10.0,
+    0.0,
+    -0.00025,
+    10.0
+   ],
+   "dtype": "uint8",
+   "nodata": null,
+   "width": 40000,
+   "height": 40000
+  },
+  "mask": {
+   "crs": "EPSG:4326",
+   "transform": [
+    0.00025,
+    0.0,
+    -10.0,
+    0.0,
+    -0.00025,
+    10.0
+   ],
+   "dtype": "uint8",
+   "nodata": null,
+   "width": 40000,
+   "height": 40000
+  },
+  "jrc": {
+   "crs": "EPSG:4326",
+   "transform": [
+    8.333333333333333e-05,
+    0.0,
+    -10.0,
+    0.0,
+    -8.333333333333333e-05,
+    10.0
+   ],
+   "dtype": "uint8",
+   "nodata": null,
+   "width": 120000,
+   "height": 120000
+  }
+ },
+ "domains": {
+  "Soubre (-6.65,5.75)": {
+   "loss": {
+    "0": 137124,
+    "1": 1200,
+    "2": 663,
+    "3": 435,
+    "4": 22,
+    "5": 296,
+    "6": 62,
+    "7": 433,
+    "8": 329,
+    "9": 157,
+    "10": 122,
+    "11": 549,
+    "12": 126,
+    "13": 1874,
+    "14": 4831,
+    "15": 761,
+    "16": 1094,
+    "17": 1603,
+    "18": 991,
+    "19": 1245,
+    "20": 525,
+    "21": 676,
+    "22": 1095,
+    "23": 1004,
+    "24": 2280,
+    "25": 503
+   },
+   "mask": {
+    "1": 156751,
+    "2": 3249
+   },
+   "jrc": {
+    "0": 1424758,
+    "1": 15242
+   }
+  },
+  "Tai NP (-7.25,5.75)": {
+   "loss": {
+    "0": 159952,
+    "1": 2,
+    "3": 4,
+    "4": 1,
+    "6": 2,
+    "7": 1,
+    "8": 2,
+    "9": 5,
+    "10": 5,
+    "11": 8,
+    "12": 2,
+    "14": 12,
+    "15": 2,
+    "17": 2
+   },
+   "mask": {
+    "1": 160000
+   },
+   "jrc": {
+    "0": 495,
+    "1": 1439505
+   }
+  },
+  "Abidjan coast/lagoon (-4.0,5.25)": {
+   "loss": {
+    "0": 618214,
+    "1": 253,
+    "2": 525,
+    "3": 74,
+    "4": 157,
+    "5": 306,
+    "6": 304,
+    "7": 336,
+    "8": 475,
+    "9": 1822,
+    "10": 422,
+    "11": 846,
+    "12": 480,
+    "13": 961,
+    "14": 1258,
+    "15": 340,
+    "16": 1180,
+    "17": 645,
+    "18": 1345,
+    "19": 818,
+    "20": 1632,
+    "21": 1896,
+    "22": 1707,
+    "23": 825,
+    "24": 1106,
+    "25": 2073
+   },
+   "mask": {
+    "1": 241801,
+    "2": 398199
+   },
+   "jrc": {
+    "0": 5750281,
+    "1": 9719
+   }
+  },
+  "Ghana (-1.5,6.5)": {
+   "loss": {
+    "0": 455523,
+    "1": 1367,
+    "2": 5944,
+    "3": 5543,
+    "4": 819,
+    "5": 2008,
+    "6": 472,
+    "7": 1926,
+    "8": 1130,
+    "9": 2181,
+    "10": 1987,
+    "11": 2281,
+    "12": 659,
+    "13": 11110,
+    "14": 12716,
+    "15": 6204,
+    "16": 13335,
+    "17": 16947,
+    "18": 9769,
+    "19": 6726,
+    "20": 13510,
+    "21": 9889,
+    "22": 14723,
+    "23": 12628,
+    "24": 15281,
+    "25": 15322
+   },
+   "mask": {
+    "1": 597746,
+    "2": 42254
+   },
+   "jrc": {
+    "0": 5664124,
+    "1": 95876
+   }
+  },
+  "_summary": {
+   "loss_codes_seen": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25
+   ],
+   "max_loss_code": 25,
+   "interpretation": "code n = loss year 2000+n"
+  }
+ },
+ "polygons": [
+  {
+   "name": "box 0.01deg, loss area",
+   "lothold": {
+    "pixels": 1600,
+    "land": 1600,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 122.3797,
+    "jrcForestAreaHa": 0,
+    "postCutoffLossAreaHa": 3.5949,
+    "lossByYearPixels": {
+     "2001": 3,
+     "2002": 29,
+     "2003": 155,
+     "2006": 16,
+     "2007": 37,
+     "2008": 52,
+     "2009": 12,
+     "2010": 17,
+     "2011": 94,
+     "2012": 10,
+     "2014": 25,
+     "2015": 2,
+     "2016": 68,
+     "2018": 19,
+     "2019": 10,
+     "2020": 23,
+     "2021": 7,
+     "2023": 8,
+     "2024": 5,
+     "2025": 27
+    },
+    "status": "NEEDS_HUMAN_REVIEW",
+    "sampling": "pixel_centres_in_polygon",
+    "polygonAreaHa": 122.3797
+   },
+   "reference_raycast": {
+    "pixels": 1600,
+    "land": 1600,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 122.37966791263221,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 3.594903580021485,
+    "postCutoffLossPixels": 47,
+    "lossByYearPixels": {
+     "2001": 3,
+     "2002": 29,
+     "2003": 155,
+     "2006": 16,
+     "2007": 37,
+     "2008": 52,
+     "2009": 12,
+     "2010": 17,
+     "2011": 94,
+     "2012": 10,
+     "2014": 25,
+     "2015": 2,
+     "2016": 68,
+     "2018": 19,
+     "2019": 10,
+     "2020": 23,
+     "2021": 7,
+     "2023": 8,
+     "2024": 5,
+     "2025": 27
+    }
+   },
+   "gdal_rasterize": {
+    "pixels": 1600,
+    "land": 1600,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 122.37966791263221,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 3.594903580021485,
+    "postCutoffLossPixels": 47,
+    "lossByYearPixels": {
+     "2001": 3,
+     "2002": 29,
+     "2003": 155,
+     "2006": 16,
+     "2007": 37,
+     "2008": 52,
+     "2009": 12,
+     "2010": 17,
+     "2011": 94,
+     "2012": 10,
+     "2014": 25,
+     "2015": 2,
+     "2016": 68,
+     "2018": 19,
+     "2019": 10,
+     "2020": 23,
+     "2021": 7,
+     "2023": 8,
+     "2024": 5,
+     "2025": 27
+    }
+   },
+   "polygonAreaHa_geodesic": 122.37966821397544,
+   "comparison": {
+    "lothold_counts_match_reference": true,
+    "lothold_loss_years_match_reference": true,
+    "gdal_vs_reference_edge_ties": 0,
+    "gdal_vs_reference_non_tie_differences": 0,
+    "sampled_area_rel_diff": 2.621951825755303e-07,
+    "jrc_area_rel_diff": 0.0,
+    "post_loss_area_rel_diff": 9.958602241614506e-07,
+    "polygon_area_rel_diff_vs_geodesic": 2.5973281977680684e-07,
+    "status_consistent": true
+   }
+  },
+  {
+   "name": "box 0.009deg, Tai NP",
+   "lothold": {
+    "pixels": 1296,
+    "land": 1296,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 99.2152,
+    "jrcForestAreaHa": 99.2152,
+    "postCutoffLossAreaHa": 0,
+    "lossByYearPixels": {},
+    "status": "NO_POST_2020_LOSS_OBSERVED",
+    "sampling": "pixel_centres_in_polygon",
+    "polygonAreaHa": 99.2152
+   },
+   "reference_raycast": {
+    "pixels": 1296,
+    "land": 1296,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 99.21516072566807,
+    "jrcForestAreaHa": 99.21516072566807,
+    "postCutoffLossAreaHa": 0.0,
+    "postCutoffLossPixels": 0,
+    "lossByYearPixels": {}
+   },
+   "gdal_rasterize": {
+    "pixels": 1296,
+    "land": 1296,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 99.21516072566807,
+    "jrcForestAreaHa": 99.21516072566807,
+    "postCutoffLossAreaHa": 0.0,
+    "postCutoffLossPixels": 0,
+    "lossByYearPixels": {}
+   },
+   "polygonAreaHa_geodesic": 99.21516092460155,
+   "comparison": {
+    "lothold_counts_match_reference": true,
+    "lothold_loss_years_match_reference": true,
+    "gdal_vs_reference_edge_ties": 0,
+    "gdal_vs_reference_non_tie_differences": 0,
+    "sampled_area_rel_diff": 3.9584994965790136e-07,
+    "jrc_area_rel_diff": 3.9584994965790136e-07,
+    "post_loss_area_rel_diff": 0.0,
+    "polygon_area_rel_diff_vs_geodesic": 3.9384487908715366e-07,
+    "status_consistent": true
+   }
+  },
+  {
+   "name": "box 0.02deg, mixed",
+   "lothold": {
+    "pixels": 6400,
+    "land": 6400,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 489.5141,
+    "jrcForestAreaHa": 0,
+    "postCutoffLossAreaHa": 19.6571,
+    "lossByYearPixels": {
+     "2001": 3,
+     "2002": 95,
+     "2003": 414,
+     "2006": 27,
+     "2007": 139,
+     "2008": 239,
+     "2009": 69,
+     "2010": 144,
+     "2011": 1329,
+     "2012": 97,
+     "2014": 49,
+     "2015": 2,
+     "2016": 118,
+     "2018": 49,
+     "2019": 18,
+     "2020": 35,
+     "2021": 7,
+     "2023": 38,
+     "2024": 20,
+     "2025": 192
+    },
+    "status": "NEEDS_HUMAN_REVIEW",
+    "sampling": "pixel_centres_in_polygon",
+    "polygonAreaHa": 489.5141
+   },
+   "reference_raycast": {
+    "pixels": 6400,
+    "land": 6400,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 489.5141170515418,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 19.65711494106464,
+    "postCutoffLossPixels": 257,
+    "lossByYearPixels": {
+     "2001": 3,
+     "2002": 95,
+     "2003": 414,
+     "2006": 27,
+     "2007": 139,
+     "2008": 239,
+     "2009": 69,
+     "2010": 144,
+     "2011": 1329,
+     "2012": 97,
+     "2014": 49,
+     "2015": 2,
+     "2016": 118,
+     "2018": 49,
+     "2019": 18,
+     "2020": 35,
+     "2021": 7,
+     "2023": 38,
+     "2024": 20,
+     "2025": 192
+    }
+   },
+   "gdal_rasterize": {
+    "pixels": 6400,
+    "land": 6400,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 489.5141170515418,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 19.65711494106464,
+    "postCutoffLossPixels": 257,
+    "lossByYearPixels": {
+     "2001": 3,
+     "2002": 95,
+     "2003": 414,
+     "2006": 27,
+     "2007": 139,
+     "2008": 239,
+     "2009": 69,
+     "2010": 144,
+     "2011": 1329,
+     "2012": 97,
+     "2014": 49,
+     "2015": 2,
+     "2016": 118,
+     "2018": 49,
+     "2019": 18,
+     "2020": 35,
+     "2021": 7,
+     "2023": 38,
+     "2024": 20,
+     "2025": 192
+    }
+   },
+   "polygonAreaHa_geodesic": 489.5141218766451,
+   "comparison": {
+    "lothold_counts_match_reference": true,
+    "lothold_loss_years_match_reference": true,
+    "gdal_vs_reference_edge_ties": 0,
+    "gdal_vs_reference_non_tie_differences": 0,
+    "sampled_area_rel_diff": 3.483360586277244e-08,
+    "jrc_area_rel_diff": 0.0,
+    "post_loss_area_rel_diff": 7.600843097423375e-07,
+    "polygon_area_rel_diff_vs_geodesic": 4.469052912578333e-08,
+    "status_consistent": true
+   }
+  },
+  {
+   "name": "concave irregular polygon",
+   "lothold": {
+    "pixels": 2550,
+    "land": 2536,
+    "water": 14,
+    "noData": 0,
+    "sampledLandAreaHa": 194.1344,
+    "jrcForestAreaHa": 0,
+    "postCutoffLossAreaHa": 0.2297,
+    "lossByYearPixels": {
+     "2001": 30,
+     "2002": 19,
+     "2003": 17,
+     "2005": 28,
+     "2006": 12,
+     "2007": 3,
+     "2008": 28,
+     "2009": 10,
+     "2010": 3,
+     "2011": 1,
+     "2012": 2,
+     "2013": 6,
+     "2014": 31,
+     "2016": 1,
+     "2017": 2,
+     "2018": 3,
+     "2025": 3
+    },
+    "status": "NEEDS_HUMAN_REVIEW",
+    "sampling": "pixel_centres_in_polygon",
+    "polygonAreaHa": 194.1343
+   },
+   "reference_raycast": {
+    "pixels": 2550,
+    "land": 2536,
+    "water": 14,
+    "noData": 0,
+    "sampledLandAreaHa": 194.1343730099067,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 0.22965611238442363,
+    "postCutoffLossPixels": 3,
+    "lossByYearPixels": {
+     "2001": 30,
+     "2002": 19,
+     "2003": 17,
+     "2005": 28,
+     "2006": 12,
+     "2007": 3,
+     "2008": 28,
+     "2009": 10,
+     "2010": 3,
+     "2011": 1,
+     "2012": 2,
+     "2013": 6,
+     "2014": 31,
+     "2016": 1,
+     "2017": 2,
+     "2018": 3,
+     "2025": 3
+    }
+   },
+   "gdal_rasterize": {
+    "pixels": 2538,
+    "land": 2524,
+    "water": 14,
+    "noData": 0,
+    "sampledLandAreaHa": 193.21575375647322,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 0.15310384481213987,
+    "postCutoffLossPixels": 2,
+    "lossByYearPixels": {
+     "2001": 30,
+     "2002": 19,
+     "2003": 17,
+     "2005": 27,
+     "2006": 12,
+     "2007": 3,
+     "2008": 28,
+     "2009": 10,
+     "2010": 3,
+     "2011": 1,
+     "2012": 2,
+     "2013": 6,
+     "2014": 31,
+     "2016": 1,
+     "2017": 2,
+     "2018": 3,
+     "2025": 2
+    }
+   },
+   "polygonAreaHa_geodesic": 194.13400248117446,
+   "comparison": {
+    "lothold_counts_match_reference": true,
+    "lothold_loss_years_match_reference": true,
+    "gdal_vs_reference_edge_ties": 12,
+    "gdal_vs_reference_non_tie_differences": 0,
+    "sampled_area_rel_diff": 1.3902787599319956e-07,
+    "jrc_area_rel_diff": 0.0,
+    "post_loss_area_rel_diff": 0.00019106493502986556,
+    "polygon_area_rel_diff_vs_geodesic": 1.5325412641321809e-06,
+    "status_consistent": true
+   }
+  },
+  {
+   "name": "lagoon/coast polygon (water + land)",
+   "lothold": {
+    "pixels": 1600,
+    "land": 1120,
+    "water": 480,
+    "noData": 0,
+    "sampledLandAreaHa": 85.8121,
+    "jrcForestAreaHa": 2.3666,
+    "postCutoffLossAreaHa": 0.8428,
+    "lossByYearPixels": {
+     "2013": 1,
+     "2025": 11
+    },
+    "status": "NEEDS_HUMAN_REVIEW",
+    "sampling": "pixel_centres_in_polygon",
+    "polygonAreaHa": 122.589
+   },
+   "reference_raycast": {
+    "pixels": 1600,
+    "land": 1120,
+    "water": 480,
+    "noData": 0,
+    "sampledLandAreaHa": 85.81213012807072,
+    "jrcForestAreaHa": 2.3666351060912425,
+    "postCutoffLossAreaHa": 0.842795301130414,
+    "postCutoffLossPixels": 11,
+    "lossByYearPixels": {
+     "2013": 1,
+     "2025": 11
+    }
+   },
+   "gdal_rasterize": {
+    "pixels": 1600,
+    "land": 1120,
+    "water": 480,
+    "noData": 0,
+    "sampledLandAreaHa": 85.81213012807072,
+    "jrcForestAreaHa": 2.3666351060912425,
+    "postCutoffLossAreaHa": 0.842795301130414,
+    "postCutoffLossPixels": 11,
+    "lossByYearPixels": {
+     "2013": 1,
+     "2025": 11
+    }
+   },
+   "polygonAreaHa_geodesic": 122.58904438853264,
+   "comparison": {
+    "lothold_counts_match_reference": true,
+    "lothold_loss_years_match_reference": true,
+    "gdal_vs_reference_edge_ties": 0,
+    "gdal_vs_reference_non_tie_differences": 0,
+    "sampled_area_rel_diff": 3.5109337892149516e-07,
+    "jrc_area_rel_diff": 1.4833757494811509e-05,
+    "post_loss_area_rel_diff": 5.575308004252465e-06,
+    "polygon_area_rel_diff_vs_geodesic": 3.6209216626764807e-07,
+    "status_consistent": true
+   }
+  },
+  {
+   "name": "small polygon (~1 ha, few pixels)",
+   "lothold": {
+    "pixels": 16,
+    "land": 16,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 1.2238,
+    "jrcForestAreaHa": 0,
+    "postCutoffLossAreaHa": 0,
+    "lossByYearPixels": {
+     "2011": 1
+    },
+    "status": "NO_POST_2020_LOSS_OBSERVED",
+    "sampling": "pixel_centres_in_polygon",
+    "polygonAreaHa": 0.9913
+   },
+   "reference_raycast": {
+    "pixels": 16,
+    "land": 16,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 1.2237944049596787,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 0.0,
+    "postCutoffLossPixels": 0,
+    "lossByYearPixels": {
+     "2011": 1
+    }
+   },
+   "gdal_rasterize": {
+    "pixels": 16,
+    "land": 16,
+    "water": 0,
+    "noData": 0,
+    "sampledLandAreaHa": 1.2237944049596787,
+    "jrcForestAreaHa": 0.0,
+    "postCutoffLossAreaHa": 0.0,
+    "postCutoffLossPixels": 0,
+    "lossByYearPixels": {
+     "2011": 1
+    }
+   },
+   "polygonAreaHa_geodesic": 0.9912735602065921,
+   "comparison": {
+    "lothold_counts_match_reference": true,
+    "lothold_loss_years_match_reference": true,
+    "gdal_vs_reference_edge_ties": 0,
+    "gdal_vs_reference_non_tie_differences": 0,
+    "sampled_area_rel_diff": 4.5718584092753946e-06,
+    "jrc_area_rel_diff": 0.0,
+    "post_loss_area_rel_diff": 0.0,
+    "polygon_area_rel_diff_vs_geodesic": 2.6671838401981398e-05,
+    "status_consistent": true
+   }
+  }
+ ],
+ "failures": []
+}
