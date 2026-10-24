@@ -1,15 +1,17 @@
-import '@fontsource/ibm-plex-sans/400.css';
-import '@fontsource/ibm-plex-sans/500.css';
-import '@fontsource/ibm-plex-sans/600.css';
-import '@fontsource/ibm-plex-sans/700.css';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/inter-tight';
 import '@fontsource/ibm-plex-mono/400.css';
 import './styles.css';
+
+// Animation classes only hide content once JavaScript is running, so pages stay readable without it.
+document.documentElement.classList.add('js');
 import { StrictMode, createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { api, setCsrf } from './api.ts';
 import { Logo, ToastProvider } from './components/ui.tsx';
-import { Landing, MethodPage, VerifyPage, InspectPage } from './pages/Public.tsx';
+import { MethodPage, VerifyPage, InspectPage } from './pages/Public.tsx';
+import { Landing } from './pages/Landing.tsx';
 import { LoginPage, RegisterPage } from './pages/Auth.tsx';
 import { Workspace } from './pages/Workspace.tsx';
 import { ShipmentDesk } from './pages/Shipment.tsx';
@@ -59,9 +61,17 @@ function Shell({ children }: { children: ReactNode }) {
       return;
     }
     const m = document.getElementById('main');
-    if (m && loc.hash === '') m.focus({ preventScroll: true });
-    window.scrollTo(0, 0);
+    if (m && loc.hash === '') {
+      m.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
   }, [loc.pathname]);
+  // In-page anchors (e.g. /#how) scroll to their section after render.
+  useEffect(() => {
+    if (!loc.hash) return;
+    const t = window.setTimeout(() => document.getElementById(loc.hash.slice(1))?.scrollIntoView({ block: 'start' }), 30);
+    return () => window.clearTimeout(t);
+  }, [loc.pathname, loc.hash]);
   return (
     <>
       <a href="#main" className="skip">
@@ -76,22 +86,33 @@ function Shell({ children }: { children: ReactNode }) {
           {open ? 'Close menu' : 'Menu'}
         </button>
         <nav id="topnav" className={`topnav ${open ? 'open' : ''}`} aria-label="Main">
-          {user && <NavLink to="/app">Shipments</NavLink>}
-          <NavLink to="/inspect">Inspect forest evidence</NavLink>
-          <NavLink to="/method">Method &amp; sources</NavLink>
-          <NavLink to="/verify">Testnet registry</NavLink>
+          <Link to="/#how">How it works</Link>
+          <NavLink to="/method">Evidence &amp; methods</NavLink>
+          <NavLink to="/inspect">Forest inspector</NavLink>
+          <NavLink to="/verify">Registry</NavLink>
+          <span className="divider" aria-hidden="true" />
           {user ? (
-            <button
-              className="linkbtn"
-              onClick={async () => {
-                await logout();
-                nav('/');
-              }}
-            >
-              Sign out <span className="muted small" style={{ marginLeft: 6 }}>({user.organisation})</span>
-            </button>
+            <>
+              <button
+                className="linkbtn"
+                onClick={async () => {
+                  await logout();
+                  nav('/');
+                }}
+              >
+                Sign out
+              </button>
+              <NavLink to="/app" className="nav-cta" end={false}>
+                Workspace
+              </NavLink>
+            </>
           ) : (
-            <NavLink to="/login">Sign in</NavLink>
+            <>
+              <NavLink to="/login">Sign in</NavLink>
+              <NavLink to="/register" className="nav-cta">
+                Open the desk
+              </NavLink>
+            </>
           )}
         </nav>
       </header>
@@ -100,10 +121,33 @@ function Shell({ children }: { children: ReactNode }) {
       </main>
       <footer className="footer">
         <div className="inner">
-          <span>LotHold prototype. It does not certify sourcing, legality, deforestation-free status or physical origin, and it does not submit anything to the EU.</span>
-          <span>
-            Data: Hansen/UMD/Google/USGS/NASA (CC BY 4.0); European Commission JRC GFC2020 V4. <Link to="/method">Sources</Link>
-          </span>
+          <div>
+            <Link to="/" className="brand" aria-label="LotHold home">
+              <Logo />
+              LotHold
+            </Link>
+            <p style={{ marginTop: 12, maxWidth: '44ch' }}>Evidence review for cocoa shipments. A prototype: it does not certify sourcing, legality, deforestation-free status or physical origin, and it never submits anything to the EU.</p>
+          </div>
+          <nav aria-label="Product">
+            <ul>
+              <li><Link to={user ? '/app' : '/register'}>Workspace</Link></li>
+              <li><Link to="/inspect">Forest inspector</Link></li>
+              <li><Link to="/method">Evidence &amp; methods</Link></li>
+              <li><Link to="/verify">Testnet registry</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label="Resources">
+            <ul>
+              <li><a href="https://github.com/TheWeirdDee/lothold">Source code (GitHub)</a></li>
+              <li><a href="/api/templates/sources.csv">Source-table template (CSV)</a></li>
+              <li><a href="https://glad.earthengine.app/view/global-forest-change">Hansen Global Forest Change</a></li>
+              <li><a href="https://forobs.jrc.ec.europa.eu/GFC">JRC Global Forest Cover 2020</a></li>
+            </ul>
+          </nav>
+          <div className="fine">
+            <span>Data: Hansen/UMD/Google/USGS/NASA (CC BY 4.0) · European Commission JRC GFC2020 V4</span>
+            <span>Testnet registry on Ethereum Sepolia · no tokens, no value transfer</span>
+          </div>
         </div>
       </footer>
     </>
