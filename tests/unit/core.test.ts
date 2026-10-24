@@ -201,3 +201,21 @@ describe('decision engine', () => {
     expect(JSON.stringify(evaluate(baseInput()))).toBe(JSON.stringify(evaluate(baseInput())));
   });
 });
+
+describe('ellipsoidal areas (reference values from pyproj.Geod WGS84)', async () => {
+  const { cellAreaM2, ringAreaM2 } = await import('../../core/ellipsoid.ts');
+  const { pointInRing } = await import('../../core/geometry.ts');
+  it('matches geodesic areas to better than 0.001 %', () => {
+    const near = (a: number, b: number) => Math.abs(a - b) / b < 1e-5;
+    expect(near(cellAreaM2(6.0, 6.00025, 0.00025), 765.2143729068339)).toBe(true);
+    expect(near(ringAreaM2([[-7.56, 6.24], [-7.55, 6.24], [-7.55, 6.25], [-7.56, 6.25], [-7.56, 6.24]]) / 1e4, 122.37966821397544)).toBe(true);
+    expect(near(ringAreaM2([[10, 50], [10.001, 50], [10.001, 50.001], [10, 50.001], [10, 50]]) / 1e4, 0.797456955063343)).toBe(true);
+  });
+  it('treats points on an edge as inside, deterministically', () => {
+    const ring: [number, number][] = [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]];
+    expect(pointInRing(0.5, 0, ring)).toBe(true);
+    expect(pointInRing(1, 0.5, ring)).toBe(true);
+    expect(pointInRing(0.5 + 1e-12, 1 + 1e-12, ring)).toBe(true);
+    expect(pointInRing(0.5, 1.000001, ring)).toBe(false);
+  });
+});
