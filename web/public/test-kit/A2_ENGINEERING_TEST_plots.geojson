@@ -1,0 +1,76 @@
+{
+ "type": "FeatureCollection",
+ "name": "ENGINEERING TEST plots - scenario A",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_ref": "ENG-KIT-A-P1",
+    "ProducerCountry": "CI",
+    "note": "ENGINEERING PROBE AREA - coordinates only, not a farm"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -7.56,
+       6.24
+      ],
+      [
+       -7.55,
+       6.24
+      ],
+      [
+       -7.55,
+       6.25
+      ],
+      [
+       -7.56,
+       6.25
+      ],
+      [
+       -7.56,
+       6.24
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_ref": "ENG-KIT-A-P2",
+    "ProducerCountry": "CI",
+    "note": "ENGINEERING PROBE AREA - coordinates only, not a farm"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -7.205,
+       5.745
+      ],
+      [
+       -7.195,
+       5.745
+      ],
+      [
+       -7.195,
+       5.755
+      ],
+      [
+       -7.205,
+       5.755
+      ],
+      [
+       -7.205,
+       5.745
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
