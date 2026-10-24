@@ -12,6 +12,7 @@ import { api, setCsrf } from './api.ts';
 import { Logo, ToastProvider } from './components/ui.tsx';
 import { MethodPage, VerifyPage, InspectPage } from './pages/Public.tsx';
 import { Landing } from './pages/Landing.tsx';
+import { TestKitPage } from './pages/TestKit.tsx';
 import { LoginPage, RegisterPage } from './pages/Auth.tsx';
 import { Workspace } from './pages/Workspace.tsx';
 import { ShipmentDesk } from './pages/Shipment.tsx';
@@ -140,6 +141,7 @@ function Shell({ children }: { children: ReactNode }) {
             <ul>
               <li><a href="https://github.com/TheWeirdDee/lothold">Source code (GitHub)</a></li>
               <li><a href="/api/templates/sources.csv">Source-table template (CSV)</a></li>
+              <li><Link to="/test-kit">Engineering test kit</Link></li>
               <li><a href="https://glad.earthengine.app/view/global-forest-change">Hansen Global Forest Change</a></li>
               <li><a href="https://forobs.jrc.ec.europa.eu/GFC">JRC Global Forest Cover 2020</a></li>
             </ul>
@@ -184,6 +186,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/inspect" element={<InspectPage />} />
               <Route path="/method" element={<MethodPage />} />
               <Route path="/verify" element={<VerifyPage />} />
+              <Route path="/test-kit" element={<TestKitPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/app" element={<RequireAuth><Workspace /></RequireAuth>} />
