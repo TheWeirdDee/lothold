@@ -11,7 +11,7 @@ import {
   HttpError, LIMITS, SHIPMENT_FIELDS, approve, computeState, confirmUpload, createShipment, getUpload, handleUpload, listShipments, recordDecision, reserveAllocations, setFields, uploadBytes, getShipment, type UploadKind,
 } from './service.ts';
 import { enqueue } from './jobs.ts';
-import { analysePlot, DATASETS, COVERAGE_BBOX, ANALYSIS_METHOD_VERSION, datasetAvailability, CUTOFF_YEAR } from './env/forest.ts';
+import { analysePlot, DATASETS, COVERAGE_BBOX, ANALYSIS_METHOD_VERSION, datasetAvailability, CUTOFF_YEAR, isVerificationDone } from './env/forest.ts';
 import { validatePlotGeometry } from '../core/geometry.ts';
 import { blankSourcesTemplate, SOURCE_COLUMNS } from '../core/sources.ts';
 import { RULES_VERSION } from '../core/rules.ts';
@@ -104,6 +104,9 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
 
   // ---------------- public ----------------
   app.get('/api/health', (c) => c.json({ ok: true, instance: process.env.LOTHOLD_INSTANCE === 'engineering' ? 'engineering' : 'operational', rulesVersion: RULES_VERSION, analysisMethod: ANALYSIS_METHOD_VERSION, datasets: datasetAvailability() }));
+
+  // Readiness: 200 once the startup dataset verification has finished (successfully or not).
+  app.get('/api/ready', (c) => (isVerificationDone() ? c.json({ ready: true, datasets: datasetAvailability() }) : c.json({ ready: false }, 503)));
 
   app.get('/api/public/method', (c) =>
     c.json({
