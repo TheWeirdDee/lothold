@@ -67,5 +67,16 @@ The application path (ledger reservation → durable job → registerBatch → a
 - **Who confirms the declaration:** nobody on-chain. The registry records what the declarant asserted; a dishonest declarant can declare any mass.
 - **Duplicate identities:** batch keys are `keccak256("lothold:batch:v1:<org>:<lot id>")`. The same physical cocoa declared under another key, by another organisation, or off-platform is invisible to the contract.
 - **Actor identity:** the server signs for reviewers. On-chain addresses identify the pilot signers.
-- **Abuse protection:** anchoring is disabled per organisation by default (`node scripts/admin.ts enable-chain <email>`), rate-limited to 10 requests per organisation per hour, and the browser never holds keys.
+- **Abuse protection** (all enforced server-side, tested against Anvil):
+  - **Per organisation:**
+    - anchoring is disabled by default (`node scripts/admin.ts enable-chain <email>`);
+    - at most 10 anchoring requests per hour;
+    - at most `CHAIN_MAX_ALLOCATIONS_PER_REQUEST` (10) allocations per request;
+    - at most `CHAIN_DAILY_TX_LIMIT` (30) transactions per 24 hours, counting queued work.
+  - **Before any signature:**
+    - the RPC's chain ID must equal the configured chain (refuses e.g. a mainnet RPC);
+    - the network fee must be below `CHAIN_MAX_FEE_GWEI`.
+  - **Keys:** never leave the server, are read only from the environment, and are never logged or returned.
+  - **Configuration:** only `sepolia` and `local-devnet` are accepted.
+  - **Public deployments:** the template sets `CHAIN_ANCHORING=off`.
 - **Gas observation:** a first reservation used 599,076 gas on Sepolia versus 150,776 on a local Anvil devnet, which Sepolia's higher storage-creation pricing explains. Local devnet gas figures are not representative.
