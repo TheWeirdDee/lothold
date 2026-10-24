@@ -1,0 +1,146 @@
+{
+  "label": "ENGINEERING TEST — shared allocation constraint. Not commercial inventory; quantities are test inputs.",
+  "network": "sepolia",
+  "chainId": 11155111,
+  "rpcHost": "ethereum-sepolia-rpc.publicnode.com",
+  "contract": {
+    "address": "0x1645604d915c55cfd61cf1492ad58ab5e4150b57",
+    "compiler": "0.8.28+commit.7893614a",
+    "deployTx": null,
+    "source": "contracts/src/BatchReservations.sol"
+  },
+  "actors": {
+    "registrarAndDeclarant": "0x9f5E6057606bC655E6dB8a6aDab40CB11217FA44",
+    "reserverA": "0x330D1bC6B9db359FeFed4bB754a21Ded89AE6113",
+    "reserverB": "0xeD7a68B3F2d96fAb6BaE926B6F3B84816fc1c058"
+  },
+  "runAt": "2026-10-23T14:30:57.260Z",
+  "deployerBalanceAfterEth": "0.041999999847924041",
+  "steps": [
+    {
+      "step": "reuse-deployment",
+      "contractAddress": "0x1645604d915c55cfd61cf1492ad58ab5e4150b57"
+    },
+    {
+      "step": "registrar-authorises-declarant",
+      "outcome": "confirmed",
+      "txHash": "0x7b34b44ccb11609ef2af7958eacb8fdb5b9767813fd14ac050c5dbf279113f3b",
+      "explorer": "https://sepolia.etherscan.io/tx/0x7b34b44ccb11609ef2af7958eacb8fdb5b9767813fd14ac050c5dbf279113f3b",
+      "blockNumber": "11977279",
+      "gasUsed": "19738"
+    },
+    {
+      "step": "unauthorised-registration-attempt (actor A is not a declarant)",
+      "outcome": "preflight_rejected",
+      "revert": {
+        "name": "NotDeclarant",
+        "message": "Signer is not an authorised declarant."
+      }
+    },
+    {
+      "step": "declarant-registers-test-batch (1,000,000 g)",
+      "batchKey": "0x29985f07c0da33fe1c87725531261d087532f44896eab2b10d0315617eb0faf5",
+      "evidenceHash": "0x25a9ca694364f6e42d198978a792a5b73ebad3eda923d1e8996d2159bbb7ffcc",
+      "outcome": "confirmed",
+      "txHash": "0x1325c794961fc843e90a286a9af9d23deb4ffbca5723dbf00025d31656662ee3",
+      "explorer": "https://sepolia.etherscan.io/tx/0x1325c794961fc843e90a286a9af9d23deb4ffbca5723dbf00025d31656662ee3",
+      "blockNumber": "11977280",
+      "gasUsed": "461911"
+    },
+    {
+      "step": "declarant-authorises-actor-A",
+      "actor": "0x330D1bC6B9db359FeFed4bB754a21Ded89AE6113",
+      "outcome": "confirmed",
+      "txHash": "0x4a6cd88fba99a3b9bf51533712b205d45a59ed428be0b45477ba857be394c6e4",
+      "explorer": "https://sepolia.etherscan.io/tx/0x4a6cd88fba99a3b9bf51533712b205d45a59ed428be0b45477ba857be394c6e4",
+      "blockNumber": "11977282",
+      "gasUsed": "130895"
+    },
+    {
+      "step": "declarant-authorises-actor-B",
+      "actor": "0xeD7a68B3F2d96fAb6BaE926B6F3B84816fc1c058",
+      "outcome": "confirmed",
+      "txHash": "0xcd479206a3332bbd9ce39e5899c57d86ec893697983903a65ca5caac2dffabbc",
+      "explorer": "https://sepolia.etherscan.io/tx/0xcd479206a3332bbd9ce39e5899c57d86ec893697983903a65ca5caac2dffabbc",
+      "blockNumber": "11977285",
+      "gasUsed": "130895"
+    },
+    {
+      "step": "actor-A-reserves-600000g",
+      "allocationKey": "0x5b3260c6047fbcd06714f80195adfbab2e982f97887babfb8fea6a611e5c6376",
+      "outcome": "confirmed",
+      "txHash": "0xe47f55181858ac5c35eb33560cbf03909d77bfe139dfa29dbbb171df3608a6be",
+      "explorer": "https://sepolia.etherscan.io/tx/0xe47f55181858ac5c35eb33560cbf03909d77bfe139dfa29dbbb171df3608a6be",
+      "blockNumber": "11977286",
+      "gasUsed": "599076"
+    },
+    {
+      "step": "actor-B-requests-600000g (preflight)",
+      "allocationKey": "0xcde8d9315736a1c49a1c3e7151c262a06ccc65b094640e164c869b5f2022afb8",
+      "outcome": "preflight_rejected",
+      "revert": {
+        "name": "ExceedsAvailable",
+        "message": "Request of 600000 g exceeds the 400000 g still available on the registered batch."
+      }
+    },
+    {
+      "step": "actor-B-submits-600000g-without-preflight (mined)",
+      "allocationKey": "0xcde8d9315736a1c49a1c3e7151c262a06ccc65b094640e164c869b5f2022afb8",
+      "outcome": "reverted",
+      "txHash": "0x37e2e02a8a970c8d282024c3f60fa4f7bb89e40ad4fdf0c6abbdf201975502a0",
+      "explorer": "https://sepolia.etherscan.io/tx/0x37e2e02a8a970c8d282024c3f60fa4f7bb89e40ad4fdf0c6abbdf201975502a0",
+      "blockNumber": "11977287",
+      "gasUsed": "26139"
+    },
+    {
+      "step": "state-after-rejection",
+      "readAtBlocks": {
+        "afterA": "11977286",
+        "afterB": "11977287"
+      },
+      "reservedGramsBefore": "600000",
+      "reservedGramsAfter": "600000",
+      "unchanged": true,
+      "actorBAllowance": "1000000",
+      "actorBReservationRecorded": false
+    },
+    {
+      "step": "actor-A-retries-same-allocation-id",
+      "outcome": "preflight_rejected",
+      "revert": {
+        "name": "AllocationAlreadyUsed",
+        "message": "This allocation identifier has already been reserved; a retry cannot reserve it twice."
+      }
+    },
+    {
+      "step": "concurrent-A-300000g",
+      "outcome": "reverted",
+      "txHash": "0xcfed88e8e5e3462ea5b96935f26757608f96ffb675a983c3ee4778a8dff44a9f",
+      "explorer": "https://sepolia.etherscan.io/tx/0xcfed88e8e5e3462ea5b96935f26757608f96ffb675a983c3ee4778a8dff44a9f",
+      "blockNumber": "11977289",
+      "gasUsed": "26139"
+    },
+    {
+      "step": "concurrent-B-300000g",
+      "outcome": "confirmed",
+      "txHash": "0x2f20283aba7e87e61c8344cb6d3158b2b8ac71e70482f2bc476ced9641775178",
+      "explorer": "https://sepolia.etherscan.io/tx/0x2f20283aba7e87e61c8344cb6d3158b2b8ac71e70482f2bc476ced9641775178",
+      "blockNumber": "11977289",
+      "gasUsed": "599076"
+    },
+    {
+      "step": "actor-B-reserves-exact-remainder-100000g",
+      "outcome": "confirmed",
+      "txHash": "0x1e86a1b13894ca35bb2672d15302b3e78b8c0cb0cf365ac753836868c1ed080f",
+      "explorer": "https://sepolia.etherscan.io/tx/0x1e86a1b13894ca35bb2672d15302b3e78b8c0cb0cf365ac753836868c1ed080f",
+      "blockNumber": "11977290",
+      "gasUsed": "599076"
+    },
+    {
+      "step": "final-state",
+      "declaredGrams": "1000000",
+      "reservedGrams": "1000000",
+      "conserved": true
+    }
+  ]
+}
