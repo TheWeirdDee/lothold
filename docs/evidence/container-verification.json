@@ -1,0 +1,36 @@
+{
+  "label": "ENGINEERING TEST - production container verification on a throwaway Docker volume. All accounts, shipments and plots are engineering fixtures; plot geometries are coordinate probe boxes, not farms.",
+  "date": "2026-10-24",
+  "environment": "Docker Engine 29.1.3 inside WSL2 (Ubuntu 24.04) on Windows 11; image built from deploy/Dockerfile (node:24.13.1-bookworm-slim, pnpm prune --prod); 202 MB content, 929 MB unpacked",
+  "run": "docker run -p 127.0.0.1:8790:8787 -v lothold_eng_data:/data --env-file <fresh random EVIDENCE_ENCRYPTION_KEY and DOWNLOAD_SIGNING_KEY> -e LOTHOLD_INSTANCE=engineering -e PUBLIC_ORIGIN=http://127.0.0.1:8790 -e CHAIN_ANCHORING=off lothold:local. No AI key, chain key or project secret was passed to the container.",
+  "defectFound": {
+    "symptom": "The first image crashed at startup: Cannot find module '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff'",
+    "cause": "The PDF generator loads the IBM Plex Sans font files at runtime, but the package was a devDependency and was removed by `pnpm prune --prod`.",
+    "fix": "Moved @fontsource/ibm-plex-sans to dependencies; added tests/unit/runtime-deps.test.ts, which fails if any package used by server/ or core/ is not a runtime dependency."
+  },
+  "datasets": "The three rasters were copied onto the volume (/data/snapshots, 431 MB). At startup the server verified each against its pinned SHA-256: hansen_lossyear d481e6be…, hansen_datamask 38278ad7…, jrc_gfc2020 33547f27… (all match).",
+  "seedChecks (scripts/container-verify.ts seed)": [
+    "readiness 200 after dataset verification",
+    "datasets present, sizes match, hashes equal pinned values",
+    "built frontend served at /",
+    "registration 201 and session cookie works",
+    "shipment created, fields saved",
+    "source CSV and plot GeoJSON uploaded and confirmed",
+    "environmental analysis ran on the real rasters inside the container: ENG-PLOT-A NEEDS_HUMAN_REVIEW, 47 of 1600 pixels with 2021-2025 loss (identical to the native run)",
+    "supplier request PDF generated and downloaded (valid %PDF header)",
+    "uploaded CSV downloaded back and decrypted byte for byte (SHA-256 equal)"
+  ],
+  "recoveryChecks (scripts/container-verify.ts after-restart)": {
+    "docker restart": "pass: login, shipment, unchanged evaluation, byte-identical stored PDF and upload, audit history",
+    "container removed and recreated on the same volume (as in a redeploy)": "pass: same checks",
+    "WSL VM shut down while idle and restarted": "the container came back by its restart policy (unless-stopped) and passed the next checks",
+    "migrations": "schema_migrations holds [1 'initial schema'] after each restart; no re-application; journal_mode wal; PRAGMA integrity_check ok",
+    "hard kill (SIGKILL) while a forest-analysis job was running": "the job was 'running', attempt 1, at the moment of the kill. After restart its lease expired and attempt 2 succeeded (NO_POST_2020_LOSS_OBSERVED on a fresh probe box). Recovery waited for the lease: about 2 minutes from kill to result."
+  },
+  "notCovered": [
+    "hosting on Fly.io or any other platform (not deployed; not authorised)",
+    "TLS termination and the Caddy configuration (deploy/Caddyfile) were not exercised",
+    "npm run data:fetch inside the container (rasters were copied from the local verified snapshot instead of downloaded)",
+    "an image build with BuildKit cache disabled: the first rebuild failed at `pnpm install --frozen-lockfile` with the cause not captured (quiet mode); the immediate rerun with full output succeeded"
+  ]
+}
