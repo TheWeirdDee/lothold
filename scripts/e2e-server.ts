@@ -13,5 +13,6 @@ process.env.EVIDENCE_ENCRYPTION_KEY = randomBytes(32).toString('hex');
 process.env.DOWNLOAD_SIGNING_KEY = randomBytes(32).toString('hex');
 process.env.REGISTER_RATE_LIMIT = '1000';
 process.env.CHAIN_ANCHORING = 'off';
+process.env.LOTHOLD_INSTANCE = 'engineering';
 delete process.env.AI_PROVIDER;
 await import('../server/main.ts');
