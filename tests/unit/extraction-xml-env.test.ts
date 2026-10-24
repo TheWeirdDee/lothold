@@ -80,7 +80,7 @@ describe('DDS V3 XML against the official XSD set', () => {
   });
 });
 
-const haveData = Object.values(DATASETS).every((d) => existsSync(`data/snapshots/${d.file}`));
+const haveData = Object.values(DATASETS).every((d) => existsSync(`${process.env.DATA_DIR ?? 'data/snapshots'}/${d.file}`));
 describe.skipIf(!haveData)('environmental analysis on real pinned rasters (engineering probe areas)', () => {
   const box = (x: number, y: number, d = 0.009) => ({ type: 'Polygon' as const, coordinates: [[[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]] as [number, number][]] });
   it('outside the installed tile is reported as outside coverage, never clear', async () => {
