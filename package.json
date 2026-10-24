@@ -7,6 +7,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "dev": "node scripts/dev.ts",
     "dev:server": "node --watch --env-file-if-exists=.env server/main.ts",
     "dev:web": "vite",
     "build": "vite build",
