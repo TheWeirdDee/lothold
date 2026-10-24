@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { api, fmtDate } from '../api.ts';
-import { Badge, DIM_LABEL, OVERALL, SeverityBadge, useToast } from '../components/ui.tsx';
+import { Badge, DIM_LABEL, OVERALL, SeverityBadge, tabKeys, useToast } from '../components/ui.tsx';
 import { DetailsTab, SourcesTab, PlotsTab, AllocationTab, DocumentsTab, ActivityTab, ReviewDialog, SignOff } from './DeskParts.tsx';
 
 export type View = any;
@@ -120,16 +120,16 @@ export function ShipmentDesk() {
         <div className="process-line">{ev.processLine}</div>
       </section>
 
-      <div className="tabs" role="tablist" aria-label="Shipment sections">
+      <div className="tabs" role="tablist" aria-label="Shipment sections" onKeyDown={(e) => tabKeys(e, TABS.map(([k]) => k as string), tab, setTab, 'tab-')}>
         {TABS.map(([k, label]) => (
-          <button key={k} role="tab" id={`tab-${k}`} aria-selected={tab === k} aria-controls={`panel-${k}`} onClick={() => setTab(k)}>
+          <button key={k} role="tab" id={`tab-${k}`} aria-selected={tab === k} aria-controls={`panel-${k}`} tabIndex={tab === k ? 0 : -1} onClick={() => setTab(k)}>
             {label}
             {counts[k] && counts[k]![0] > 0 && <span className={`count ${counts[k]![1]}`}>{counts[k]![0]}</span>}
           </button>
         ))}
       </div>
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="tabpanel" key={tab}>
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} tabIndex={0} className="tabpanel" key={tab}>
         {tab === 'review' && <FindingsTab view={view} goTo={goTo} onReview={setReviewKey} reload={load} />}
         {tab === 'details' && <DetailsTab view={view} reload={load} focus={focus} />}
         {tab === 'sources' && <SourcesTab view={view} reload={load} focus={focus} />}
