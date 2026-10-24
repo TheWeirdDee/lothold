@@ -81,8 +81,12 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   // rotate the header to bypass per-IP rate limits.
   const ip = (c: Context<Env>) => {
     if (process.env.TRUST_PROXY === 'true') {
-      const xff = c.req.header('x-forwarded-for')?.split(',')[0]?.trim();
-      if (xff) return xff;
+      // Prefer a single-value header set by the platform proxy (e.g. TRUST_PROXY_HEADER=fly-client-ip).
+      const named = process.env.TRUST_PROXY_HEADER ? c.req.header(process.env.TRUST_PROXY_HEADER)?.trim() : undefined;
+      if (named) return named;
+      // Otherwise use the LAST X-Forwarded-For entry: the one appended by our own proxy. Earlier entries are client-controlled.
+      const xff = c.req.header('x-forwarded-for')?.split(',').map((s) => s.trim()).filter(Boolean);
+      if (xff?.length) return xff[xff.length - 1]!;
     }
     try {
       return getConnInfo(c).remote.address ?? 'unknown';
@@ -99,7 +103,7 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   };
 
   // ---------------- public ----------------
-  app.get('/api/health', (c) => c.json({ ok: true, rulesVersion: RULES_VERSION, analysisMethod: ANALYSIS_METHOD_VERSION, datasets: datasetAvailability() }));
+  app.get('/api/health', (c) => c.json({ ok: true, instance: process.env.LOTHOLD_INSTANCE === 'engineering' ? 'engineering' : 'operational', rulesVersion: RULES_VERSION, analysisMethod: ANALYSIS_METHOD_VERSION, datasets: datasetAvailability() }));
 
   app.get('/api/public/method', (c) =>
     c.json({
@@ -118,6 +122,9 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
     const report = validatePlotGeometry(body.geometry, { declaredAreaHa: 1 });
     if (!report.valid) return c.json({ report, analysis: null });
     if ((report.areaHa ?? 0) > 5_000) throw new HttpError(422, 'too_large', 'Public inspection is limited to areas of 5,000 ha or less.');
+    // Only analyse against rasters that passed SHA-256 verification at startup (same rule as the job worker).
+    const verified = datasetAvailability().every((d) => d.sha256 !== null && d.sha256 === DATASETS[d.id].sha256);
+    if (!verified) return c.json({ report, analysis: { status: 'UNAVAILABLE', summary: 'Environmental datasets are missing or failed hash verification on this server; no conclusion is drawn.', limitations: [], hansenPixels: { total: 0, land: 0, water: 0, noData: 0 }, areaHa: { sampled: 0, jrcForest2020: 0, postCutoffLoss: 0, postCutoffLossOnJrcForest: 0, preCutoffLoss: 0 }, lossByYear: {}, coveredInterval: '', methodVersion: ANALYSIS_METHOD_VERSION, analysedAt: new Date().toISOString(), grid: null }, stored: false });
     const analysis = await analysePlot(body.geometry as never, { geometryValid: true });
     log({ event: 'public.forest_check', status: analysis.status });
     return c.json({ report, analysis, stored: false });
