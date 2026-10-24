@@ -1,0 +1,57 @@
+{
+  "name": "lothold",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev:server": "node --watch --env-file-if-exists=.env server/main.ts",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node --env-file-if-exists=.env server/main.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:contracts": "cd contracts && forge test -vv",
+    "test:e2e": "playwright test",
+    "data:fetch": "node scripts/fetch-datasets.ts",
+    "data:verify": "node scripts/fetch-datasets.ts --verify-only",
+    "setup": "node scripts/setup.ts",
+    "admin": "node --env-file-if-exists=.env scripts/admin.ts",
+    "verify": "node scripts/verify-all.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.1.0",
+    "@hono/node-server": "^2.1.5",
+    "@turf/area": "^7.4.0",
+    "@turf/boolean-point-in-polygon": "^7.4.0",
+    "@turf/helpers": "^7.4.0",
+    "@turf/kinks": "^7.4.0",
+    "geotiff": "^3.0.5",
+    "hono": "^4.13.13",
+    "papaparse": "^5.7.0",
+    "pdfjs-dist": "^6.4.299",
+    "pdfkit": "^0.20.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.0",
+    "viem": "^2.57.10",
+    "xmllint-wasm": "^5.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "@types/papaparse": "^5.5.2",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}
