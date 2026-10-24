@@ -44,10 +44,11 @@ export const COUNTRY_BBOX: Record<string, [number, number, number, number]> = {
 };
 
 /**
- * Supported product scope: cocoa beans only. Annex I of Regulation (EU) 2023/1115 lists HS 1801
- * "Cocoa beans, whole or broken, raw or roasted". The official DDS V3 sample uses hsHeading 1801 with
- * scientificName Theobroma cacao. EUR-Lex could not be retrieved from the build environment; see
- * docs/SOURCES.md. Other cocoa headings (1802–1806) are deliberately out of this prototype's scope.
+ * Supported product scope: cocoa beans only. Annex I of Regulation (EU) 2023/1115 (OJ L 150, 9.6.2023,
+ * retrieved from the Publications Office, see docs/SOURCES.md) lists cocoa under HS 1801–1806; the
+ * amending Regulation (EU) 2025/2650 did not change those entries. LotHold supports only 1801
+ * "Cocoa beans, whole or broken, raw or roasted" and reports 1802–1806 as outside its scope (not as
+ * outside the Regulation).
  */
 export const SUPPORTED_PRODUCT = {
   hsHeading: '1801',
@@ -66,7 +67,7 @@ export function checkHsCode(raw: string | null | undefined): ProductCheck {
   if (!/^[0-9]{2,10}$/.test(v)) return { ok: false, reason: 'malformed', message: `"${raw}" is not a 2–10 digit HS code.` };
   if (v.startsWith('1801') ) return { ok: true, normalized: v };
   if (/^180[2-6]/.test(v))
-    return { ok: false, reason: 'other_cocoa_product', message: `HS ${v} is a cocoa product other than beans. This prototype only supports HS 1801 (cocoa beans).` };
+    return { ok: false, reason: 'other_cocoa_product', message: `HS ${v} is a cocoa product other than beans. Annex I covers it, but this tool only supports HS 1801 (cocoa beans).` };
   return { ok: false, reason: 'not_cocoa', message: `HS ${v} is not cocoa beans (HS 1801). LotHold supports one product entry only.` };
 }
 
