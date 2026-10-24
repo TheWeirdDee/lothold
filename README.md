@@ -54,15 +54,21 @@ Optional configuration is documented in [.env.example](.env.example): model prov
 5. Work through **Findings**. Each one links to its file, row, column or plot. Land-change signals need a written investigation **and** an evidence file before they stop blocking.
 6. Reserve allocations, sign off the evidence snapshot, then export the documents.
 
-Public pages need no login: **Inspect forest evidence** (runs the real analysis on any area you enter; nothing is stored), **Method & sources**, and **Testnet registry**.
+Public pages need no login: **Inspect forest evidence** (runs the real analysis on any area you enter; nothing is stored), **Method & sources**, **Testnet registry**, and the **Engineering test kit**.
+
+### Try it without real records
+
+`/test-kit` offers ten downloadable, clearly labelled engineering-test files (`ENGINEERING_TEST_*`, identifiers `ENG-KIT-…`, plot shapes that are coordinate probe boxes, not farms). They cover three scenarios: a complete case through sign-off and XML; deliberate data and geometry errors with corrections; and one source lot over-allocated across two cases. [docs/AUDIT_GUIDE.md](docs/AUDIT_GUIDE.md) gives the steps and expected results, and `tests/integration/test-kit.test.ts` checks those results on every run.
+
+The landing page's **Product walkthrough** shows "Demo video coming soon" until a real recording is configured with `DEMO_VIDEO_URL` (YouTube, Vimeo, or an MP4/WebM file). See [docs/DEMO_VIDEO.md](docs/DEMO_VIDEO.md).
 
 ## Verify
 
 ```bash
 npm run typecheck        # TypeScript (tsc 7) over server, core, web, scripts, tests
-npm test                 # vitest: unit + integration (67 tests; includes real-raster, backup/restore and Anvil chain tests)
+npm test                 # vitest: unit + integration (85 tests; includes real-raster, backup/restore and Anvil chain tests)
 npm run test:contracts   # forge: 18 contract tests incl. 512-run fuzz (first: cd contracts && forge install foundry-rs/forge-std --no-git)
-npm run test:e2e         # Playwright (Chrome): 11 browser tests (journeys + accessibility) on a throwaway database
+npm run test:e2e         # Playwright (Chrome): 15 browser tests (journeys, accessibility, demo video) on a throwaway database
 npm run data:verify      # re-hashes the raster snapshots against the pinned SHA-256 values
 python scripts/gis-crosscheck.py   # independent GDAL/pyproj recomputation (pip install rasterio pyproj shapely numpy)
 ```
@@ -79,6 +85,9 @@ Results, scope and what each layer does and does not prove are listed in [docs/V
 - [Verification record and known limitations](docs/VERIFICATION.md)
 - [Requirement checklist](docs/CHECKLIST.md)
 - [Evidence classification](docs/EVIDENCE.md)
+- [Independent audit guide and engineering test kit](docs/AUDIT_GUIDE.md)
+- [Landing demo video configuration](docs/DEMO_VIDEO.md)
+- [Accessibility record](docs/ACCESSIBILITY.md)
 - [Deployment plan, costs, backup and recovery](docs/DEPLOYMENT.md)
 - [Hackathon submission materials and recording script](docs/SUBMISSION.md)
 
