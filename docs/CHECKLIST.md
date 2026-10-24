@@ -4,7 +4,7 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 
 | Area | Requirement | Status | Evidence |
 |---|---|---|---|
-| Data feasibility | Official EUDR dates verified from a primary source | Verified | EC 13 Jul 2026 page; SOURCES.md |
+| Data feasibility | Official EUDR dates, Annex I scope and definitions verified from primary sources | Verified | EC 13 Jul 2026 page; OJ texts of Reg. 2023/1115 and 2025/2650 via Publications Office; SOURCES.md |
 | | Official DDS V3 schema obtained and used for validation | Verified | `server/dds/schema/`, XSD tests |
 | | Real environmental dataset retrieved, licensed, pinned, spatially queried | Verified | METHOD.md, real-raster unit tests |
 | | Genuine cocoa plots / permissioned shipment records | **Blocked** | None available; workspace empty |
@@ -26,7 +26,7 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 | | Separate record / environment / allocation dimensions; transparent overall | Verified | status strip |
 | | No-data / outside / no-alert never the same green state | Verified | unit test |
 | | Material environmental finding needs rationale + evidence | Verified | unit + integration + browser |
-| Environment | CRS, units, intersection, no-data, date semantics, coverage, observation vs retrieval, caveats | Verified | METHOD.md |
+| Environment | CRS, units, intersection, no-data, date semantics, coverage, observation vs retrieval, caveats | Verified | METHOD.md; independent GDAL/pyproj cross-check |
 | | Near-real-time alerts | **Blocked / deferred** | GFW requires API key; annual loss used and labelled |
 | AI | Strict schema, span check, human confirmation, no model authority, adversarial tests | Verified (with injected model output) | tests |
 | | Live model call | **Blocked** | no credentials |
@@ -40,5 +40,6 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 | | DDS XML only after official-schema validation; draft marker outside envelope | Verified | tests |
 | Testing | Unit, integration, contract, browser, real-data, testnet | Verified | VERIFICATION.md |
 | Docs | README, .env.example, architecture, sources/licences, method, AI, chain, verification, submission, recording script | Verified | this folder |
-| Delivery | Local commits, one file per commit, no co-author trailers | Done | `git log` |
+| Delivery | Production start path, persistent storage, dataset provisioning, backup/restore, deployment plan with costs | Verified (container build pending) | DEPLOYMENT.md; backup test |
+| | Local commits, one file per commit, no co-author trailers | Done | `git log` |
 | | Push / deploy / submit | Awaiting authorisation | — |
