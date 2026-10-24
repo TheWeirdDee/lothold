@@ -1,0 +1,8 @@
+# Caddy reverse proxy with automatic HTTPS. Replace the hostname.
+lothold.example.org {
+	encode gzip
+	request_body {
+		max_size 27MB
+	}
+	reverse_proxy 127.0.0.1:8787
+}
