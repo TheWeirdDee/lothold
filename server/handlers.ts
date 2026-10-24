@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { type DB, id, now, run } from './db.ts';
-import { analysePlot, DATASETS, setDatasetHashes, datasetAvailability, ANALYSIS_METHOD_VERSION, type DatasetId } from './env/forest.ts';
+import { analysePlot, DATASETS, setDatasetHashes, markVerificationDone, datasetAvailability, ANALYSIS_METHOD_VERSION, type DatasetId } from './env/forest.ts';
 import { DATASETS_KEY } from './service.ts';
 import { anchorAllocationJob } from './chain/anchor.ts';
 import type { JobHandler } from './jobs.ts';
@@ -18,6 +18,7 @@ export async function verifyDatasets(log: (o: object) => void = (o) => console.l
     hashes[a.id] = h.digest('hex');
   }
   setDatasetHashes(hashes);
+  markVerificationDone();
   for (const k of Object.keys(DATASETS) as DatasetId[]) log({ event: 'dataset.verify', id: k, ok: hashes[k] === DATASETS[k].sha256, present: !!hashes[k] });
   return (Object.keys(DATASETS) as DatasetId[]).every((k) => hashes[k] === DATASETS[k].sha256);
 }
