@@ -209,7 +209,11 @@ export async function callModel(cfg: ProviderConfig, pages: PageText[]): Promise
         response_format: { type: 'json_schema', json_schema: { name: 'candidates', strict: true, schema: CANDIDATE_SCHEMA } },
       }),
     });
-    if (!res.ok) throw new Error(`provider HTTP ${res.status}`);
+    if (!res.ok) {
+      // Keep a short provider message for diagnosis; never include the key or request content.
+      const detail = (await res.text().catch(() => '')).replaceAll(cfg.apiKey, '[redacted]').replace(/\s+/g, ' ').slice(0, 300);
+      throw new Error(`provider HTTP ${res.status}: ${detail}`);
+    }
     const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     return JSON.parse(j.choices?.[0]?.message?.content ?? '');
   }
