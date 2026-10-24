@@ -8,10 +8,11 @@ Machine-checked on every run; pass or fail without human judgement.
 
 | Suite | Count | Covers |
 |---|---|---|
-| `tests/unit` | 40 | Quantities, product scope, geometry rules, parsers, decision engine, ellipsoidal areas, edge rule, extraction span checks, official-XSD validation, real-raster analysis on probe areas |
+| `tests/unit` | 41 | Runtime-dependency guard for the production image, quantities, product scope, geometry rules, parsers, decision engine, ellipsoidal areas, edge rule, extraction span checks, official-XSD validation, real-raster analysis on probe areas |
 | `tests/integration` | 26 | HTTP API: auth, CSRF/Origin, rate limits (direct and behind a proxy), isolation, uploads, ledger, append-only history, jobs, full review workflow, review-integrity bypass attempts, approval binding, extraction fallback, hostile PDFs, backup/restore, Anvil chain lifecycle and signing safeguards |
 | `contracts/test` | 18 | Registry authorisation, conservation (512-run fuzz), duplicates, zero values, events |
-| `tests/e2e` | 6 | Browser journeys in Chrome on a throwaway server, including labelled landing demonstrations, live readings, reduced motion and AI/parser disclosure |
+| `tests/e2e` | 11 | Browser journeys in Chrome on a throwaway server, including labelled landing demonstrations, live readings, reduced motion and AI/parser disclosure; plus axe WCAG 2.2 A/AA scans, keyboard-only use, dialog focus and live regions |
+| `scripts/container-verify.ts` | 16 + 10 checks | Production container: datasets, auth, uploads, analysis, exports; recovery after restart, redeploy and hard kill (`docs/evidence/container-verification.json`) |
 | `scripts/gis-crosscheck.py` | 6 polygons × 9 checks | Independent GDAL/pyproj recomputation of the environmental analysis (`docs/evidence/gis-crosscheck.json`) |
 
 ## B. Manually inspected results (human review of rendered output)
@@ -41,15 +42,15 @@ Real transactions on a test network with **engineering quantities**. They prove 
 | Behaviour | Why | What would verify it |
 |---|---|---|
 | Processing a real exporter's shipment | No permissioned records available | An anonymised source CSV and plot GeoJSON from an exporter, with permission |
-| Live model extraction | A Gemini key is configured and authenticates, but the free-tier daily request quota was exhausted (HTTP 429) before a successful extraction; fallback behaviour was verified live | After the quota resets: `node --env-file=.env scripts/ai-live-verify.ts` (see `docs/evidence/ai-live-verification.json`) |
+| Live model extraction | A Gemini key is configured and authenticates. The in-app extraction got HTTP 503 (provider overloaded); a later call got HTTP 429 (free-tier daily quota exhausted, limit 20). No model extraction has succeeded. Fallback behaviour was verified live | After the quota resets: `node --env-file=.env scripts/ai-live-verify.ts` (see `docs/evidence/ai-live-verification.json`) |
 | Near-real-time disturbance alerts | GFW Data API requires a key | GFW API key and an adapter |
-| Container image build and hosted deployment | Docker unavailable locally; no deployment authorised | First `fly deploy` (see DEPLOYMENT.md) |
+| Hosted deployment | Not authorised. The production container itself was built and verified locally (`docs/evidence/container-verification.json`) | First `fly deploy` after authorisation (see DEPLOYMENT.md) |
 | EU Information System acceptance of the XML | Requires operator credentials and authorisation | Acceptance-environment submission by an authorised operator |
-| Screen-reader usability | Not audited | Manual NVDA/VoiceOver pass |
+| Screen-reader usability | Automated accessibility checks pass (`docs/ACCESSIBILITY.md`), but no screen-reader session has been run | Manual NVDA/VoiceOver pass |
 | Organiser eligibility confirmation | External | Reply from organisers on Devpost |
 
 ## Isolation of engineering (ENG) records
 
 - Engineering fixtures live only in `tests/fixtures/engineering/` and are loaded only into temporary databases (test harnesses, `scripts/e2e-server.ts`, `scripts/render-documents.ts`, `scripts/app-anchoring-sepolia.ts` all create `mkdtemp` directories).
 - Scripts that drive a running server (`scripts/ui-walkthrough.ts`, `tests/smoke-api.ts`) refuse to run unless `/api/health` reports `instance: "engineering"`, which is set only by `LOTHOLD_INSTANCE=engineering`.
-- The operational database (`data/lothold.sqlite`) did not exist at the time of this audit: no operational records of any kind have been created.
+- The local operational database (`data/lothold.sqlite`) was checked read-only on 24 Oct 2026 (about 16:20 UTC). It holds one organisation, one user and one shipment, created through the UI at 15:10 UTC, and no uploads. None of these records match the engineering fixture patterns (`ENG…` references, `@example.test` emails); the agent's scripts write only to temporary databases. These records were left untouched.
