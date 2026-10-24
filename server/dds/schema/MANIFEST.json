@@ -1,0 +1,48 @@
+{
+ "retrievedAt": "2026-10-23 (UTC)",
+ "wsdl": "https://eudr.webcloud.ec.europa.eu/tracesnt/ws/EUDRDueDiligenceStatementServiceV3?wsdl",
+ "files": [
+  {
+   "local": "tracesnt-base-v4.xsd",
+   "source": "?xsd=1",
+   "originalSha256": "ca818ede2d4be88c9ab7497451dadfd2b14e8d7740a20c0176796ccdf4b76fb8",
+   "change": "schemaLocation rewritten to local filename"
+  },
+  {
+   "local": "tracesnt-body-v3.xsd",
+   "source": "?xsd=2",
+   "originalSha256": "f2cfae796d489b2250b96fab4ca1d687fc37c4945eea168dc1b5294b52fd1821",
+   "change": "none"
+  },
+  {
+   "local": "eudr-common-v3.xsd",
+   "source": "?xsd=3",
+   "originalSha256": "c4e7963feb2d853d3c7c29c3fb914d6e25686048c73fe4bebb86a345c08f96e7",
+   "change": "none"
+  },
+  {
+   "local": "eudr-dds-v3.xsd",
+   "source": "?xsd=4",
+   "originalSha256": "947fa49372ca8f8c678d08b8881c38065c257f834875f65c0b13c9796825c4cc",
+   "change": "schemaLocation rewritten to local filename"
+  },
+  {
+   "local": "tracesnt-error-v01.xsd",
+   "source": "?xsd=5",
+   "originalSha256": "d974fb587e297b211d87dfd0795e6a685abfc8fa972654b05ba362ae58fca7ed",
+   "change": "schemaLocation rewritten to local filename"
+  },
+  {
+   "local": "uncefact-iso2-language.xsd",
+   "source": "?xsd=6",
+   "originalSha256": "d62c439be9ccb875e262d6ede6e064a943e9e0773d642d1bd7ed9a42bed8a3ac",
+   "change": "none"
+  },
+  {
+   "local": "uncefact-udt-21.xsd",
+   "source": "?xsd=7",
+   "originalSha256": "3e48fd745361560e63a4df25595f3c143a69022291a1ed69beb1538328a21901",
+   "change": "none"
+  }
+ ]
+}
