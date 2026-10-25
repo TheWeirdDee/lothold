@@ -21,6 +21,23 @@ test('cold-start recovery preserves blurred, unsaved form values and never repla
   expect(navigations).toBe(settledNavigations); expect(mutations).toBe(0);
 });
 
+for (const state of ['failed','unavailable'] as const) {
+ test(`readiness ${state} preserves inputs and recovers only after explicit retry`, async ({page}) => {
+  let recovered=false;
+  await page.route('**/api/**',r=>{
+   if(r.request().url().endsWith('/api/ready'))return r.fulfill({status:recovered?200:503,contentType:'application/json',body:JSON.stringify({ready:recovered,state:recovered?'ready':state})});
+   return r.fulfill({status:recovered?200:503,contentType:recovered?'application/json':'text/plain',body:recovered?'{"user":null}':'Starting'});
+  });
+  await page.goto('/register');
+  await page.getByLabel('Your name').fill('ENGINEERING UNSAVED');
+  await expect(page.getByText(state==='failed'?'Server readiness failed.':'The service is still unavailable.',{exact:true})).toBeVisible();
+  recovered=true;
+  await page.getByRole('button',{name:'Retry connection',exact:true}).click();
+  await expect(page.getByText('The LotHold server is ready.',{exact:true})).toBeVisible();
+  await expect(page.getByLabel('Your name')).toHaveValue('ENGINEERING UNSAVED');
+ });
+}
+
 test('mobile menu traps focus, closes on Escape and selection, restores focus and unlocks scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 640 });
   await page.goto('/');
