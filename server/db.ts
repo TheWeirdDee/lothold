@@ -239,7 +239,34 @@ CREATE TRIGGER uploads_bytes_immutable BEFORE UPDATE OF sha256, storage_key, byt
 CREATE TRIGGER source_lots_declared_immutable BEFORE UPDATE OF declared_grams ON source_lots BEGIN SELECT RAISE(ABORT, 'declared quantity is immutable'); END;
 `,
   },
+  {
+    id: 2,
+    name: 'audited source-lot total corrections',
+    // The first declared total stays immutable; a correction is a new, append-only record with rationale and
+    // evidence, and the latest correction (by seq) is the effective declared total.
+    sql: `
+CREATE TABLE source_lot_corrections (
+  id TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL REFERENCES orgs(id),
+  source_lot_id TEXT NOT NULL REFERENCES source_lots(id),
+  seq INTEGER NOT NULL,
+  previous_grams INTEGER NOT NULL,
+  new_grams INTEGER NOT NULL CHECK (new_grams > 0),
+  from_upload_id TEXT NOT NULL REFERENCES uploads(id),
+  rationale TEXT NOT NULL,
+  evidence_upload_id TEXT NOT NULL REFERENCES uploads(id),
+  corrected_by TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL,
+  UNIQUE (source_lot_id, seq)
+);
+CREATE TRIGGER lot_corrections_no_update BEFORE UPDATE ON source_lot_corrections BEGIN SELECT RAISE(ABORT, 'source_lot_corrections is append-only'); END;
+CREATE TRIGGER lot_corrections_no_delete BEFORE DELETE ON source_lot_corrections BEGIN SELECT RAISE(ABORT, 'source_lot_corrections is append-only'); END;
+`,
+  },
 ];
+
+/** SQL expression for a source lot's effective declared total (latest audited correction, else the first total). */
+export const EFFECTIVE_DECLARED_SQL = `COALESCE((SELECT c.new_grams FROM source_lot_corrections c WHERE c.source_lot_id = source_lots.id ORDER BY c.seq DESC LIMIT 1), source_lots.declared_grams)`;
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'data/lothold.sqlite'): DB {
   if (path !== ':memory:') mkdirSync(dirname(resolve(path)), { recursive: true });
