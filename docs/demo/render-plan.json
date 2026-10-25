@@ -1,0 +1,190 @@
+{
+  "renderedAt": "2026-10-25T20:02:22.522107+00:00",
+  "source": "Recordings of https://lothold.vercel.app in the isolated ENGINEERING TEST - DEMO workspace",
+  "rawFootage": "docs\\demo\\raw",
+  "leadSeconds": 0.4,
+  "tailSeconds": 0.8,
+  "endCardSeconds": 11.0,
+  "scenes": [
+    {
+      "scene": 1,
+      "rawSegments": [
+        {
+          "source": "scene-01-problem.webm",
+          "in": 3.0,
+          "out": 23.936
+        },
+        {
+          "source": "scene-03-uploads.webm",
+          "in": 40.0,
+          "out": 46.64
+        }
+      ],
+      "sourceSeconds": 27.576,
+      "playbackSpeed": 1.0,
+      "freezeHoldSeconds": 0.0,
+      "durationSeconds": 27.56,
+      "targetSeconds": 27.576,
+      "footageTargetSeconds": 27.576,
+      "endCard": null,
+      "zoom": true,
+      "narrationSeconds": 26.376
+    },
+    {
+      "scene": 2,
+      "rawSegments": [
+        {
+          "source": "scene-02-introduce.webm",
+          "in": 0.6,
+          "out": 18.92
+        }
+      ],
+      "sourceSeconds": 18.32,
+      "playbackSpeed": 0.9811,
+      "freezeHoldSeconds": 0.0,
+      "durationSeconds": 18.68,
+      "targetSeconds": 18.672,
+      "footageTargetSeconds": 18.672,
+      "endCard": null,
+      "zoom": true,
+      "narrationSeconds": 17.472
+    },
+    {
+      "scene": 3,
+      "rawSegments": [
+        {
+          "source": "scene-03-uploads.webm",
+          "in": 4.0,
+          "out": 27.21
+        }
+      ],
+      "sourceSeconds": 23.21,
+      "playbackSpeed": 1.0,
+      "freezeHoldSeconds": 0.0,
+      "durationSeconds": 23.2,
+      "targetSeconds": 23.208,
+      "footageTargetSeconds": 23.208,
+      "endCard": null,
+      "zoom": true,
+      "narrationSeconds": 22.008
+    },
+    {
+      "scene": 4,
+      "rawSegments": [
+        {
+          "source": "scene-04-analysis.webm",
+          "in": 2.5,
+          "out": 22.88
+        }
+      ],
+      "sourceSeconds": 20.38,
+      "playbackSpeed": 0.85,
+      "freezeHoldSeconds": 3.624,
+      "durationSeconds": 27.6,
+      "targetSeconds": 27.6,
+      "footageTargetSeconds": 27.6,
+      "endCard": null,
+      "zoom": true,
+      "narrationSeconds": 26.4
+    },
+    {
+      "scene": 5,
+      "rawSegments": [
+        {
+          "source": "scene-05-findings-pdf.webm",
+          "in": 2.5,
+          "out": 26.38
+        }
+      ],
+      "sourceSeconds": 23.88,
+      "playbackSpeed": 1.0,
+      "freezeHoldSeconds": 0.0,
+      "durationSeconds": 23.88,
+      "targetSeconds": 23.88,
+      "footageTargetSeconds": 23.88,
+      "endCard": null,
+      "zoom": true,
+      "narrationSeconds": 22.68
+    },
+    {
+      "scene": 6,
+      "rawSegments": [
+        {
+          "source": "scene-06-review.webm",
+          "in": 1.0,
+          "out": 26.03
+        }
+      ],
+      "sourceSeconds": 25.03,
+      "playbackSpeed": 1.0,
+      "freezeHoldSeconds": 0.0,
+      "durationSeconds": 25.04,
+      "targetSeconds": 25.032,
+      "footageTargetSeconds": 25.032,
+      "endCard": null,
+      "zoom": true,
+      "narrationSeconds": 23.832
+    },
+    {
+      "scene": 7,
+      "rawSegments": [
+        {
+          "source": "scene-07-export.webm",
+          "in": 7.0,
+          "out": 14.2
+        },
+        {
+          "source": "scene-07-export.webm",
+          "in": 14.4,
+          "out": 20.3
+        },
+        {
+          "source": "scene-07-export.webm",
+          "in": 20.5,
+          "out": 23.5
+        },
+        {
+          "source": "scene-07-export.webm",
+          "in": 23.7,
+          "out": 30.016
+        }
+      ],
+      "sourceSeconds": 22.416,
+      "playbackSpeed": 1.0,
+      "freezeHoldSeconds": 0.0,
+      "durationSeconds": 22.4,
+      "targetSeconds": 22.416,
+      "footageTargetSeconds": 22.416,
+      "endCard": null,
+      "zoom": true,
+      "narrationSeconds": 21.216
+    },
+    {
+      "scene": 8,
+      "rawSegments": [
+        {
+          "source": "scene-08-closing.webm",
+          "in": 1.5,
+          "out": 14.32
+        }
+      ],
+      "sourceSeconds": 12.82,
+      "playbackSpeed": 0.8634,
+      "freezeHoldSeconds": 0.0,
+      "durationSeconds": 14.84,
+      "targetSeconds": 25.848,
+      "footageTargetSeconds": 14.848,
+      "endCard": "footage 14.8s + end card 11.0s",
+      "zoom": false,
+      "narrationSeconds": 24.648
+    }
+  ],
+  "totalVideoSeconds": 194.2,
+  "output": "lothold-demo.mp4",
+  "resolution": "1920x1080",
+  "codec": "H.264 (High) + AAC-LC",
+  "fps": 25,
+  "captions": "docs\\demo\\CAPTIONS.srt",
+  "burnedIn": true,
+  "privacyMask": "Registration email/password area hidden; no application results modified"
+}
