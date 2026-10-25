@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-10-25T20:04:31.508716+00:00",
+  "video": "lothold-demo.mp4",
+  "sha256": "309ac647c70eb52ce626f040fb54fc418b159fa6cdc779d3e07d514cca65f251",
+  "bytes": 14065000,
+  "durationSeconds": 194.2,
+  "videoCodec": "h264",
+  "audioCodec": "aac",
+  "width": 1920,
+  "height": 1080,
+  "fps": "25/1",
+  "fullDecodeErrors": "",
+  "blackIntervals": [
+    {
+      "start": 193.88,
+      "end": 194.16,
+      "seconds": 0.28
+    }
+  ],
+  "audioMeasurements": {
+    "input_i": "-16.09",
+    "input_tp": "-1.54",
+    "input_lra": "3.60",
+    "input_thresh": "-26.38",
+    "output_i": "-15.98",
+    "output_tp": "-1.50",
+    "output_lra": "3.40",
+    "output_thresh": "-26.25",
+    "normalization_type": "dynamic",
+    "target_offset": "-0.02"
+  },
+  "captionCues": 74,
+  "captionsExactNarrationWords": true,
+  "officialDurationRangeSeconds": [
+    180,
+    300
+  ],
+  "requestedDurationRangeSeconds": [
+    180,
+    240
+  ],
+  "rulesSource": "https://ieee-climatechain-hack.devpost.com/",
+  "independentAudioTranscription": {
+    "model": "cached faster-whisper base.en, CPU int8",
+    "characterSimilarity": 0.9998,
+    "transcript": "TRANSCRIPTION.json",
+    "note": "ASR is a separate check; proper-name errors are inspected, not silently corrected."
+  },
+  "automatedChecksPassed": true
+}
