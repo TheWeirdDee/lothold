@@ -6,7 +6,7 @@ import { openDb } from './db.ts';
 import { createApp } from './app.ts';
 import { startWorker } from './jobs.ts';
 import { createJobHandlers, verifyDatasets } from './handlers.ts';
-import { secrets } from './security.ts';
+import { housekeeping, secrets } from './security.ts';
 
 secrets.evidenceKey();
 secrets.signingKey();
@@ -29,10 +29,29 @@ const server = serve({ fetch: app.fetch, port, hostname: process.env.HOST ?? '12
 // Listen first; verify the raster hashes in the background. Until verification finishes, public analysis
 // returns UNAVAILABLE and no analysis job runs, because the worker only starts afterwards.
 let worker: ReturnType<typeof startWorker> | null = null;
-void verifyDatasets().then((datasetsOk) => {
-  console.log(JSON.stringify({ event: 'datasets.verified', ok: datasetsOk }));
-  worker = startWorker(db, createJobHandlers(db, { datasetsOk }));
-});
+verifyDatasets()
+  .catch((e: Error) => {
+    console.log(JSON.stringify({ event: 'datasets.verify_failed', error: e.message }));
+    return false;
+  })
+  .then((datasetsOk) => {
+    console.log(JSON.stringify({ event: 'datasets.verified', ok: datasetsOk }));
+    // Jobs that do not need the rasters (e.g. testnet anchoring) still run when verification failed.
+    worker = startWorker(db, createJobHandlers(db, { datasetsOk }));
+  });
+
+// Remove expired sessions and rate-limit records that are never revisited.
+const sweep = () => {
+  try {
+    const r = housekeeping(db);
+    if (r.rateEvents || r.sessions) console.log(JSON.stringify({ event: 'housekeeping', ...r }));
+  } catch (e) {
+    console.log(JSON.stringify({ event: 'housekeeping.failed', error: (e as Error).message }));
+  }
+};
+sweep();
+const sweepTimer = setInterval(sweep, 15 * 60 * 1000);
+sweepTimer.unref();
 
 async function shutdown() {
   await worker?.stop();
