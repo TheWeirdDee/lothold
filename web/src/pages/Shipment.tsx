@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { api, fmtDate } from '../api.ts';
 import { Badge, DIM_LABEL, OVERALL, SeverityBadge, tabKeys, useToast } from '../components/ui.tsx';
-import { DetailsTab, SourcesTab, PlotsTab, AllocationTab, DocumentsTab, ActivityTab, ReviewDialog, SignOff } from './DeskParts.tsx';
+import { DetailsTab, SourcesTab, PlotsTab, AllocationTab, DocumentsTab, ActivityTab, ReviewDialog, LotCorrectionDialog, SignOff } from './DeskParts.tsx';
 
 export type View = any;
 export type Focus = { tab: string; row?: number; column?: string; featureIndex?: number; plotRef?: string; field?: string } | null;
@@ -26,6 +26,7 @@ export function ShipmentDesk() {
   const [error, setError] = useState<string | null>(null);
   const [focus, setFocus] = useState<Focus>(null);
   const [reviewKey, setReviewKey] = useState<string | null>(null);
+  const [correctKey, setCorrectKey] = useState<string | null>(null);
   const timer = useRef<number | undefined>(undefined);
 
   const load = useCallback(async () => {
@@ -130,7 +131,7 @@ export function ShipmentDesk() {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} tabIndex={0} className="tabpanel" key={tab}>
-        {tab === 'review' && <FindingsTab view={view} goTo={goTo} onReview={setReviewKey} reload={load} />}
+        {tab === 'review' && <FindingsTab view={view} goTo={goTo} onReview={setReviewKey} onCorrect={setCorrectKey} reload={load} />}
         {tab === 'details' && <DetailsTab view={view} reload={load} focus={focus} />}
         {tab === 'sources' && <SourcesTab view={view} reload={load} focus={focus} />}
         {tab === 'plots' && <PlotsTab view={view} reload={load} focus={focus} onReview={setReviewKey} />}
@@ -139,6 +140,16 @@ export function ShipmentDesk() {
         {tab === 'activity' && <ActivityTab view={view} />}
       </div>
 
+      <LotCorrectionDialog
+        view={view}
+        findingKey={correctKey}
+        onClose={() => setCorrectKey(null)}
+        onDone={async () => {
+          setCorrectKey(null);
+          toast('Source-lot total corrected and recorded.');
+          await load();
+        }}
+      />
       <ReviewDialog
         view={view}
         findingKey={reviewKey}
@@ -170,7 +181,7 @@ export function refText(ref: any): string {
   return 'Allocation ledger';
 }
 
-function FindingsTab({ view, goTo, onReview, reload }: { view: View; goTo: (f: Focus) => void; onReview: (k: string) => void; reload: () => Promise<unknown> }) {
+function FindingsTab({ view, goTo, onReview, onCorrect, reload }: { view: View; goTo: (f: Focus) => void; onReview: (k: string) => void; onCorrect: (k: string) => void; reload: () => Promise<unknown> }) {
   const ev = view.evaluation;
   const order: Record<string, number> = { not_supported: 0, hold: 1, review: 2, warning: 3 };
   const findings = [...ev.findings].sort((a: any, b: any) => order[a.severity]! - order[b.severity]!);
@@ -246,6 +257,11 @@ function FindingsTab({ view, goTo, onReview, reload }: { view: View; goTo: (f: F
                     </p>
                   )}
                   {f.requestedAction && f.supplierActionable && <p className="action">Supplier request: {f.requestedAction}</p>}
+                  {f.ruleId === 'ALLOC-REG-MISMATCH' && (
+                    <button className="btn secondary small" onClick={() => onCorrect(f.key)}>
+                      Correct the recorded total…
+                    </button>
+                  )}
                   <div className="refs">
                     {f.refs.map((ref: any, i: number) => {
                       const target = refToFocus(ref);
