@@ -3,7 +3,7 @@ import { checkHsCode, EUROPEAN_COUNTRY_TYPE, ACTIVITY_TYPES, ISO_ALPHA2 } from '
 import { parseQuantity, formatKg, sumGrams } from './quantity.ts';
 import type { SourceRow, PlotFeature } from './sources.ts';
 
-export const RULES_VERSION = 'lothold-rules/2026-10-24.1';
+export const RULES_VERSION = 'lothold-rules/2026-10-25.1';
 
 export type Dimension = 'record' | 'environment' | 'allocation';
 export type Severity = 'hold' | 'review' | 'not_supported' | 'warning';
