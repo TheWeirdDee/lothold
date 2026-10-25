@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-25T17:15:03.975Z",
+  "scope": "Read-only metadata of expected judging namespace; no claim/write/download and no credentials in report.",
+  "namespace": "judging",
+  "revision": 52,
+  "retainedObjects": 6,
+  "retainedPayloadBytes": 1933504,
+  "latestEncryptedCheckpointBytes": 393248,
+  "billingTelemetryVerified": false,
+  "publicationFrequencyVerified": false
+}
