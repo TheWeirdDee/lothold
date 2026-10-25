@@ -1,0 +1,10 @@
+{
+  "tag": "lothold-release:reliability",
+  "manifestListDigest": "sha256:7457f0ef695b949c2acb719dd131f9c048705f199ee571ab362ae672fb9f3d69",
+  "platformManifestDigest": "sha256:4bcef6fde00165422aac7ca80feb7baa5e0cc02ed32952858a9d0ce593f8566e",
+  "configDigest": "sha256:4aadb71c88eb04f7b7bd2e8cc68fbf868ed287060244f133db0a8d2c91da1c6c",
+  "frontendAsset": "index-C1E3uUCj.js",
+  "source": "current frontend and bundled backend, fresh runtime stage",
+  "rasterInput": "named datasets context lothold-render:local; only snapshot bytes copied; all three full SHA-256 pins reverified during release build",
+  "published": false
+}
