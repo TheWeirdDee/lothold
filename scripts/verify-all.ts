@@ -7,6 +7,7 @@ import { join } from 'node:path';
 
 const forge = join(homedir(), '.foundry', 'bin', process.platform === 'win32' ? 'forge.exe' : 'forge');
 const steps: [string, string, string[], { cwd?: string; optional?: boolean }?][] = [
+  ['documentation links', process.execPath, ['scripts/check-doc-links.ts']],
   ['dataset hashes', process.execPath, ['scripts/fetch-datasets.ts', '--verify-only'], { optional: true }],
   ['typecheck', 'npx', ['tsc', '--noEmit', '-p', 'tsconfig.json']],
   ['unit + integration', 'npx', ['vitest', 'run']],
