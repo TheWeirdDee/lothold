@@ -1,6 +1,20 @@
 # LotHold demo script and shot list - engineering edition
 
-Target: about 3 minutes, with a separate reliability appendix. Current delivery status: locally verified; Supabase live checks and hosted acceptance are pending. The existing bundled recording is a real local engineering run, not evidence of a deployed backend. Do not relabel it as a hosted run.
+Target: **3–5 minutes**, honest throughout. Current delivery status (25 October 2026): the full workflow, tests and the production image are verified locally; the live Supabase checkpoint layer passed its service verification; **no hosted backend exists yet** — the public site is frontend-only. The source of truth for what works where is the [README status table](../README.md#current-status); narrate from that table, not from memory. The existing bundled recording is a real local engineering run, not evidence of a deployed backend. Do not relabel it as a hosted run.
+
+## Brief (the video is judged on this)
+
+| Requirement | What it means for this recording |
+| --- | --- |
+| Problem-led hook | Open on the gap a reviewer actually hits — a source row with no matching plot, or one lot claimed twice — before naming the product. |
+| Plain words | Say "published satellite data", not "raster ingestion"; explain *due-diligence statement* the first time it appears; one new term per screen. |
+| Real workflow, visible | Show the running application doing the work: upload → preview → confirm → findings → land evidence → supplier request → sign-off → XML. No mock-ups, no slides of the interface. |
+| Duration and pacing | 3–5 minutes. Hold each screen long enough to read a finding; cut waits rather than narrating over dead air, and caption any edited wait. |
+| Legible framing | Capture at 1440×900, browser chrome hidden, text at 100 % zoom; the window must fill the frame — no full-desktop capture where labels are unreadable. |
+| Clear voice-over | One speaker, recorded close, levels consistent; no background music under narration. |
+| Captions | A caption file timed to the final edit, matching the narration word-for-word; verify it against the exported video, not the script. |
+| Honest labels | `ENGINEERING TEST` / `ENG-` identifiers and probe-box boundaries stay visible; say out loud that the records are test inputs. |
+| No fabrication | No invented success scenes, adoption, impact numbers, model results, transactions or submissions. |
 
 ## Setup and capture
 
@@ -31,4 +45,4 @@ Optional alternate opening: use Scenario B in a different `ENG-DEMO-B` case to s
 5. Redeploy so the ephemeral filesystem is replaced, then repeat login, record and byte comparisons. Record the new deployment ID and immutable image digest/commit.
 6. Observe a natural cold wake. Show honest starting/unavailable/failed/ready UI and preserved unsaved input; no mutation replay. Do not run a keep-alive tunnel.
 
-Until all hosted checks pass, end with: "The local production image and browser workflow are verified. Cloud persistence and hosted redeployment are still awaiting verification." After they pass, replace that line with the exact measured scope, release and date, retaining the engineering-data and draft-output labels. A successful demo never proves legality, physical origin or deforestation-free status.
+Until all hosted checks pass, end with: "The local production image and the full browser workflow are verified, and the cloud persistence layer passed its live service checks. There is still no hosted backend, so this runs on a computer here." After they pass, replace that line with the exact measured scope, release and date, retaining the engineering-data and draft-output labels. A successful demo never proves legality, physical origin or deforestation-free status.
