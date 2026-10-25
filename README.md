@@ -8,8 +8,9 @@ LotHold does **not** certify sourcing, legality, deforestation-free status or ph
 
 | | |
 |---|---|
-| **Public site** | [lothold.vercel.app](https://lothold.vercel.app) — the landing page, user guide, methods, forest inspector and testnet-registry pages are live. **Sign-in, uploads, analysis and exports do not work there**: the public copy is static files with no LotHold server behind it, and the site says so on every page. |
-| **Full application** | Runs locally from this repository (see [Quick start](#quick-start)). That is where every screenshot, test and recording below comes from. |
+| **Hosted application** | [lothold.onrender.com](https://lothold.onrender.com) — the full application with its API, on a free container. Read-only checks passed on 25 October 2026: strict readiness returns 200 with `datasetsVerified: true`, health and the public method endpoint answer, unknown API paths return JSON 404s. Cold wake took about 90 s; warm responses about 1 s. ([evidence](docs/evidence/hosted-readiness.json)) **What is not yet verified there:** registering an account, uploads, analysis and exports — no account has been created on it in this pass, and it sleeps after idle periods. |
+| **Public site** | [lothold.vercel.app](https://lothold.vercel.app) — the landing page, user guide, methods, forest inspector and testnet-registry pages are live, but **this copy does not reach the hosted API yet**: its deployed routing has no `/api` proxy, so sign-in, uploads and analysis still show the "server not running" state there. |
+| **Run it locally** | [Quick start](#quick-start) — the full workflow on your machine. Every screenshot, test and recording below comes from here. |
 | **Walkthrough recording** | Bundled on the [landing page](https://lothold.vercel.app), or directly: [full recording](web/public/media/lothold-full.webm) · [short preview](web/public/media/lothold-short.webm) · [captions](web/public/media/lothold.en.vtt). Recorded on the real application with labelled engineering records. |
 | **Documentation** | [User guide](web/src/pages/Docs.tsx) (also `/docs` in the app) · [methods](docs/METHOD.md) · [verification record](docs/VERIFICATION.md) · [submission materials](docs/SUBMISSION.md) |
 
@@ -116,15 +117,16 @@ One section, so the rest of the README can stay readable:
 | Surface | Implementation | Verification | Publicly available |
 |---|---|---|---|
 | Public frontend (landing, docs, methods, inspector, registry pages) | Yes | HTTP-checked 25 Oct: `/` 200, static assets served | **Yes** — [lothold.vercel.app](https://lothold.vercel.app) |
-| Public backend (accounts, uploads, analysis, exports) | Yes (locally) | Local only | **No.** `/api/*` at the public URL returns the host's 404; the frontend shows a "server not running" state instead of failing silently |
-| Local full workflow | Yes | Verified today from a **fresh clone**: install → secrets → dataset download and hash verification → build → start → `/api/ready?strict=1` returns 200 with `datasetsVerified: true`, plus the full browser, unit/integration and contract suites | Runs on your machine |
+| Hosted backend (full app + API on a free container) | Yes | **Read-only verified 25 Oct**: `GET /api/ready?strict=1` → 200 `datasetsVerified: true` (89 s cold wake, 1.5 s warm), `/api/health` → 200, `/api/public/method` → 200 JSON, unknown `/api/*` → JSON 404. Account/upload/analysis flows **not exercised** on it in this pass | **Yes, reachable** — [lothold.onrender.com](https://lothold.onrender.com). It sleeps when idle (~90 s wake) |
+| API routing from the public site | Implemented (reviewed candidate `deploy/vercel.connected.json`) | Not applied | **No.** The deployed `vercel.json` still has no `/api` rewrite, so [lothold.vercel.app](https://lothold.vercel.app) shows the "server not running" state even though the backend answers directly |
+| Local full workflow | Yes | Verified today from a **fresh clone**: install → secrets → dataset download and hash verification → build → start → `/api/ready?strict=1` returns 200 with `datasetsVerified: true`, plus the full browser, unit/integration and contract suites ([record](docs/evidence/readme-quickstart.json)) | Runs on your machine |
 | Environmental datasets | 3 pinned tiles (Hansen loss-year + datamask, JRC 2020 forest) | Downloaded and SHA-256-verified today; independent GDAL/pyproj cross-check on 24 Oct | Local / baked into the container image |
 | Field extraction — deterministic label parser | Yes | Unit, integration and browser tests; used live during the AI verification attempt | Yes (works locally) |
 | Field extraction — live model | Adapter implemented | **Unverified.** 25 Oct attempt: provider timeout after 90 s (earlier: 503, then 429 daily quota). Fallback labelling verified live | Unverified |
 | DDS V3 XML export | Yes | Validates against the official 7-schema XSD set with a base64 round-trip check; only after sign-off; filename marked `DRAFT_NOT_SUBMITTED` | Local only |
 | Allocation registry (Sepolia) | Contract deployed | Code present on chain (re-checked 25 Oct); two-actor excess rejection, mined revert and in-app anchoring runs recorded | Testnet is public; the app's anchoring is off by default in hosted images |
-| Durable cloud checkpoint (Supabase) | Implemented | Live service verification **passed** 25 Oct ([evidence](docs/evidence/supabase-live.json)) in an isolated engineering namespace | Not attached to any public deployment |
-| Production container | Image built and measured locally | Workflow/restart/recovery checks pass at 512 MiB / 0.1 CPU, ~253 MiB peak, ~49 s to first readiness response ([evidence](docs/evidence/release/measurement.json)) | Not deployed to a provider |
+| Durable cloud checkpoint (Supabase) | Implemented | Live service verification **passed** 25 Oct ([evidence](docs/evidence/supabase-live.json)) in an isolated engineering namespace, extended with direct SQL guard checks | Configured for the hosted service (`render.yaml` sets `DURABLE_STORE=supabase`); whether the running instance is publishing checkpoints has **not** been verified here |
+| Production container | Image built and measured locally | Workflow/restart/recovery checks pass at 512 MiB / 0.1 CPU, ~253 MiB peak, ~49 s to first readiness response ([evidence](docs/evidence/release/measurement.json)) | **Yes** — a container of this image serves [lothold.onrender.com](https://lothold.onrender.com) (read-only checked 25 Oct) |
 | Real commercial shipment | — | **None processed.** Workspace starts empty | — |
 
 Current test results for this commit, on Windows 11 with Node v24.13.1: **typecheck 0 errors · 123 unit/integration tests · 18 contract tests · 23 browser tests · all documentation links resolve** ([unit evidence](docs/evidence/submission-unit.json) · [browser evidence](docs/evidence/submission-browser.json) · [full record](docs/VERIFICATION.md)).
@@ -157,7 +159,7 @@ npm run setup                     # creates .env with two random keys
 npm run data:fetch     # ~431 MB download, then SHA-256 verification of all three tiles
 ```
 
-Files land in `data/snapshots/` (git-ignored). The download took about 7½ minutes on the verification machine; each file is checked against a pinned SHA-256 and the command exits non-zero on any mismatch. Re-check later with `npm run data:verify` (a few seconds of hashing, no download).
+Files land in `data/snapshots/` (git-ignored). The download took 7½–11 minutes across two verification runs on the same machine; each file is checked against a pinned SHA-256 and the command exits non-zero on any mismatch. Re-check later with `npm run data:verify` (a few seconds of hashing, no download).
 
 ### 4. Run the application
 
@@ -182,6 +184,7 @@ curl "http://127.0.0.1:8787/api/ready?strict=1"
 | `npm start` serves the API but pages 404 | `npm run build` has not been run, so `dist/` is missing |
 | `datasetsVerified: false`, analysis shows *Unavailable* | Step 3 was skipped or a file failed its hash — re-run `npm run data:fetch` |
 | `EADDRINUSE` on 8787 | Another process holds the port; set `PORT=8788` in `.env` |
+| The log says `startup.ready` but `127.0.0.1:8787` refuses connections | `PORT` is exported in your shell (check `echo "$PORT"`) — an inherited value such as `0` binds a random port. Start with `env -u PORT npm start`, or set an explicit `PORT` in `.env` |
 | Node error mentioning `sqlite` or TypeScript syntax | Node older than 24 |
 
 ### 5. Development mode (optional)
@@ -389,7 +392,12 @@ Intentional skips: without Foundry, `npm run verify` skips the contract step and
 
 ## Deployment and persistence
 
-**Deployed today:** the static frontend at [lothold.vercel.app](https://lothold.vercel.app) (landing, user guide, methods, inspector page, registry page, bundled recording). It has no backend; `/api/*` there returns the host's 404 and the interface says the server is not running.
+**Deployed today (25 October 2026):**
+
+- [lothold.onrender.com](https://lothold.onrender.com) — the complete application (built frontend + API + worker) on one free Docker container, with the pinned rasters baked into the image. Read-only checks pass: strict readiness reports `datasetsVerified: true`, health answers, unknown API paths return JSON 404s. Cold wake about 90 s after idle, warm responses about 1 s ([evidence](docs/evidence/hosted-readiness.json)). Registration, uploads, analysis and exports on this origin have **not** been exercised yet, and the free plan sleeps when idle.
+- [lothold.vercel.app](https://lothold.vercel.app) — the static frontend. Its deployed routing has no `/api` proxy yet, so it still shows the "server not running" state. A reviewed candidate that routes `/api/:path*` to the hosted backend sits in [`deploy/vercel.connected.json`](deploy/vercel.connected.json); applying it is a one-file change that needs the owner's go-ahead.
+
+Vercel's static hosting cannot run this backend by itself: it needs Node 24, a writable database, encrypted files and 431 MB of rasters. The container above provides those.
 
 **The supported production shape** is one long-running container with persistent storage — details and platform notes in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md):
 
@@ -397,10 +405,8 @@ Intentional skips: without Foundry, `npm run verify` skips the contract step and
 - **Persistence.** A `/data` volume for `lothold.sqlite`, `evidence/` and `snapshots/`. Back up with `npm run backup`; restore is covered by an integration test that checks evidence decrypts byte for byte.
 - **HTTPS and cookies.** Production cookies are `Secure`; set `NODE_ENV=production`, terminate TLS in front, and configure `PUBLIC_ORIGIN` plus `TRUST_PROXY*` for the actual proxy depth.
 - **Health checks.** `/api/health` for liveness; `/api/ready?strict=1` for readiness (fails when the rasters are not hash-verified).
-- **Prepared pilot hosting** (not yet deployed): one Render Free Docker web service + the Vercel frontend proxying `/api`, with encrypted Supabase checkpoints for durability ([setup](docs/FREE_HOSTING_SETUP.md) · [handoff](docs/RENDER_PUBLISH_HANDOFF.md) · [protocol](docs/CHECKPOINT_PROTOCOL.md)). The Supabase pieces were verified live against real services on 25 October; the Render service itself has not been created — publishing needs an explicit go-ahead.
+- **Pilot hosting** ([setup](docs/FREE_HOSTING_SETUP.md) · [handoff](docs/RENDER_PUBLISH_HANDOFF.md) · [protocol](docs/CHECKPOINT_PROTOCOL.md)): the Render Free Docker web service now exists and answers read-only checks; the Supabase checkpoint layer passed its live service verification on 25 October (isolated engineering namespace, later extended with direct SQL guard checks). Still outstanding: routing `/api` from the Vercel frontend to it, and a hosted end-to-end acceptance pass (register → upload → analyse → export → restart → redeploy) with recorded evidence.
 - **Compose alternative:** [deploy/compose.yaml](deploy/compose.yaml) + Caddy for a single HTTPS origin, built and exercised locally including restart and forced-recreate persistence ([evidence](docs/evidence/compose-verification.json)).
-
-Vercel's static hosting cannot run this backend: it needs Node 24, a writable database, encrypted files and 431 MB of rasters.
 
 ## Security, privacy and limitations
 
@@ -441,7 +447,7 @@ Built for the **Sustainable Supply Chains track** of the IEEE ClimateChain Globa
 
 **Outstanding, honestly:**
 
-- A hosted backend — prepared and locally validated, not deployed (needs an explicit go-ahead and a hosting account).
+- Hosted end-to-end acceptance — the backend is live and answers read-only checks; nobody has yet driven register → upload → analyse → export against it and recorded the result, and the public site still does not route `/api` to it.
 - Live model extraction — blocked on provider availability; the deterministic fallback is what ships today.
 - A permissioned pilot with a real exporter's anonymised records.
 - Evaluation with real compliance reviewers.
