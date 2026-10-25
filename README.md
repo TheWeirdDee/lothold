@@ -66,9 +66,9 @@ The landing page's **Product walkthrough** shows "Demo video coming soon" until 
 
 ```bash
 npm run typecheck        # TypeScript (tsc 7) over server, core, web, scripts, tests
-npm test                 # vitest: unit + integration (85 tests; includes real-raster, backup/restore and Anvil chain tests)
+npm test                 # vitest: unit + integration (93 tests; 4 need Foundry's Anvil and are skipped without it)
 npm run test:contracts   # forge: 18 contract tests incl. 512-run fuzz (first: cd contracts && forge install foundry-rs/forge-std --no-git)
-npm run test:e2e         # Playwright (Chrome): 15 browser tests (journeys, accessibility, demo video) on a throwaway database
+npm run test:e2e         # Playwright (Chrome): 16 browser tests (journeys, accessibility, demo video, server-unavailable state) on a throwaway database
 npm run data:verify      # re-hashes the raster snapshots against the pinned SHA-256 values
 python scripts/gis-crosscheck.py   # independent GDAL/pyproj recomputation (pip install rasterio pyproj shapely numpy)
 ```
@@ -88,6 +88,7 @@ Results, scope and what each layer does and does not prove are listed in [docs/V
 - [Independent audit guide and engineering test kit](docs/AUDIT_GUIDE.md)
 - [Landing demo video configuration](docs/DEMO_VIDEO.md)
 - [Accessibility record](docs/ACCESSIBILITY.md)
+- [Response to the independent audit (24 Oct 2026)](docs/AUDIT_RESPONSE.md)
 - [Deployment plan, costs, backup and recovery](docs/DEPLOYMENT.md)
 - [Hackathon submission materials and recording script](docs/SUBMISSION.md)
 
