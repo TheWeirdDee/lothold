@@ -13,7 +13,7 @@ export default defineConfig({
     acceptDownloads: true,
   },
   webServer: {
-    command: 'npm run build && node scripts/e2e-server.ts',
+    command: 'npm run build && npm run build:server && node scripts/e2e-server.ts --bundled',
     url: 'http://127.0.0.1:8798/api/ready',
     timeout: 180_000,
     reuseExistingServer: false,
