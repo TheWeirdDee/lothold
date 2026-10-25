@@ -2,6 +2,8 @@
 
 **Latest full run: 25 October 2026**, Windows 11, Node v24.13.1, pnpm 11.5.0, Chrome (Playwright `chrome` channel), Foundry 1.8.6.
 
+Latest post-routing browser run: **23/23 passed together in 4.3 minutes**, no retries/skips, against the local compiled backend ([report](evidence/connected-browser.json)); hosted workflow/recovery probes are recorded separately. No isolated results were merged into this count.
+
 | Command | Result (25 Oct 2026) | Machine-readable record |
 |---|---|---|
 | `npm run typecheck` | 0 errors (TypeScript 7, strict) | — |
@@ -12,8 +14,8 @@
 | Fresh-clone walkthrough | separate checkout: `pnpm install --frozen-lockfile` → `npm run setup` → `npm run data:fetch` (3/3 SHA-256, ~431 MB) → `npm run build` → `npm start` → `/api/ready?strict=1` returned 200 with `datasetsVerified: true` | performed 25 October 2026 |
 | Live AI verification attempt | **still unverified**: provider timeout after 90 s (earlier attempts: 503, then 429 daily quota). Deterministic fallback verified live again | `docs/evidence/ai-live-verification.json` |
 | Sepolia contract re-check | code present at `0x1645604d915c55cfd61cf1492ad58ab5e4150b57` (`eth_getCode`, block 11991100) | `docs/CHAIN.md` |
-| Public site check | `https://lothold.vercel.app/` 200 (static frontend); `/api/ready` → Vercel 404 (the deployed routing has no `/api` proxy) | [EXPERIENCE_HOSTING.md](EXPERIENCE_HOSTING.md) |
-| Hosted backend check (read-only) | `https://lothold.onrender.com/api/ready?strict=1` → 200 `datasetsVerified: true` (89 s cold wake, 1.5 s warm); `/api/health` → 200; `/api/public/method` → 200 JSON; unknown `/api/*` → JSON 404. No account created, no mutation sent | `docs/evidence/hosted-readiness.json` |
+| Public site connection | Vercel `/api/ready?strict=1` returns 200 through the published Render rewrite (`4a9c877`); authenticated browser session and saved case visible | `docs/evidence/hosted-workflow.json` |
+| Hosted workflow and restart | 17 API workflow checks; browser login/session, review PDF and unsigned XML refusal; 10 checks after user-reported Render restart, including byte-identical PDF/evidence. 10 recovery checks also passed after a separately reported replacement redeployment | `docs/evidence/hosted-workflow.json` |
 | Fresh-clone README walk-through | clone → install → setup → data:fetch (3/3 pins) → build → start → strict readiness 200 → 123 tests → 23 browser tests → `docs:check` pass | `docs/evidence/readme-quickstart.json` |
 
 ## Commands and results (24 October 2026 run)
