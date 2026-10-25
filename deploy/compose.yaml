@@ -1,0 +1,47 @@
+# Run from the repository root. Requires a DNS name and deploy/hosting.env.
+# This file creates no cloud account or paid resource. Keep one app instance.
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    env_file: hosting.env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8787
+      DATABASE_PATH: /data/lothold.sqlite
+      EVIDENCE_DIR: /data/evidence
+      DATA_DIR: /data/snapshots
+      TRUST_PROXY: 'true'
+      TRUST_PROXY_HEADER: ''
+      CHAIN_ANCHORING: 'off'
+    volumes:
+      - lothold_data:/data
+    expose:
+      - '8787'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:8787/api/ready?strict=1').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      LOTHOLD_HOST: ${LOTHOLD_HOST:?Set LOTHOLD_HOST in deploy/hosting.env}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile.container:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+volumes:
+  lothold_data:
+  caddy_data:
+  caddy_config:
