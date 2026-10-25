@@ -8,7 +8,8 @@ export function Workspace() {
   const { user } = useAuth();
   const toast = useToast();
   const nav = useNavigate();
-  const { data, error, loading, reload } = useAsync(() => api<{ shipments: any[] }>('GET', '/api/shipments'), []);
+  const [pageSize, setPageSize] = useState(50);
+  const { data, error, loading, reload } = useAsync(() => api<{ shipments: any[]; total: number }>('GET', `/api/shipments?limit=${pageSize}`), [pageSize]);
   const [ref, setRef] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -98,6 +99,7 @@ export function Workspace() {
         </div>
       )}
       {rows.length > 0 && (
+        <>
         <TableWrap>
           <table className="data">
             <thead>
@@ -137,6 +139,15 @@ export function Workspace() {
             </tbody>
           </table>
         </TableWrap>
+        {data && data.total > rows.length && (
+          <p className="small muted" style={{ marginTop: 10 }}>
+            Showing the newest {rows.length} of {data.total} cases.{' '}
+            <button className="linkbtn" onClick={() => setPageSize((n) => Math.min(n + 50, 200))} disabled={pageSize >= 200}>
+              Show more
+            </button>
+          </p>
+        )}
+        </>
       )}
     </div>
   );
