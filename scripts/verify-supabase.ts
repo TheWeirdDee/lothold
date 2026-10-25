@@ -29,7 +29,10 @@ const memory:CheckpointTransport={ async claim(owner){row={...row,owner};return 
 const transport=live?supabaseTransport(process.env.SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!,bucket,namespace):memory;
 const keys:string[]=[],sizes:number[]=[],dbs:DB[]=[],checks:{name:string;pass:boolean}[]=[];
 let downloaded=0;
-const measured:CheckpointTransport={...transport,async put(k,b){keys.push(k);sizes.push(b.length);await transport.put(k,b);},async read(k){const b=await transport.read(k);downloaded+=b.length;return b;}};
+const operations:{operation:string;ms:number;pass:boolean}[]=[];
+let stage='initial RPC claim/recovery'; let failureStage:string|null=null; let failureHttpStatus:number|null=null;
+async function measure<T>(operation:string,run:()=>Promise<T>):Promise<T>{const t=performance.now();try{const value=await run();operations.push({operation,ms:Math.round(performance.now()-t),pass:true});return value;}catch(e){operations.push({operation,ms:Math.round(performance.now()-t),pass:false});failureStage=operation;const matched=/HTTP (\d{3})/.exec(e instanceof Error?e.message:'');failureHttpStatus=matched?Number(matched[1]):null;throw e;}}
+const measured:CheckpointTransport={...transport,claim:owner=>measure('RPC claim',()=>transport.claim(owner)),status:()=>measure('RPC status',()=>transport.status()),commit:(...args)=>measure('RPC conditional commit',()=>transport.commit(...args)),async put(k,b){keys.push(k);sizes.push(b.length);await measure('private immutable upload',()=>transport.put(k,b));},async read(k){const b=await measure('private checkpoint download',()=>transport.read(k));downloaded+=b.length;return b;}};
 const check=(name:string,pass:boolean)=>{checks.push({name,pass});if(!pass)throw new Error(name);};
 async function instance(){const store=new DurableCheckpoint(measured,namespace,join(dir,randomUUID()+'.sqlite'));await store.restore();const db=openDb(store.path);dbs.push(db);store.attach(db);await store.flush();return {db,store,app:createApp(db,{durability:store})};}
 let outcome='failed';
@@ -52,24 +55,33 @@ try {
  const doc=get<{org_id:string;storage_key:string;sha256:string}>(d.db,'SELECT s.org_id,d.storage_key,d.sha256 FROM documents d JOIN shipments s ON s.id=d.shipment_id WHERE d.id=?',pdf.json.id)!;
  check('stored PDF decrypts and hashes correctly',createHash('sha256').update(readBytes(doc.org_id,doc.storage_key,d.db)).digest('hex')===doc.sha256);
  if(live){
+  stage='private bucket and anon permission checks';
   const headers={apikey:process.env.SUPABASE_ANON_KEY!,authorization:`Bearer ${process.env.SUPABASE_ANON_KEY!}`};
   const base=process.env.SUPABASE_URL!;
+  const serviceHeaders={apikey:process.env.SUPABASE_SERVICE_ROLE_KEY!,authorization:`Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`};
+  const settings=await fetch(`${base}/auth/v1/settings`,{headers,signal:AbortSignal.timeout(15000)});
+  check('anon key is accepted by this project',settings.ok);
+  const meta=await fetch(`${base}/storage/v1/bucket/${encodeURIComponent(bucket)}`,{headers:serviceHeaders,signal:AbortSignal.timeout(15000)});
+  check('bucket metadata readable by service role',meta.ok);
+  const bucketInfo=await meta.json();check('configured bucket is private',bucketInfo.public===false);
+  check('bucket permits bounded encrypted checkpoints',Number(bucketInfo.file_size_limit)>=32*1024*1024+32);
+
   const denied=await fetch(`${base}/rest/v1/rpc/lothold_claim`,{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({p_namespace:namespace,p_owner:randomUUID()}),signal:AbortSignal.timeout(15000)});
-  check('anon cannot claim checkpoint',!denied.ok);
+  check('anon cannot claim checkpoint',[401,403,404].includes(denied.status));
   const table=await fetch(`${base}/rest/v1/lothold_checkpoint?namespace=eq.${namespace}`,{headers,signal:AbortSignal.timeout(15000)});
-  check('anon cannot read checkpoint row',!table.ok || JSON.stringify(await table.json())==='[]');
+  check('anon cannot read checkpoint row',[401,403].includes(table.status) || (table.ok && JSON.stringify(await table.json())==='[]'));
   const pointer=await transport.status(); const path=`${encodeURIComponent(bucket)}/${pointer.object_key!.split('/').map(encodeURIComponent).join('/')}`;
-  for(const [name,route,auth] of [['anonymous','public',{}],['anon-key','authenticated',headers]] as const){
-   const r=await fetch(`${base}/storage/v1/object/${route}/${path}`,{headers:auth,signal:AbortSignal.timeout(15000)});check(`${name} cannot download private snapshot`,!r.ok);
+  for(const [name,route,auth] of [['anonymous','public',{}],['anon-key','',headers]] as const){
+   const r=await fetch(`${base}/storage/v1/object/${route?route+'/':''}${path}`,{headers:auth,signal:AbortSignal.timeout(15000)});check(`${name} cannot download private snapshot`,[400,401,403,404].includes(r.status));
   }
  }
  outcome='passed';
-} catch { console.error('Engineering verification failed; inspect named checks. No credentials logged.'); }
+} catch { failureStage ??= stage; console.error('Engineering verification failed; inspect named checks/operations. No credentials logged.'); }
 finally {
  dbs.forEach(db=>db.close());
  let cleanup='not external';
- if(live){try{for(const key of keys)await transport.remove(key);const r=await fetch(`${process.env.SUPABASE_URL}/rest/v1/lothold_checkpoint?namespace=eq.${namespace}`,{method:'DELETE',headers:{apikey:process.env.SUPABASE_SERVICE_ROLE_KEY!,authorization:`Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`},signal:AbortSignal.timeout(15000)});cleanup=r.ok?'isolated namespace removed':'manual cleanup required';}catch{cleanup='manual cleanup required';}}
+ if(live){try{for(const key of keys)await transport.remove(key);const r=await fetch(`${process.env.SUPABASE_URL}/rest/v1/lothold_checkpoint?namespace=eq.${namespace}`,{method:'DELETE',headers:{apikey:process.env.SUPABASE_SERVICE_ROLE_KEY!,authorization:`Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`},signal:AbortSignal.timeout(15000)});cleanup=r.ok?'isolated namespace removed':r.status===404&&keys.length===0&&failureHttpStatus===404?'claim RPC missing; no checkpoints uploaded':'manual cleanup required';}catch{cleanup='manual cleanup required';}}
  const last=sizes.at(-1)??0;
- writeFileSync(reportPath,JSON.stringify({status:outcome,liveVerified:live&&outcome==='passed',scope:live?'actual Supabase services; isolated engineering namespace':'LOCAL PROTOCOL DOUBLE; size/usage measurement only',namespace,checks,checkpointCount:sizes.length,encryptedCheckpointBytes:sizes,totalUploadedBytes:sizes.reduce((a,b)=>a+b,0),totalReadBackAndRestoreBytes:downloaded,retainedTwoSnapshotsBytes:2*last,cleanup},null,2));
+ writeFileSync(reportPath,JSON.stringify({status:outcome,liveVerified:live&&outcome==='passed',scope:live?'actual Supabase services; isolated engineering namespace':'LOCAL PROTOCOL DOUBLE; size/usage measurement only',namespace,checks,operations,failureStage,failureHttpStatus,checkpointCount:sizes.length,encryptedCheckpointBytes:sizes,totalUploadedBytes:sizes.reduce((a,b)=>a+b,0),totalReadBackAndRestoreBytes:downloaded,retainedTwoSnapshotsBytes:2*last,cleanup},null,2));
 }
 if(outcome!=='passed')process.exitCode=1;
