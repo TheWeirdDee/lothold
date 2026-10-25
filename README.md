@@ -60,7 +60,7 @@ Public pages need no login: **Inspect forest evidence** (runs the real analysis 
 
 `/test-kit` offers ten downloadable, clearly labelled engineering-test files (`ENGINEERING_TEST_*`, identifiers `ENG-KIT-…`, plot shapes that are coordinate probe boxes, not farms). They cover three scenarios: a complete case through sign-off and XML; deliberate data and geometry errors with corrections; and one source lot over-allocated across two cases. [docs/AUDIT_GUIDE.md](docs/AUDIT_GUIDE.md) gives the steps and expected results, and `tests/integration/test-kit.test.ts` checks those results on every run.
 
-The landing page's **Product walkthrough** shows "Demo video coming soon" until a real recording is configured with `DEMO_VIDEO_URL` (YouTube, Vimeo, or an MP4/WebM file). See [docs/DEMO_VIDEO.md](docs/DEMO_VIDEO.md).
+The landing page?s **Product walkthrough** ships a real recording of an isolated engineering instance, a short muted preview, a poster, captions and a transcript. These static files work independently of the API. See [docs/DEMO_VIDEO.md](docs/DEMO_VIDEO.md). Public `/docs` and `/method` also work without the backend. [Connection diagnosis and prepared persistent hosting](docs/EXPERIENCE_HOSTING.md) records the remaining deployment work.
 
 ## Verify
 
@@ -68,7 +68,7 @@ The landing page's **Product walkthrough** shows "Demo video coming soon" until 
 npm run typecheck        # TypeScript (tsc 7) over server, core, web, scripts, tests
 npm test                 # vitest: unit + integration (110 tests; 4 need Foundry's Anvil and are skipped without it)
 npm run test:contracts   # forge: 18 contract tests incl. 512-run fuzz (first: cd contracts && forge install foundry-rs/forge-std --no-git)
-npm run test:e2e         # Playwright (Chrome): 16 browser tests (journeys, accessibility, demo video, server-unavailable state) on a throwaway database
+npm run test:e2e         # Playwright (Chrome): 19 browser tests (journeys, accessibility, recorded walkthrough, mobile navigation, FAQ, cross-device login, no-API public pages) on a throwaway database
 npm run data:verify      # re-hashes the raster snapshots against the pinned SHA-256 values
 python scripts/gis-crosscheck.py   # independent GDAL/pyproj recomputation (pip install rasterio pyproj shapely numpy)
 ```
