@@ -1,6 +1,6 @@
 # Bounded checkpoint protocol and guarantees
 
-This is a single-writer, whole-SQLite checkpoint protocol, not a live hosted relational database, distributed transaction manager, or replicated database service. It is limited to small engineering workspaces. Supabase SQL and private object behavior remain unverified until `scripts/verify-supabase.ts --live` passes against an actual project.
+This is a single-writer, whole-SQLite checkpoint protocol, not a live hosted relational database, distributed transaction manager, or replicated database service. It is limited to small engineering workspaces. Supabase SQL/private object behavior passed 22 isolated live-service checks on 25 October 2026; see docs/evidence/supabase-live.json. This does not validate a hosted application or its redeployment lifecycle.
 
 ## Recovery and publication
 
@@ -18,7 +18,7 @@ This is a single-writer, whole-SQLite checkpoint protocol, not a live hosted rel
 - A new owner can interrupt the old deployment during upload. Its conditional commit must fail. An old process may continue local computation, but cannot publish a checkpoint under the new owner's revision. A failed new deployment can leave the older service fenced and unavailable; the operator must recover/redeploy with the original keys.
 - Reads, authentication, hashing/encryption and snapshot creation still cost CPU. Raster decoding is isolated in a child process; this does not guarantee unlimited concurrency or bound every PDF, SQLite, password hashing or provider request latency.
 - No multi-region or multi-writer use. An operator with service-role access can replace pointers or delete storage; cryptographic integrity does not prevent an authorized rollback to a previously valid snapshot. No anti-rollback promise across compromised administrative credentials.
-- Storage upload plus pointer commit is not one distributed transaction: publication is conditional, while object orphans are possible. Provider acknowledgement/durability and row/object permissions must be tested live. Two retained objects are not an independent disaster-recovery backup.
+- Storage upload plus pointer commit is not one distributed transaction: publication is conditional, while object orphans are possible. Row/object permissions and acknowledged upload/read-back were tested live; long-term provider durability, outage handling and hosted operation are not established by that run. Two retained objects are not an independent disaster-recovery backup.
 - Restore validates all evidence; publication checks references. Immutable evidence bytes are encrypted by organization as well as by the outer database checkpoint. Both keys and an independent encrypted backup require secure continuity.
 
 ## Evidence
