@@ -15,4 +15,5 @@ process.env.REGISTER_RATE_LIMIT = '1000';
 process.env.CHAIN_ANCHORING = 'off';
 process.env.LOTHOLD_INSTANCE = 'engineering';
 delete process.env.AI_PROVIDER;
-await import('../server/main.ts');
+if (process.argv.includes('--bundled')) await import(new URL('../server-dist/bootstrap.mjs', import.meta.url).href);
+else await import('../server/main.ts');
