@@ -3,9 +3,11 @@ import { Link, useParams, useSearchParams } from 'react-router';
 import { api, fmtDate } from '../api.ts';
 import { Badge, DIM_LABEL, OVERALL, SeverityBadge, tabKeys, useToast } from '../components/ui.tsx';
 import { DetailsTab, SourcesTab, PlotsTab, AllocationTab, DocumentsTab, ActivityTab, ReviewDialog, LotCorrectionDialog, SignOff } from './DeskParts.tsx';
+import { refText, refToFocus, type Focus } from '../refs.ts';
 
 export type View = any;
-export type Focus = { tab: string; row?: number; column?: string; featureIndex?: number; plotRef?: string; field?: string } | null;
+export type { Focus };
+export { refText, refToFocus };
 
 const TABS = [
   ['review', 'Findings'],
@@ -162,23 +164,6 @@ export function ShipmentDesk() {
       />
     </div>
   );
-}
-
-export function refToFocus(ref: any): Focus {
-  if (ref.kind === 'sources_csv') return { tab: 'sources', row: ref.row, column: ref.column };
-  if (ref.kind === 'plots_geojson') return { tab: 'plots', featureIndex: ref.featureIndex, plotRef: ref.plotRef };
-  if (ref.kind === 'environment') return { tab: 'plots', plotRef: ref.plotRef };
-  if (ref.kind === 'shipment_field') return { tab: 'details', field: ref.field };
-  if (ref.kind === 'ledger') return { tab: 'allocation' };
-  return null;
-}
-
-export function refText(ref: any): string {
-  if (ref.kind === 'sources_csv') return ref.row ? `${ref.filename ?? 'source table'} · row ${ref.row}${ref.column ? ` · ${ref.column}` : ''}` : 'Upload a source table';
-  if (ref.kind === 'plots_geojson') return ref.featureIndex !== undefined ? `${ref.filename ?? 'plot file'} · feature ${ref.featureIndex + 1}${ref.plotRef ? ` (${ref.plotRef})` : ''}` : 'Upload a plot file';
-  if (ref.kind === 'environment') return `Land evidence for ${ref.plotRef}`;
-  if (ref.kind === 'shipment_field') return `Field: ${ref.field}${ref.filename ? ` (from ${ref.filename})` : ''}`;
-  return 'Allocation ledger';
 }
 
 function FindingsTab({ view, goTo, onReview, onCorrect, reload }: { view: View; goTo: (f: Focus) => void; onReview: (k: string) => void; onCorrect: (k: string) => void; reload: () => Promise<unknown> }) {
