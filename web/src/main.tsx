@@ -8,8 +8,8 @@ document.documentElement.classList.add('js');
 import { StrictMode, createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
-import { api, setCsrf } from './api.ts';
-import { Logo, ToastProvider } from './components/ui.tsx';
+import { api, isBackendUnavailable, setCsrf } from './api.ts';
+import { Logo, ToastProvider, useToast } from './components/ui.tsx';
 import { MethodPage, VerifyPage, InspectPage } from './pages/Public.tsx';
 import { Landing } from './pages/Landing.tsx';
 import { TestKitPage } from './pages/TestKit.tsx';
@@ -18,37 +18,58 @@ import { Workspace } from './pages/Workspace.tsx';
 import { ShipmentDesk } from './pages/Shipment.tsx';
 
 export type User = { id: string; email: string; name: string; organisation: string; role: string; chainEnabled: boolean };
-type AuthState = { user: User | null; loading: boolean; refresh: () => Promise<void>; logout: () => Promise<void> };
-const AuthCtx = createContext<AuthState>({ user: null, loading: true, refresh: async () => {}, logout: async () => {} });
+// `unavailable` means the session could not be checked (server unreachable); it is not the same as signed out.
+type AuthState = { user: User | null; loading: boolean; unavailable: string | null; refresh: () => Promise<void>; logout: () => Promise<void> };
+const AuthCtx = createContext<AuthState>({ user: null, loading: true, unavailable: null, refresh: async () => {}, logout: async () => {} });
 export const useAuth = () => useContext(AuthCtx);
 
 function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState<string | null>(null);
   const refresh = useCallback(async () => {
     try {
       const r = await api<{ user: User | null; csrf?: string }>('GET', '/api/auth/me');
       setUser(r.user);
       setCsrf(r.csrf ?? null);
-    } catch {
+      setUnavailable(null);
+    } catch (e) {
       setUser(null);
+      setUnavailable((e as Error).message);
     } finally {
       setLoading(false);
     }
   }, []);
+  // Local state is cleared only when the server confirms the session ended; otherwise the error is reported.
   const logout = useCallback(async () => {
-    await api('POST', '/api/auth/logout').catch(() => {});
+    await api('POST', '/api/auth/logout');
     setCsrf(null);
     setUser(null);
   }, []);
   useEffect(() => {
     void refresh();
   }, [refresh]);
-  return <AuthCtx.Provider value={{ user, loading, refresh, logout }}>{children}</AuthCtx.Provider>;
+  return <AuthCtx.Provider value={{ user, loading, unavailable, refresh, logout }}>{children}</AuthCtx.Provider>;
+}
+
+/** Shown when this site cannot reach the LotHold server (for example a static-only deployment). */
+function BackendNotice() {
+  const [down, setDown] = useState(false);
+  useEffect(() => {
+    api('GET', '/api/health').catch((e) => setDown(isBackendUnavailable(e)));
+  }, []);
+  if (!down) return null;
+  return (
+    <div className="backend-notice" role="status">
+      <strong>The LotHold server is not running at this address.</strong> This site shows the interface only: sign-in, uploads, forest analysis and the registry need the server (API, database and forest datasets). Run it locally by following the{' '}
+      <a href="https://github.com/TheWeirdDee/lothold#run-it-locally">README</a>.
+    </div>
+  );
 }
 
 function Shell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const loc = useLocation();
   const nav = useNavigate();
@@ -97,8 +118,12 @@ function Shell({ children }: { children: ReactNode }) {
               <button
                 className="linkbtn"
                 onClick={async () => {
-                  await logout();
-                  nav('/');
+                  try {
+                    await logout();
+                    nav('/');
+                  } catch (e) {
+                    toast(`Sign-out could not be confirmed by the server: ${(e as Error).message}`, 'error');
+                  }
                 }}
               >
                 Sign out
@@ -117,6 +142,7 @@ function Shell({ children }: { children: ReactNode }) {
           )}
         </nav>
       </header>
+      <BackendNotice />
       <main id="main" tabIndex={-1} style={{ outline: 'none' }}>
         {children}
       </main>
@@ -157,9 +183,20 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, unavailable, refresh } = useAuth();
   const loc = useLocation();
   if (loading) return <div className="page">Checking your session…</div>;
+  if (!user && unavailable)
+    return (
+      <div className="page narrow">
+        <h1>Your session could not be checked</h1>
+        <p role="alert">{unavailable}</p>
+        <p>You may still be signed in. Nothing was changed.</p>
+        <button className="btn" onClick={() => void refresh()}>
+          Try again
+        </button>
+      </div>
+    );
   if (!user) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname)}`} replace />;
   return <>{children}</>;
 }
