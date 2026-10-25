@@ -3,7 +3,6 @@
 // The XML contains only official elements. Draft status lives in the filename and the sidecar manifest,
 // never inside the official envelope. No reference or verification numbers are ever produced.
 import { readFileSync } from 'node:fs';
-import { validateXML } from 'xmllint-wasm';
 import { gramsToKgDecimal } from '../../core/quantity.ts';
 import { SUPPORTED_PRODUCT } from '../../core/reference.ts';
 
@@ -67,7 +66,7 @@ ${producers}
 export type XsdValidation = { valid: boolean; schema: string; errors: string[]; validator: string; validatedAt: string };
 
 export async function validateDdsXml(xml: string): Promise<XsdValidation> {
-  const r = await validateXML({
+  const r = await (await import('xmllint-wasm')).validateXML({
     xml: [{ fileName: 'dds.xml', contents: xml }],
     schema: [read('eudr-dds-v3.xsd')],
     preload: [read('eudr-common-v3.xsd'), read('tracesnt-error-v01.xsd'), read('uncefact-udt-21.xsd')],
