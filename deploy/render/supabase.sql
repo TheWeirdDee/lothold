@@ -36,7 +36,7 @@ declare r public.lothold_checkpoint; discarded text;
 begin
   select * into r from public.lothold_checkpoint where namespace = p_namespace for update;
   if not found or r.owner <> p_owner or r.revision <> p_revision then raise exception 'writer fenced or revision changed'; end if;
-  if p_object_key not like p_namespace || '/%' or p_sha256 !~ '^[0-9a-f]{64}$' then raise exception 'invalid checkpoint'; end if;
+  if left(p_object_key, length(p_namespace)+1) <> p_namespace || '/' or p_sha256 !~ '^[0-9a-f]{64}$' then raise exception 'invalid checkpoint'; end if;
   discarded := r.previous_key;
   update public.lothold_checkpoint set previous_key = object_key, object_key = p_object_key,
     sha256 = p_sha256, revision = revision + 1, updated_at = now()
