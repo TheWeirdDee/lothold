@@ -1,6 +1,6 @@
 # Environmental interpretation method
 
-Implementation: `server/env/forest.ts` (method version `forest-analysis/2026-10-25.1`).
+Implementation: `server/env/forest.ts` (method version `forest-analysis/2026-10-25.2`).
 
 ## Inputs
 
@@ -11,7 +11,7 @@ Implementation: `server/env/forest.ts` (method version `forest-analysis/2026-10-
 
 1. **CRS and grid checks.** The raster must declare EPSG:4326, PixelIsArea, origin (−10°, 10°) and the expected resolution; otherwise it is refused. GeoJSON is already EPSG:4326, so no reprojection is performed. Files that declare any other CRS are rejected at upload with a request to convert them.
 2. **Coverage.** A plot whose bounding box lies outside lon −10…0, lat 0…10 is `PLOT_OUTSIDE_COVERAGE`. A plot extending beyond the tile, or containing Hansen no-data pixels, cannot be `NO_POST_2020_LOSS_OBSERVED`.
-3. **Sampling.** Every 30 m Hansen pixel whose centre lies inside the polygon is sampled. The polygon is treated as a closed set: a centre on the boundary (within 1e-10°) counts as inside, so edge cases are deterministic. A point plot, or a polygon too small to contain a pixel centre, samples the single pixel containing the point or centroid, and `sampling` records which rule applied.
+3. **Sampling.** Every 30 m Hansen pixel whose centre lies inside the polygon is sampled. The polygon is treated as a closed set: a centre on the boundary (within 1e-10°) counts as inside, so edge cases are deterministic. A point plot samples the single pixel containing the point. A polygon too small to contain a pixel centre samples the pixel containing a point guaranteed to lie inside each of its parts (the midpoint of the widest interior span, never the vertex mean, which can fall outside a concave plot); if no such point can be placed, the result is `UNAVAILABLE`. `sampling` records which rule applied. MultiPolygon parts that overlap or repeat each other are rejected (`multipolygon_overlap`), so the reported area matches the sampled land.
 4. **Per-pixel reading.** Datamask (0 no data, 1 land, 2 water); loss year (0 none, n = 2000+n); and the 9 JRC sub-pixels nested in it (count of forest = 1).
 5. **Area.** Exact WGS 84 ellipsoidal area of each lon/lat cell, `a²/2 · Δλ · (q(φ₂) − q(φ₁))` (Snyder's authalic q). Polygon areas use the authalic-latitude mapping of WGS 84. Pixel-count totals remain approximations of mapped extent (UMD usage note), not statistically valid area estimates.
 6. **Classification** (shown on the map):
