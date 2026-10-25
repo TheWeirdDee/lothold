@@ -173,7 +173,7 @@ export function handleUpload(db: DB, user: SessionUser, shipmentId: string, kind
     if (r.ok) { status = 'parsed'; parsed = r; } else { status = 'rejected'; error = r.error; }
   }
   const uploadId = id();
-  const storageKey = storeBytes(user.orgId, bytes);
+  const storageKey = storeBytes(user.orgId, bytes, db);
   tx(db, () => {
     run(
       db,
@@ -196,7 +196,7 @@ export function getUpload(db: DB, user: SessionUser, uploadId: string): UploadRo
 
 export function uploadBytes(db: DB, user: SessionUser, uploadId: string): { row: UploadRow; bytes: Buffer } {
   const row = getUpload(db, user, uploadId);
-  return { row, bytes: readBytes(user.orgId, row.storage_key) };
+  return { row, bytes: readBytes(user.orgId, row.storage_key, db) };
 }
 
 function activeUpload(db: DB, shipmentId: string, kind: 'sources_csv' | 'plots_geojson'): UploadRow | null {
