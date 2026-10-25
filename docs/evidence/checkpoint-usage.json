@@ -1,0 +1,59 @@
+{
+  "status": "passed",
+  "liveVerified": false,
+  "scope": "LOCAL PROTOCOL DOUBLE; size/usage measurement only",
+  "namespace": "engineering-0bc1e2d1-8b61-423e-8170-742d174fdd42",
+  "checks": [
+    {
+      "name": "create engineering case",
+      "pass": true
+    },
+    {
+      "name": "upload",
+      "pass": true
+    },
+    {
+      "name": "PDF",
+      "pass": true
+    },
+    {
+      "name": "same account after fresh-cache restore",
+      "pass": true
+    },
+    {
+      "name": "same records",
+      "pass": true
+    },
+    {
+      "name": "evidence decrypts byte-identically",
+      "pass": true
+    },
+    {
+      "name": "stale writer rejected",
+      "pass": true
+    },
+    {
+      "name": "second replacement restores evidence",
+      "pass": true
+    },
+    {
+      "name": "stored PDF decrypts and hashes correctly",
+      "pass": true
+    }
+  ],
+  "checkpointCount": 8,
+  "encryptedCheckpointBytes": [
+    282656,
+    282656,
+    282656,
+    282656,
+    294944,
+    294944,
+    294944,
+    294944
+  ],
+  "totalUploadedBytes": 2310400,
+  "totalReadBackAndRestoreBytes": 2900288,
+  "retainedTwoSnapshotsBytes": 589888,
+  "cleanup": "not external"
+}
