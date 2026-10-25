@@ -436,5 +436,12 @@
     "providerFilesystemSemantics": "https://render.com/docs/free#local-files-lost-on-redeploy",
     "providerDashboardAccess": false
   },
-  "validationScope": "Single isolated hosted engineering workflow and persistence after reported restart and redeployment passed. Not a concurrency, provider resource, cold-start SLA or guaranteed-free validation."
+  "validationScope": "Single isolated hosted engineering workflow and persistence after reported restart and redeployment passed. Not a concurrency, provider resource, cold-start SLA or guaranteed-free validation.",
+  "localPostRoutingBrowserSuite": {
+    "result": "23 passed together",
+    "seconds": 255,
+    "report": "connected-browser.json",
+    "scope": "Local compiled production backend, separate from hosted probes",
+    "initialAttempt": "An earlier runner stalled without a result; stopped its identified process and reran the entire suite with visible progress. No isolated test results combined."
+  }
 }
