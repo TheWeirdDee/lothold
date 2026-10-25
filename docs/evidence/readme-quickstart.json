@@ -1,0 +1,41 @@
+{
+  "label": "README quick start followed exactly in a separate clean checkout, as a first-time user would.",
+  "verifiedAt": "2026-10-25T16:12:00Z/2026-10-25T17:47:00Z",
+  "environment": {
+    "os": "Windows 11",
+    "node": "v24.13.1",
+    "pnpm": "11.5.0",
+    "playwrightBrowser": "Chrome (channel: chrome)",
+    "foundry": "1.8.6 (forge on PATH via ~/.foundry/bin)"
+  },
+  "checkout": {
+    "method": "git clone of this repository into a new directory",
+    "commit": "7dacfce",
+    "note": "Later README edits in the same session only widened the dataset download-time range to 7.5-11 minutes and added the inherited-PORT troubleshooting row; both describe behaviour reproduced in this run. No command, port, path or variable name changed."
+  },
+  "steps": [
+    { "step": "pnpm install --frozen-lockfile", "result": "pass", "exitCode": 0, "durationSeconds": 34.8, "notes": "lockfile unchanged after install" },
+    { "step": "npm run setup", "result": "pass", "exitCode": 0, "notes": "created .env with EVIDENCE_ENCRYPTION_KEY and DOWNLOAD_SIGNING_KEY; values printed only as '<name> created', never shown" },
+    { "step": "npm run data:fetch", "result": "pass", "exitCode": 0, "durationSeconds": 678, "downloadedBytes": 431458785, "notes": "3/3 files matched their pinned SHA-256 (Hansen lossyear, Hansen datamask, JRC GFC2020 V4); earlier run of the same command on the same machine took 453 seconds" },
+    { "step": "npm run build", "result": "pass", "exitCode": 0, "notes": "dist/index.html produced" },
+    { "step": "npm run docs:check", "result": "pass", "exitCode": 0, "notes": "all relative documentation links and image paths resolved inside the fresh clone" },
+    { "step": "npm start", "result": "pass", "exitCode": 0, "notes": "listener on 127.0.0.1:8787 after startup.ready (4.7 s in one start)" },
+    { "step": "GET /api/health", "result": "pass", "httpStatus": 200, "notes": "instance 'operational'; all three dataset hashes reported present and size-matched" },
+    { "step": "GET /api/ready?strict=1", "result": "pass", "httpStatus": 200, "durationMs": 4, "body": { "ready": true, "state": "ready", "datasetsVerified": true, "degraded": false } },
+    { "step": "GET /", "result": "pass", "httpStatus": 200, "contentType": "text/html; charset=utf-8", "title": "LotHold — cocoa shipment evidence review" },
+    { "step": "GET /media/lothold-poster.jpg", "result": "pass", "httpStatus": 200, "contentType": "image/jpeg" },
+    { "step": "GET /api/nope", "result": "pass", "httpStatus": 404, "contentType": "application/json", "notes": "JSON 404, not the HTML shell" },
+    { "step": "second npm start on the same port", "result": "pass", "notes": "reproduced the documented EADDRINUSE failure message on 127.0.0.1:8787" },
+    { "step": "npm test", "result": "pass", "exitCode": 0, "durationSeconds": 66.6, "tests": 123 },
+    { "step": "npm run test:e2e", "result": "pass", "exitCode": 0, "tests": 23, "durationMinutes": 2.5, "notes": "no retries, no skips" }
+  ],
+  "environmentQuirk": {
+    "observed": "The verification shell exported PORT=0, so a plain 'npm start' bound a random ephemeral port instead of 8787 while still logging startup.ready.",
+    "resolution": "Start with 'env -u PORT npm start' or set PORT explicitly in .env; documented in the README troubleshooting table. Ordinary shells are unaffected."
+  },
+  "notCovered": [
+    "Foundry contract tests in the fresh clone (run separately in the working checkout: 18/18)",
+    "GIS cross-check (needs Python rasterio/pyproj/shapely/numpy)",
+    "A hosted backend: none exists"
+  ]
+}
