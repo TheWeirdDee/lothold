@@ -49,4 +49,12 @@ for (const id of Object.keys(DATASETS) as DatasetId[]) {
   if (!ok) failed = true;
   console.log(`${ok ? 'OK      ' : 'MISMATCH'} ${d.file} sha256=${got}`);
 }
+// --write-manifest (image builds): record size, mtime and verified hash of each pinned file, so a server started from
+// this immutable image can skip re-hashing 431 MB on every cold start (DATASETS_TRUST_BUILD_MANIFEST=1).
+if (!failed && process.argv.includes('--write-manifest')) {
+  const { writeFileSync } = await import('node:fs');
+  const entries = Object.values(DATASETS).map((d) => { const st = statSync(resolve(dir, d.file)); return { file: d.file, bytes: st.size, mtimeMs: Math.floor(st.mtimeMs / 1000) * 1000, sha256: d.sha256 }; });
+  writeFileSync(resolve(dir, 'verified-manifest.json'), JSON.stringify({ verifiedAt: new Date().toISOString(), entries }, null, 2));
+  console.log('wrote verified-manifest.json');
+}
 process.exitCode = failed ? 1 : 0;
