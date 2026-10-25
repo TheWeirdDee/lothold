@@ -137,6 +137,8 @@ function decodeUtf8Strict(bytes: Buffer, what: string): string {
 
 export type UploadResult = { uploadId: string; duplicate: boolean; parseStatus: 'parsed' | 'rejected' | 'stored'; error: string | null };
 
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
 export function handleUpload(db: DB, user: SessionUser, shipmentId: string, kind: UploadKind, filename: string, mediaType: string, bytes: Buffer): UploadResult {
   getShipment(db, user, shipmentId);
   const name = sanitizeFilename(filename);
@@ -146,8 +148,9 @@ export function handleUpload(db: DB, user: SessionUser, shipmentId: string, kind
   if (MEDIA[kind].types.length && !MEDIA[kind].types.includes(mediaType.split(';')[0]!.trim().toLowerCase())) throw new HttpError(415, 'type', `Media type "${mediaType}" is not accepted for this upload.`);
   const isPdf = bytes.subarray(0, 5).toString('latin1') === '%PDF-';
   if (/\.pdf$/i.test(name) && !isPdf) throw new HttpError(415, 'type', 'The file is named .pdf but is not a PDF.');
-  if (/\.(png)$/i.test(name) && bytes.readUInt32BE(0) !== 0x89504e47) throw new HttpError(415, 'type', 'The file is named .png but is not a PNG image.');
-  if (/\.(jpe?g)$/i.test(name) && !(bytes[0] === 0xff && bytes[1] === 0xd8)) throw new HttpError(415, 'type', 'The file is named .jpg but is not a JPEG image.');
+  // Signature checks read only bytes that exist, so a truncated file gets a clear 415 instead of a server error.
+  if (/\.(png)$/i.test(name) && !(bytes.length >= 8 && bytes.subarray(0, 8).equals(PNG_SIGNATURE))) throw new HttpError(415, 'type', 'The file is named .png but is not a complete PNG image.');
+  if (/\.(jpe?g)$/i.test(name) && !(bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)) throw new HttpError(415, 'type', 'The file is named .jpg but is not a JPEG image.');
 
   const sha = sha256Hex(bytes);
   const existing = get<{ id: string; parse_status: UploadResult['parseStatus']; parse_error: string | null }>(db, 'SELECT id, parse_status, parse_error FROM uploads WHERE shipment_id = ? AND kind = ? AND sha256 = ?', shipmentId, kind, sha);
@@ -202,6 +205,12 @@ export function confirmUpload(db: DB, user: SessionUser, uploadId: string, enque
   if (u.parse_status !== 'parsed') throw new HttpError(409, 'rejected_upload', 'This file was rejected by the parser and cannot be confirmed. Fix the file and upload it again.');
   const current = activeUpload(db, u.shipment_id, u.kind);
   if (current?.id === u.id) return { alreadyActive: true };
+  if (u.kind === 'sources_csv') {
+    // The testnet registry has no release operation. Once a reservation is anchored (or anchoring is under way),
+    // revising the source table would free database balance without freeing on-chain capacity, so it is refused.
+    const anchored = get<{ n: number }>(db, `SELECT COUNT(*) AS n FROM chain_txs t JOIN allocations a ON a.id = t.allocation_id WHERE a.shipment_id = ? AND a.status = 'reserved' AND t.action = 'reserve' AND t.status IN ('queued','pending','confirmed')`, u.shipment_id)!.n;
+    if (anchored > 0) throw new HttpError(409, 'anchored', 'This case has allocations recorded (or being recorded) on the testnet registry, which cannot release them. Its source table can no longer be revised; open a new case for the corrected shipment.');
+  }
   tx(db, () => {
     const seq = (get<{ s: number | null }>(db, 'SELECT MAX(seq) AS s FROM confirmations WHERE shipment_id = ? AND kind = ?', u.shipment_id, u.kind)?.s ?? 0) + 1;
     run(db, 'INSERT INTO confirmations (id, shipment_id, kind, upload_id, confirmed_by, confirmed_at, seq) VALUES (?, ?, ?, ?, ?, ?, ?)', id(), u.shipment_id, u.kind, u.id, user.id, now(), seq);
@@ -328,11 +337,18 @@ export function reserveAllocations(db: DB, user: SessionUser, shipmentId: string
     for (const a of st.evaluation.allocationSummary) {
       const lot = get<{ id: string }>(db, 'SELECT id FROM source_lots WHERE org_id = ? AND supplier_id = ? AND source_lot_ref = ?', user.orgId, a.supplierId, a.sourceLotRef);
       if (!lot) throw new HttpError(409, 'lot_missing', `Source lot ${a.sourceLotRef} is not registered.`);
-      const key = sha256Hex(`${shipmentId}|${lot.id}|${st.sourcesUpload.id}`);
-      if (get(db, 'SELECT 1 FROM allocations WHERE idempotency_key = ?', key)) continue; // retry: already reserved
+      // Retry-safe: skip only if this lot is currently reserved for the active source table. A reservation released
+      // by a later revision does not count, so re-confirming an earlier table can be reserved again.
+      if (get(db, `SELECT 1 FROM allocations WHERE shipment_id = ? AND source_lot_id = ? AND sources_upload_id = ? AND status = 'reserved'`, shipmentId, lot.id, st.sourcesUpload.id)) continue;
+      const generation = get<{ n: number }>(db, 'SELECT COUNT(*) AS n FROM allocations WHERE shipment_id = ? AND source_lot_id = ? AND sources_upload_id = ?', shipmentId, lot.id, st.sourcesUpload.id)!.n;
+      const key = sha256Hex(generation === 0 ? `${shipmentId}|${lot.id}|${st.sourcesUpload.id}` : `${shipmentId}|${lot.id}|${st.sourcesUpload.id}|${generation}`);
       run(db, `INSERT INTO allocations (id, org_id, shipment_id, source_lot_id, grams, sources_upload_id, idempotency_key, status, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'reserved', ?, ?)`, id(), user.orgId, shipmentId, lot.id, a.requestedGrams, st.sourcesUpload.id, key, user.id, now());
       created.push(`${a.sourceLotRef}: ${formatKg(a.requestedGrams)}`);
     }
+    // Report success only if every requested allocation is now actually reserved for the active source table.
+    const after = computeState(db, user, shipmentId).evaluation.allocationSummary;
+    const short = after.filter((a) => a.reservedHereGrams !== a.requestedGrams);
+    if (short.length) throw new HttpError(500, 'reservation_incomplete', `Reservation did not complete for ${short.map((a) => a.sourceLotRef).join(', ')}; nothing was reported as reserved.`);
     audit(db, { orgId: user.orgId, shipmentId, actorId: user.id, type: created.length ? 'allocations.reserved' : 'allocations.reserve_idempotent', data: { created } });
     return { ok: true as const, created };
   });
