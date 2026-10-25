@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "data:fetch": "node scripts/fetch-datasets.ts",
     "data:verify": "node scripts/fetch-datasets.ts --verify-only",
+    "docs:check": "node scripts/check-doc-links.ts",
     "setup": "node scripts/setup.ts",
     "admin": "node --env-file-if-exists=.env scripts/admin.ts",
     "verify": "node scripts/verify-all.ts",
