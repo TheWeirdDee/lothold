@@ -14,6 +14,7 @@ export function InspectPage() {
   const [size, setSize] = useState('1000');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [geom, setGeom] = useState<any>(null);
@@ -43,9 +44,20 @@ export function InspectPage() {
         return setErr('That is not valid JSON. Paste a GeoJSON Polygon, Feature or FeatureCollection.');
       }
     }
-    setBusy(true);
+    setProgress('Submitting analysis job.'); setBusy(true);
     try {
-      const r = await api('POST', '/api/public/forest-check', { geometry });
+      let r = await api('POST', '/api/public/forest-check', { geometry }, { timeoutMs: 15000 });
+      if (r.pollUrl) {
+        const pollUrl = r.pollUrl; const deadline = Date.now() + 360_000;
+        while (true) {
+          setProgress(r.status === 'running' ? 'Processing raster pixels. No percentage estimate is available.' : 'Queued for raster processing.');
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          r = await api('GET', pollUrl, undefined, { timeoutMs: 15000 });
+          if (r.status === 'complete') { r = r.result; break; }
+          if (r.status === 'failed') throw new Error(r.error);
+          if (Date.now() > deadline) throw new Error('Inspection is still unconfirmed. Retry explicitly; no result is implied.');
+        }
+      }
       setResult(r);
       setGeom(geometry);
     } catch (e) {
@@ -68,6 +80,7 @@ export function InspectPage() {
       <p className="muted" style={{ maxWidth: '72ch', marginTop: -6 }}>
         This runs the same pixel-level analysis LotHold applies to shipment plots, on the locally installed Hansen GFC v1.13 and JRC GFC2020 V4 tile (longitude −10° to 0°, latitude 0° to 10°, which covers Côte d’Ivoire and western Ghana). Your geometry is not stored. <strong>An area you query is just coordinates. It is not a farm, and it tells you nothing about who produced what.</strong>
       </p>
+      {busy && <p role="status" aria-live="polite">{progress}</p>}
       <div className="split">
         <form className="panel stack" onSubmit={run} aria-describedby="inspect-help">
           {offline && (
