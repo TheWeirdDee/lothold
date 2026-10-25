@@ -2,7 +2,7 @@
   "status": "passed",
   "liveVerified": true,
   "scope": "actual Supabase services; isolated engineering namespace",
-  "namespace": "engineering-4c4a4ccb-ac43-4555-bf86-498d972a259a",
+  "namespace": "engineering-888b2c50-7b70-4a14-a796-2a710fd06053",
   "checks": [
     {
       "name": "create engineering case",
@@ -65,6 +65,26 @@
       "pass": true
     },
     {
+      "name": "SQL rejects stale owner",
+      "pass": true
+    },
+    {
+      "name": "SQL rejects stale revision",
+      "pass": true
+    },
+    {
+      "name": "rejected commits leave the published checkpoint unchanged",
+      "pass": true
+    },
+    {
+      "name": "anon cannot execute lothold_status",
+      "pass": true
+    },
+    {
+      "name": "anon cannot execute lothold_commit",
+      "pass": true
+    },
+    {
       "name": "anonymous cannot download private snapshot",
       "pass": true
     },
@@ -76,47 +96,87 @@
   "operations": [
     {
       "operation": "RPC claim",
-      "ms": 995,
+      "ms": 1637,
       "pass": true
     },
     {
       "operation": "private immutable upload",
-      "ms": 1134,
+      "ms": 4622,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 1118,
+      "ms": 3192,
       "pass": true
     },
     {
       "operation": "RPC conditional commit",
-      "ms": 199,
+      "ms": 394,
       "pass": true
     },
     {
       "operation": "RPC status",
-      "ms": 299,
+      "ms": 231,
       "pass": true
     },
     {
       "operation": "private immutable upload",
-      "ms": 862,
+      "ms": 628,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 672,
+      "ms": 772,
       "pass": true
     },
     {
       "operation": "RPC conditional commit",
-      "ms": 247,
+      "ms": 193,
       "pass": true
     },
     {
       "operation": "RPC status",
-      "ms": 182,
+      "ms": 177,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 192,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 322,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 504,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 179,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 237,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 1000,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 1174,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 178,
       "pass": true
     },
     {
@@ -126,137 +186,107 @@
     },
     {
       "operation": "private immutable upload",
-      "ms": 701,
+      "ms": 393,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 732,
+      "ms": 1093,
       "pass": true
     },
     {
       "operation": "RPC conditional commit",
-      "ms": 258,
-      "pass": true
-    },
-    {
-      "operation": "RPC status",
-      "ms": 222,
-      "pass": true
-    },
-    {
-      "operation": "private immutable upload",
-      "ms": 1932,
-      "pass": true
-    },
-    {
-      "operation": "private checkpoint download",
-      "ms": 549,
-      "pass": true
-    },
-    {
-      "operation": "RPC conditional commit",
-      "ms": 264,
-      "pass": true
-    },
-    {
-      "operation": "RPC status",
-      "ms": 181,
-      "pass": true
-    },
-    {
-      "operation": "private immutable upload",
-      "ms": 822,
-      "pass": true
-    },
-    {
-      "operation": "private checkpoint download",
-      "ms": 1260,
-      "pass": true
-    },
-    {
-      "operation": "RPC conditional commit",
-      "ms": 201,
+      "ms": 191,
       "pass": true
     },
     {
       "operation": "RPC claim",
-      "ms": 243,
+      "ms": 288,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 265,
+      "ms": 240,
       "pass": true
     },
     {
       "operation": "private immutable upload",
-      "ms": 2158,
+      "ms": 1436,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 884,
+      "ms": 576,
       "pass": true
     },
     {
       "operation": "RPC conditional commit",
-      "ms": 228,
+      "ms": 277,
       "pass": true
     },
     {
       "operation": "RPC status",
-      "ms": 174,
+      "ms": 217,
       "pass": true
     },
     {
       "operation": "private immutable upload",
-      "ms": 483,
+      "ms": 577,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 1114,
+      "ms": 1098,
       "pass": true
     },
     {
       "operation": "RPC conditional commit",
-      "ms": 181,
+      "ms": 187,
       "pass": true
     },
     {
       "operation": "RPC status",
-      "ms": 204,
+      "ms": 171,
       "pass": true
     },
     {
       "operation": "RPC status",
-      "ms": 176,
+      "ms": 169,
       "pass": true
     },
     {
       "operation": "RPC claim",
-      "ms": 586,
+      "ms": 570,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 574,
+      "ms": 637,
       "pass": true
     },
     {
       "operation": "private immutable upload",
-      "ms": 682,
+      "ms": 371,
       "pass": true
     },
     {
       "operation": "private checkpoint download",
-      "ms": 575,
+      "ms": 536,
       "pass": true
     },
     {
       "operation": "RPC conditional commit",
-      "ms": 184,
+      "ms": 165,
+      "pass": true
+    },
+    {
+      "operation": "SQL rejects stale owner",
+      "ms": 197,
+      "pass": true
+    },
+    {
+      "operation": "SQL rejects stale revision",
+      "ms": 172,
       "pass": true
     }
   ],
