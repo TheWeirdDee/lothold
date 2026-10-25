@@ -20,6 +20,8 @@ import { extractionStatus, runExtraction, acceptExtraction } from './ai/extract.
 import { chainStatus, queueAnchoring, publicVerify } from './chain/anchor.ts';
 import { swapAxesCorrection } from './corrections.ts';
 import { demoVideoFromEnv, contentSecurityPolicy } from './demo-video.ts';
+import { randomUUID } from 'node:crypto';
+import { analyseOffThread } from './analysis.ts';
 import { DurableCheckpoint, PersistenceError } from './durability.ts';
 
 type Env = { Variables: { user: SessionUser | null; db: DB } };
@@ -31,6 +33,7 @@ let publicAnalysesInFlight = 0;
 
 export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?: boolean; durability?: DurableCheckpoint | null } = {}) {
   const app = new Hono<Env>();
+  const inspections = new Map<string, { created: number; status: 'queued' | 'running' | 'complete' | 'failed'; report: unknown; analysis?: unknown; error?: string }>();
   const secure = opts.secureCookies ?? process.env.NODE_ENV === 'production';
   const demoVideo = demoVideoFromEnv();
   if (demoVideo.error) log({ event: 'config_warning', setting: 'DEMO_VIDEO', message: demoVideo.error });
@@ -139,13 +142,13 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   app.get('/api/ready', async (c) => {
     if (opts.durability) {
       try { await opts.durability.assertOwner(); }
-      catch { return c.json({ ready: false, storage: 'unavailable' }, 503); }
-      if (!opts.durability.ready()) return c.json({ ready: false, storage: 'unconfirmed' }, 503);
+      catch { return c.json({ ready: false, state: 'unavailable', storage: 'unavailable' }, 503); }
+      if (!opts.durability.ready()) return c.json({ ready: false, state: 'unavailable', storage: 'unconfirmed' }, 503);
     }
-    if (!isVerificationDone()) return c.json({ ready: false }, 503);
+    if (!isVerificationDone()) return c.json({ ready: false, state: 'starting' }, 503);
     const datasets = datasetAvailability();
     const datasetsVerified = datasets.every((d) => d.sha256 !== null && d.sha256 === DATASETS[d.id].sha256);
-    return c.json({ ready: true, datasetsVerified, degraded: !datasetsVerified, datasets }, c.req.query('strict') === '1' && !datasetsVerified ? 503 : 200);
+    return c.json({ ready: datasetsVerified, state: datasetsVerified ? 'ready' : 'failed', datasetsVerified, degraded: !datasetsVerified, datasets }, c.req.query('strict') === '1' && !datasetsVerified ? 503 : 200);
   });
 
   app.get('/api/public/method', (c) =>
@@ -175,15 +178,21 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
     // Only analyse against rasters that passed SHA-256 verification at startup (same rule as the job worker).
     const verified = datasetAvailability().every((d) => d.sha256 !== null && d.sha256 === DATASETS[d.id].sha256);
     if (!verified) return c.json({ report, analysis: { status: 'UNAVAILABLE', summary: 'Environmental datasets are missing or failed hash verification on this server; no conclusion is drawn.', limitations: [], hansenPixels: { total: 0, land: 0, water: 0, noData: 0 }, areaHa: { sampled: 0, jrcForest2020: 0, postCutoffLoss: 0, postCutoffLossOnJrcForest: 0, preCutoffLoss: 0 }, lossByYear: {}, coveredInterval: '', methodVersion: ANALYSIS_METHOD_VERSION, analysedAt: new Date().toISOString(), grid: null }, stored: false });
-    publicAnalysesInFlight++;
-    let analysis;
-    try {
-      analysis = await analysePlot(body.geometry as never, { geometryValid: true });
-    } finally {
-      publicAnalysesInFlight--;
-    }
-    log({ event: 'public.forest_check', status: analysis.status });
-    return c.json({ report, analysis, stored: false });
+    for (const [key, job] of inspections) if (Date.now() - job.created > 600_000) inspections.delete(key);
+    if (inspections.size >= 20) throw new HttpError(503, 'busy', 'Inspector capacity reached. Retry later.');
+    const jobId = randomUUID();
+    const job: { created: number; status: 'queued' | 'running' | 'complete' | 'failed'; report: unknown; analysis?: unknown; error?: string } = { created: Date.now(), status: 'queued', report };
+    inspections.set(jobId, job); publicAnalysesInFlight++;
+    void analyseOffThread(body.geometry, () => { job.status = 'running'; }).then((analysis) => {
+      job.analysis = analysis; job.status = analysis.status === 'UNAVAILABLE' && analysis.error ? 'failed' : 'complete';
+      if (job.status === 'failed') job.error = 'Raster processing failed; no conclusion was produced.';
+    }).catch(() => { job.status = 'failed'; job.error = 'Analysis failed or exceeded capacity. Retry explicitly.'; }).finally(() => { publicAnalysesInFlight--; });
+    return c.json({ id: jobId, status: job.status, pollUrl: `/api/public/forest-check/${jobId}`, report, stored: false }, 202);
+  });
+  app.get('/api/public/forest-check/:id', (c) => {
+    const job = inspections.get(c.req.param('id'));
+    if (!job || Date.now() - job.created > 600_000) throw new HttpError(404, 'inspection_expired', 'This temporary inspection expired or the server restarted. Run it again explicitly.');
+    return c.json({ status: job.status, ...(job.status === 'complete' ? { result: { report: job.report, analysis: job.analysis, stored: false } } : {}), ...(job.error ? { error: job.error } : {}) });
   });
 
   app.get('/api/public/demo-video', (c) => c.json(demoVideo.video));
