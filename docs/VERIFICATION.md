@@ -7,10 +7,10 @@ Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrom
 | Command | Result | Scope |
 |---|---|---|
 | `npm run typecheck` | 0 errors | server, core, web, scripts, tests (TypeScript 7.0.2, strict) |
-| `npm test` | **85 / 85 passed** | `tests/unit` (55, incl. the runtime-dependency guard and demo-video configuration) + `tests/integration` test kit (4) + `tests/integration` (26, incl. 4 against a local Anvil devnet and 1 backup/restore) |
+| `npm test` | **93 / 93 passed** (Foundry installed; without Anvil, 4 chain tests are skipped) | `tests/unit` (57, incl. water-only coverage, runtime-dependency guard and demo-video configuration) + `tests/integration` audit regressions (6) + test kit (4) + `tests/integration` (26, incl. 4 against a local Anvil devnet and 1 backup/restore) |
 | `python scripts/gis-crosscheck.py` | 0 failures (6 polygons) | Independent GDAL 3.12.2 / pyproj 3.8.0 recomputation; see METHOD.md |
 | `npm run test:contracts` | **18 / 18 passed** (fuzz: 512 runs) | `contracts/test/BatchReservations.t.sol` |
-| `npm run test:e2e` | **15 / 15 passed** | Playwright + Chrome, real server, throwaway database: 7 workflow journeys (incl. test-kit downloads) + 3 demo-video states (file playback with captions at 1440/390 px, YouTube facade) + 5 accessibility checks (axe WCAG 2.2 A/AA, keyboard-only, dialog focus, live regions; see `docs/ACCESSIBILITY.md`) |
+| `npm run test:e2e` | **16 / 16 passed** | Playwright + Chrome, real server, throwaway database: 8 workflow journeys (incl. test-kit downloads and the server-unavailable state) + 3 demo-video states (file playback with captions at 1440/390 px, YouTube facade) + 5 accessibility checks (axe WCAG 2.2 A/AA, keyboard-only, dialog focus, live regions; see `docs/ACCESSIBILITY.md`) |
 | Production container | **Passed** | Built from `deploy/Dockerfile` and checked with `scripts/container-verify.ts`: datasets, auth, uploads, analysis, exports, restart, redeploy and hard-kill recovery (`docs/evidence/container-verification.json`) |
 | `npm run data:verify` | 3 / 3 SHA-256 match | raster snapshots |
 | `node scripts/chain-engineering-verify.ts --network sepolia` | PASS | public testnet; see CHAIN.md |
