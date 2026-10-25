@@ -327,7 +327,7 @@ export async function generateDocument(db: DB, user: SessionUser, shipmentId: st
     filename = `LotHold_${safeRef}_DDS-V3_DRAFT_NOT_SUBMITTED_${stamp}Z.xml`;
   }
   const docId = id();
-  const storageKey = storeBytes(user.orgId, bytes);
+  const storageKey = storeBytes(user.orgId, bytes, db);
   run(db, 'INSERT INTO documents (id, shipment_id, kind, snapshot_digest, filename, sha256, bytes, storage_key, validation_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', docId, shipmentId, kind, st.digest, filename, sha256Hex(bytes), bytes.length, storageKey, JSON.stringify(validation), user.id, now());
   audit(db, { orgId: user.orgId, shipmentId, actorId: user.id, type: 'document.generated', data: { documentId: docId, kind, digest: st.digest, sha256: sha256Hex(bytes) } });
   return { id: docId, kind, filename, sha256: sha256Hex(bytes), bytes: bytes.length, snapshotDigest: st.digest, validation, schema: kind === 'dds_xml' ? SCHEMA_ID : null };
