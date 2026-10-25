@@ -36,7 +36,7 @@ async function uploadConfirm(page: Page, name: string, content: string, mime: st
 for (const width of [1440, 390]) {
   test(`axe: public pages at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ['/', '/method', '/inspect', '/verify', '/test-kit', '/login', '/register']) {
+    for (const path of ['/', '/docs', '/method', '/inspect', '/verify', '/test-kit', '/login', '/register']) {
       await page.goto(path);
       await page.waitForLoadState('networkidle');
       await axe(page, `${path} @${width}`);
