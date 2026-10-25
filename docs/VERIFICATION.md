@@ -1,8 +1,22 @@
 # Verification record
 
-Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrome 155, Foundry 1.8.6.
+**Latest full run: 25 October 2026**, Windows 11, Node v24.13.1, pnpm 11.5.0, Chrome (Playwright `chrome` channel), Foundry 1.8.6.
 
-## Commands and results
+| Command | Result (25 Oct 2026) | Machine-readable record |
+|---|---|---|
+| `npm run typecheck` | 0 errors (TypeScript 7, strict) | — |
+| `npm test` | **123 / 123 passed** (68 unit + 55 integration, including the 4 Anvil chain tests with Foundry installed) | `docs/evidence/submission-unit.json` |
+| `npm run test:contracts` | **18 / 18 passed** (512-run conservation fuzz) | — |
+| `npm run test:e2e` | **23 / 23 passed** in ~3 minutes, no retries and no skips | `docs/evidence/submission-browser.json` |
+| `npm run docs:check` | every relative link and image in the Markdown resolves | asserted again by `tests/unit/doc-links.test.ts` |
+| Fresh-clone walkthrough | separate checkout: `pnpm install --frozen-lockfile` → `npm run setup` → `npm run data:fetch` (3/3 SHA-256, ~431 MB) → `npm run build` → `npm start` → `/api/ready?strict=1` returned 200 with `datasetsVerified: true` | performed 25 October 2026 |
+| Live AI verification attempt | **still unverified**: provider timeout after 90 s (earlier attempts: 503, then 429 daily quota). Deterministic fallback verified live again | `docs/evidence/ai-live-verification.json` |
+| Sepolia contract re-check | code present at `0x1645604d915c55cfd61cf1492ad58ab5e4150b57` (`eth_getCode`, block 11991100) | `docs/CHAIN.md` |
+| Public site check | `https://lothold.vercel.app/` 200 (static frontend); `/api/ready` → Vercel 404 (no backend routed) | [EXPERIENCE_HOSTING.md](EXPERIENCE_HOSTING.md) |
+
+## Commands and results (24 October 2026 run)
+
+Kept for its wider manual scope; the counts above supersede the unit/e2e figures in this table.
 
 | Command | Result | Scope |
 |---|---|---|
