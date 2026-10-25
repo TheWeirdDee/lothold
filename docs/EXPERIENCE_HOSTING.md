@@ -1,8 +1,8 @@
-> Updated free-project preparation: see [FREE_HOSTING_SETUP.md](FREE_HOSTING_SETUP.md). Its checkpoint setup supersedes older hosting recommendations below. No cloud deployment has been verified.
+> Current status: the Vercel `/api` rewrite to Render is published (`4a9c877`). Strict readiness, 17 hosted API workflow checks, browser login/session, review PDF download, unsigned XML refusal and 10 post-restart recovery checks passed. All 10 recovery checks also passed after a separately reported replacement redeployment. See [hosted evidence](evidence/hosted-workflow.json) and [setup](FREE_HOSTING_SETUP.md). This is not a fully validated free hosted deployment.
 
 # Connection and persistent hosting handoff
 
-## Observed public failure — 25 October 2026
+## Historical public failure — resolved by the published API rewrite
 
 Direct HTTP inspection of `https://lothold.vercel.app` returned:
 
@@ -28,7 +28,7 @@ The prepared build keeps Docs, methodology, static templates, historical public 
 - Evidence and generated documents: AES-256-GCM encrypted files, authenticated to the organisation, on the evidence volume.
 - Encryption: stable `EVIDENCE_ENCRYPTION_KEY` supplied by the operator. Losing/changing it makes existing evidence unreadable.
 - Downloads: stable `DOWNLOAD_SIGNING_KEY` signs user-bound five-minute download links. It is distinct from the evidence key. Requests also require the authenticated user.
-- Current **public Vercel deployment**: no persistent backend or production database/volume was identified. Do not claim production accounts are provisioned there.
+- Historical public Vercel check: at that time no backend route was present. This was superseded by the published rewrite and the hosted workflow/recovery checks linked above.
 - Local default: database and evidence on the local machine's configured disk. Browser storage is never authoritative for accounts or cases.
 
 ## Prepared hosting path
