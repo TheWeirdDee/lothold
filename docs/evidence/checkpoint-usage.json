@@ -2,7 +2,7 @@
   "status": "passed",
   "liveVerified": false,
   "scope": "LOCAL PROTOCOL DOUBLE; size/usage measurement only",
-  "namespace": "engineering-0bc1e2d1-8b61-423e-8170-742d174fdd42",
+  "namespace": "engineering-ac36173b-4bea-4b77-a11c-1e0b60e6257f",
   "checks": [
     {
       "name": "create engineering case",
@@ -41,6 +41,194 @@
       "pass": true
     }
   ],
+  "operations": [
+    {
+      "operation": "RPC claim",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 1,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC claim",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC claim",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 0,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 0,
+      "pass": true
+    }
+  ],
+  "failureStage": null,
   "checkpointCount": 8,
   "encryptedCheckpointBytes": [
     282656,
