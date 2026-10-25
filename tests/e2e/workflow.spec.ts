@@ -41,8 +41,11 @@ test.afterAll(() => expect(errors, errors.join('\n')).toEqual([]));
 
 test('fresh visit: public pages work, links resolve, workspace starts honestly empty', async ({ page, request }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Catch missing plot evidence');
-  await expect(page.getByText('No sample shipments, no invented suppliers.')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Find missing evidence');
+  // Scope is visible before signup.
+  await expect(page.locator('.scope-line')).toContainText('cocoa beans (HS 1801) only');
+  await expect(page.locator('.scope-line')).toContainText('nothing is submitted to the EU');
+  await expect(page.getByText(/Your workspace starts empty: no sample shipments/)).toBeVisible();
   // Demonstration captures are visibly labelled as engineering test records.
   await expect(page.getByText('Engineering test records', { exact: true })).toBeVisible();
   // Bring every (lazy-loaded) image into view and wait for it to decode before judging it broken.
@@ -195,7 +198,7 @@ test('mobile layout and keyboard access', async ({ page }) => {
   const focused = await page.evaluate(() => document.activeElement?.textContent ?? '');
   expect(focused.length).toBeGreaterThan(0);
   // Touch targets on key controls are at least 40px tall.
-  const h = await page.getByRole('link', { name: /Open the review desk/ }).first().evaluate((e) => e.getBoundingClientRect().height);
+  const h = await page.getByRole('link', { name: /Create a review case/ }).first().evaluate((e) => e.getBoundingClientRect().height);
   expect(h).toBeGreaterThanOrEqual(40);
 });
 
@@ -255,4 +258,16 @@ test('engineering test kit: every file downloads, is labelled, and the coming-so
     expect(href).toContain('ENGINEERING_TEST');
     expect(await r.text()).toContain('ENGINEERING TEST');
   }
+});
+
+test('a site without the LotHold server says so instead of failing silently', async ({ page }) => {
+  // Simulate a static-only host: every /api request gets a plain-text 404, as on a frontend-only deployment.
+  await page.route('**/api/**', (r) => r.fulfill({ status: 404, contentType: 'text/plain', body: 'The page could not be found' }));
+  await page.goto('/');
+  await expect(page.getByRole('status').filter({ hasText: 'The LotHold server is not running at this address' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'The demo video settings could not be loaded' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Demo video coming soon' })).toHaveCount(0);
+  await page.goto('/app');
+  await expect(page.getByRole('heading', { name: 'Your session could not be checked' })).toBeVisible();
+  await expect(page).toHaveURL(/\/app$/);
 });
