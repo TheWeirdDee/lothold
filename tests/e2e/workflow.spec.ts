@@ -41,9 +41,9 @@ test.afterAll(() => expect(errors, errors.join('\n')).toEqual([]));
 
 test('fresh visit: public pages work, links resolve, workspace starts honestly empty', async ({ page, request }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Find missing evidence');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Find missing farm evidence');
   // Scope is visible before signup.
-  await expect(page.locator('.scope-line')).toContainText('cocoa beans (HS 1801) only');
+  await expect(page.locator('.scope-line')).toContainText('Cocoa beans only');
   await expect(page.locator('.scope-line')).toContainText('nothing is submitted to the EU');
   await expect(page.getByText(/Your workspace starts empty: no sample shipments/)).toBeVisible();
   // Demonstration captures are visibly labelled as engineering test records.
@@ -184,8 +184,8 @@ test('mobile layout and keyboard access', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 760 });
   await page.goto('/');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-  await page.getByRole('button', { name: 'Menu' }).click();
-  await page.locator('#topnav').getByRole('link', { name: 'Evidence & methods' }).click();
+  await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('dialog', { name: 'LotHold / Explore' }).getByRole('link', { name: 'Evidence & methods' }).click();
   await expect(page).toHaveURL(/\/method/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
   // Keyboard: the skip link is the first focus stop and moves focus to main content.
@@ -198,29 +198,18 @@ test('mobile layout and keyboard access', async ({ page }) => {
   const focused = await page.evaluate(() => document.activeElement?.textContent ?? '');
   expect(focused.length).toBeGreaterThan(0);
   // Touch targets on key controls are at least 40px tall.
-  const h = await page.getByRole('link', { name: /Create a review case/ }).first().evaluate((e) => e.getBoundingClientRect().height);
+  const h = await page.getByRole('link', { name: /Open workspace/ }).first().evaluate((e) => e.getBoundingClientRect().height);
   expect(h).toBeGreaterThanOrEqual(40);
 });
 
-test('landing: demonstrations are labelled, live readings are real, reduced motion shows everything', async ({ page }) => {
+test('landing: recordings are labelled and reduced motion leaves content visible', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await expect(page.getByText('Engineering test records', { exact: true })).toBeVisible();
   await expect(page.getByText('ILLUSTRATION · NOT A SHIPMENT')).toBeVisible();
-  // No recording is configured on this server: an honest "coming soon" state with no play control or player.
-  await expect(page.getByRole('heading', { name: 'Demo video coming soon' })).toBeVisible();
-  await expect(page.locator('.demo').getByRole('button', { name: /play/i })).toHaveCount(0);
-  await expect(page.locator('.demo video, .demo iframe')).toHaveCount(0);
-  await expect(page.locator('.demo-note')).toContainText('engineering test records');
-  await expect(page.locator('.demo-note')).toContainText('genuine Sepolia testnet transactions');
-  // Live forest reading comes from the real analysis endpoint (coordinates only, not a farm).
-  const live = page.locator('.live-reading');
-  await live.scrollIntoViewIfNeeded();
-  await expect(live.locator('.badge')).toBeVisible({ timeout: 30_000 });
-  await expect(live).toContainText('not a farm');
-  // Registry ledger shows real engineering outcomes, including a rejection that was never mined.
-  await expect(page.locator('.ledger')).toContainText('REJECTED · NOT MINED');
-  await expect(page.locator('.ledger')).toContainText('REVERTED ON-CHAIN');
+  await expect(page.getByRole('button', { name: 'Play full walkthrough' })).toBeVisible();
+  await expect(page.locator('.demo-note')).toContainText('coordinate probe boxes');
+  await expect(page.locator('.demo video')).toHaveAttribute('preload', 'none');
   // With reduced motion every reveal section is fully visible.
   const hidden = await page.locator('.reveal').evaluateAll((els) => els.filter((e) => getComputedStyle(e).opacity !== '1').length);
   expect(hidden).toBe(0);
@@ -244,7 +233,7 @@ test('extraction discloses the plain parser when no model is configured and need
   await expect(page.locator('#field-hsCode')).toContainText('confirmed from ENGINEERING_TEST_document.txt');
 });
 
-test('engineering test kit: every file downloads, is labelled, and the coming-soon video links to it', async ({ page, request }) => {
+test('engineering test kit: every file downloads and is labelled', async ({ page, request }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Get the engineering test kit' }).click();
   await expect(page).toHaveURL(/\/test-kit$/);
@@ -264,9 +253,10 @@ test('a site without the LotHold server says so instead of failing silently', as
   // Simulate a static-only host: every /api request gets a plain-text 404, as on a frontend-only deployment.
   await page.route('**/api/**', (r) => r.fulfill({ status: 404, contentType: 'text/plain', body: 'The page could not be found' }));
   await page.goto('/');
-  await expect(page.getByRole('status').filter({ hasText: 'The LotHold server is not running at this address' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'The demo video settings could not be loaded' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Demo video coming soon' })).toHaveCount(0);
+  await expect(page.locator('.backend-notice')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Play full walkthrough' })).toBeVisible();
+  await page.goto('/docs');
+  await expect(page.getByRole('heading', { name: 'The LotHold user guide.' })).toBeVisible();
   await page.goto('/app');
   await expect(page.getByRole('heading', { name: 'Your session could not be checked' })).toBeVisible();
   await expect(page).toHaveURL(/\/app$/);
