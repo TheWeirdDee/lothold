@@ -17,3 +17,5 @@ research/totext.py
 
 # Host-only deployment secrets
 deploy/hosting.env
+
+server-dist/
