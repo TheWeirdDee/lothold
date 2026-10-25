@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-25T12:18:55.914Z",
+  "file": ".env",
+  "secretValuesPrinted": false,
+  "required": {
+    "SUPABASE_URL": "present",
+    "SUPABASE_SERVICE_ROLE_KEY": "present",
+    "SUPABASE_ANON_KEY": "present"
+  },
+  "optionalBucket": "configured",
+  "localEncryptionKeyFormat": "valid",
+  "localSigningKeyFormat": "valid"
+}
