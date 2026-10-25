@@ -70,7 +70,19 @@ try {
   check('anon cannot claim checkpoint',[401,403,404].includes(denied.status));
   const table=await fetch(`${base}/rest/v1/lothold_checkpoint?namespace=eq.${namespace}`,{headers,signal:AbortSignal.timeout(15000)});
   check('anon cannot read checkpoint row',[401,403].includes(table.status) || (table.ok && JSON.stringify(await table.json())==='[]'));
-  const pointer=await transport.status(); const path=`${encodeURIComponent(bucket)}/${pointer.object_key!.split('/').map(encodeURIComponent).join('/')}`;
+  const pointer=await transport.status();
+  const unchanged=()=>transport.status();
+  for(const [name,owner,revision] of [['SQL rejects stale owner',a.store.owner,Number(pointer.revision)],['SQL rejects stale revision',pointer.owner,Number(pointer.revision)-1]] as const){
+   let rejected=false;const t=performance.now();
+   try{await transport.commit(owner,revision,pointer.object_key!,pointer.sha256!);}catch(e){rejected=/HTTP (400|409)/.test(e instanceof Error?e.message:'');}
+   operations.push({operation:name,ms:Math.round(performance.now()-t),pass:rejected});check(name,rejected);
+  }
+  const after=await unchanged();check('rejected commits leave the published checkpoint unchanged',after.owner===pointer.owner&&Number(after.revision)===Number(pointer.revision)&&after.object_key===pointer.object_key&&after.sha256===pointer.sha256);
+  for(const [rpc,payload] of [['lothold_status',{p_namespace:namespace}],['lothold_commit',{p_namespace:namespace,p_owner:pointer.owner,p_revision:pointer.revision,p_object_key:pointer.object_key,p_sha256:pointer.sha256}]] as const){
+   const denied=await fetch(`${base}/rest/v1/rpc/${rpc}`,{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});
+   check(`anon cannot execute ${rpc}`,[401,403,404].includes(denied.status));
+  }
+  const path=`${encodeURIComponent(bucket)}/${pointer.object_key!.split('/').map(encodeURIComponent).join('/')}`;
   for(const [name,route,auth] of [['anonymous','public',{}],['anon-key','',headers]] as const){
    const r=await fetch(`${base}/storage/v1/object/${route?route+'/':''}${path}`,{headers:auth,signal:AbortSignal.timeout(15000)});check(`${name} cannot download private snapshot`,[400,401,403,404].includes(r.status));
   }
