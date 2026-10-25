@@ -1,0 +1,10 @@
+# LOCAL resource proof only: reuse the already built, pinned-raster image rather
+# than downloading 431 MB again. This is not the Render deployment Dockerfile.
+FROM lothold-render:local
+WORKDIR /app
+COPY server ./server
+COPY core ./core
+COPY scripts ./scripts
+COPY tests ./tests
+COPY deploy/render/start.sh /usr/local/bin/lothold-start
+RUN chmod +x /usr/local/bin/lothold-start
