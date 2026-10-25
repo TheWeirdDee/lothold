@@ -55,12 +55,13 @@ export function startWorker(db: DB, handlers: Record<string, JobHandler>, opts: 
   };
   const loop = async () => {
     while (!stopped) {
-      running = tick();
+      // Infrastructure errors (claim or status update failing) are logged and the loop keeps going.
+      running = tick().catch((e: Error) => log({ event: 'worker.error', error: e.message }));
       await running;
       await new Promise((r) => setTimeout(r, opts.intervalMs ?? 400));
     }
   };
-  void loop();
+  loop().catch((e: Error) => log({ event: 'worker.stopped_unexpectedly', error: e.message }));
   return {
     async stop() {
       stopped = true;
