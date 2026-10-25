@@ -263,6 +263,21 @@ CREATE TRIGGER lot_corrections_no_update BEFORE UPDATE ON source_lot_corrections
 CREATE TRIGGER lot_corrections_no_delete BEFORE DELETE ON source_lot_corrections BEGIN SELECT RAISE(ABORT, 'source_lot_corrections is append-only'); END;
 `,
   },
+  {
+    id: 3,
+    name: 'optional in-database evidence store',
+    // Used only with EVIDENCE_STORE=sqlite: the same encrypted objects as on disk, stored with the database so a
+    // host without a persistent disk can replicate everything (e.g. with Litestream). Written once, never changed.
+    sql: `
+CREATE TABLE evidence_blobs (
+  storage_key TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL REFERENCES orgs(id),
+  bytes BLOB NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TRIGGER evidence_blobs_no_update BEFORE UPDATE ON evidence_blobs BEGIN SELECT RAISE(ABORT, 'evidence objects are immutable'); END;
+`,
+  },
 ];
 
 /** SQL expression for a source lot's effective declared total (latest audited correction, else the first total). */
