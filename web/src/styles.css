@@ -172,7 +172,7 @@ input[type='file'] { font: inherit; font-size: 0.88rem; max-width: 100%; color: 
 input[type='file']::file-selector-button { font: inherit; font-size: 0.85rem; font-weight: 560; margin-right: 12px; padding: 7px 14px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--white); color: var(--ink); cursor: pointer; }
 input[type='file']::file-selector-button:hover { border-color: var(--ink); }
 input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-color: var(--forest); }
-.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 18px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px 18px; }
 .file-drop { display: grid; gap: 12px; padding: 16px; border: 1px dashed var(--line-strong); border-radius: var(--r-lg); background: var(--white); }
 
 /* ---------------- surfaces ---------------- */
@@ -267,7 +267,7 @@ td .orig { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); di
 /* ---------------- layout helpers ---------------- */
 .split { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .split.even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 960px) { .split, .split.even { grid-template-columns: 1fr; } .plot-list { order: -1; } }
+@media (max-width: 960px) { .split, .split.even { grid-template-columns: minmax(0, 1fr); } .plot-list { order: -1; } }
 .stack { display: grid; gap: 16px; align-content: start; }
 .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .spacer { flex: 1; }
@@ -655,12 +655,34 @@ dialog .dlg-foot { padding: 14px 20px; border-top: 1px solid var(--line); displa
 
 /* Tables that become labelled blocks on phones instead of scrolling sideways (labels come from data-label). */
 @media (max-width: 640px) {
-  table.stack-sm thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  table.stack-sm, table.stack-sm tbody, table.stack-sm tr, table.stack-sm td { display: block; width: 100%; }
-  table.stack-sm tr { padding: 10px 0; border-bottom: 1px solid var(--line); }
-  table.stack-sm tr:last-child { border-bottom: 0; }
-  table.stack-sm td { border: 0; padding: 3px 14px; }
-  table.stack-sm td:empty { display: none; }
-  table.stack-sm td[data-label]::before { content: attr(data-label); display: block; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
-  table.stack-sm .badge { white-space: normal; }
+  .stack-wrap table.data thead, table.stack-sm thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.stack-sm, table.stack-sm tbody, table.stack-sm tr, table.stack-sm td,
+  .stack-wrap table.data, .stack-wrap table.data tbody, .stack-wrap table.data tr, .stack-wrap table.data td { display: block; width: 100%; }
+  table.stack-sm tr, .stack-wrap table.data tr { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  table.stack-sm tr:last-child, .stack-wrap table.data tr:last-child { border-bottom: 0; }
+  table.stack-sm td, .stack-wrap table.data td { border: 0; padding: 3px 14px; text-align: left; }
+  table.stack-sm td:empty, .stack-wrap table.data td:empty { display: none; }
+  table.stack-sm td[data-label]::before, .stack-wrap table.data td[data-label]::before { content: attr(data-label); display: block; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  table.stack-sm .badge, .stack-wrap .badge { white-space: normal; }
+}
+
+/* Registry: summary, lookup and limits side by side when there is room; the engineering run always full width. */
+.registry-layout { display: grid; gap: clamp(28px, 4vw, 48px); }
+.registry-top { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: start; }
+.registry-top > * { margin: 0; }
+
+/* ---------------- responsive foundations ----------------
+   Grid and flex children may shrink below their content's intrinsic width, and form controls never exceed their
+   container, so a file input or long value cannot push a page wider than the screen. */
+.split > *, .stack > *, .form-grid > *, .registry-top > * { min-width: 0; }
+input, select, textarea { max-width: 100%; }
+input[type='file'] { width: 100%; }
+table.data th { white-space: normal; }
+
+/* Tabs wrap into a compact pill set on narrower screens instead of a sideways-scrolling strip. */
+@media (max-width: 960px) {
+  .tabs { flex-wrap: wrap; overflow: visible; gap: 6px; border-bottom: 0; }
+  .tabs button { border: 1px solid var(--line); border-radius: var(--r-pill); min-height: 40px; padding: 8px 12px; margin-bottom: 0; font-size: 0.86rem; background: var(--white); }
+  .tabs button[aria-selected='true'], .tabs button[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .tabs button[aria-selected='true'] .count { background: rgba(255, 255, 255, 0.18); color: var(--paper); }
 }
