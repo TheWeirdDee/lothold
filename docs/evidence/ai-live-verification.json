@@ -1,57 +1,160 @@
 {
-  "label": "ENGINEERING TEST - live AI extraction verification attempt with an invented, labelled document. No commercial data.",
-  "status": "LIVE AI UNVERIFIED. No model extraction has succeeded through the application. The extraction attempt received HTTP 503 from the provider; a later diagnostic call received HTTP 429 (free-tier daily request quota exhausted). Stopped as instructed: no retries, no billing.",
-  "provider": "Google Gemini API (Google AI Studio key, provider confirmed by the user) via the OpenAI-compatible endpoint https://generativelanguage.googleapis.com/v1beta/openai",
-  "model": "gemini-3.8-flash (listed for this key by GET /models, HTTP 200; listed as Stable on https://ai.google.dev/gemini-api/docs/models, page updated 2026-10-22)",
-  "date": "2026-10-24",
-  "providerRequests": [
+  "label": "ENGINEERING TEST - live AI extraction verification with an invented, labelled document. No commercial data.",
+  "status": "LIVE AI UNVERIFIED: Model extraction failed (The operation was aborted due to timeout); the label parser (not AI) was used instead.",
+  "verified": false,
+  "provider": "Google Gemini API via OpenAI-compatible endpoint (generativelanguage.googleapis.com/v1beta/openai)",
+  "model": null,
+  "configVersion": "label-parser/2026-10-24.1",
+  "startedAt": "2026-10-25T13:21:46.303Z",
+  "latencyMs": 90029,
+  "providerRequests": 2,
+  "extractionError": "Model extraction failed (The operation was aborted due to timeout); the label parser (not AI) was used instead.",
+  "candidates": [
     {
-      "at": "2026-10-24T14:27Z",
-      "purpose": "list models (authentication + model availability)",
-      "outcome": "HTTP 200; configured model present"
+      "field": "hsCode",
+      "status": "found",
+      "page": 1,
+      "accepted": true,
+      "reason": null
     },
     {
-      "at": "2026-10-24T14:27:21Z",
-      "purpose": "live extraction through the app (POST /api/shipments/:id/extract), structured output",
-      "outcome": "HTTP 503 after ~1.8 s. Stored record: 'Model extraction failed (provider HTTP 503); the label parser (not AI) was used instead.'"
+      "field": "description",
+      "status": "found",
+      "page": 1,
+      "accepted": true,
+      "reason": null
     },
     {
-      "at": "2026-10-24T14:27Z",
-      "purpose": "fallback check with a deliberately nonexistent model name",
-      "outcome": "HTTP 404 (expected). Stored record: 'Model extraction failed (provider HTTP 404); the label parser (not AI) was used instead.' Error text contained no key."
+      "field": "netMassValue",
+      "status": "found",
+      "page": 1,
+      "accepted": true,
+      "reason": null
     },
     {
-      "at": "2026-10-24T14:28Z",
-      "purpose": "diagnostic structured-output call outside the app",
-      "outcome": "no response; client-side timeout after 90 s (cause unknown)"
+      "field": "netMassUnit",
+      "status": "found",
+      "page": 1,
+      "accepted": true,
+      "reason": null
     },
     {
-      "at": "2026-10-24T14:29:32Z",
-      "purpose": "minimal diagnostic call ('Reply with the single word: ready')",
-      "outcome": "HTTP 429",
-      "providerMessageExcerpt": "You exceeded your current quota, please check your plan and billing details. ... Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash, description: Generate content requests per day limit exceeded on Free Tie[r] (captured text truncated at this point)"
+      "field": "operatorName",
+      "status": "found",
+      "page": 1,
+      "accepted": true,
+      "reason": null
+    },
+    {
+      "field": "operatorEori",
+      "status": "not_found",
+      "page": null,
+      "accepted": false,
+      "reason": null
+    },
+    {
+      "field": "countryOfActivity",
+      "status": "not_found",
+      "page": null,
+      "accepted": false,
+      "reason": null
+    },
+    {
+      "field": "activityType",
+      "status": "found",
+      "page": 1,
+      "accepted": true,
+      "reason": null
     }
   ],
-  "interpretation": {
-    "429": "Exhausted daily quota, not zero quota: the provider reports a non-zero free-tier limit ('limit: 20') on the per-day request metric for this model. A project with no free-tier access to a model would report a zero limit. Google's API errors page (updated 2026-10-23) describes daily-quota 429s as: wait for the quota to reset or request an increase.",
-    "503": "Provider temporarily overloaded or down (Google API errors page: 'The service is temporarily overloaded or down'). It says nothing about whether the request format is supported.",
-    "configuration": "Not shown to be unsupported: authentication succeeded, the model is listed and the model name is accepted (a wrong name gives 404, as the fallback check showed). Whether this provider accepts the app's strict json_schema response_format is still unverified.",
-    "quotaAttribution": "Rate limits apply per project, not per API key (rate-limits page, updated 2026-10-15). This work sent 4 generate requests, so other usage in the same Google Cloud project probably accounts for most of the 20; Google's documentation does not say whether failed requests count."
-  },
-  "verifiedThroughTheApp": {
-    "fallbackDisclosedInUiLabel": "Label parser (deterministic, not AI)",
-    "providerFailureRecordedAccurately": true,
+  "checks": {
+    "requestSucceeded": false,
+    "methodLabel": "Label parser (deterministic, not AI)",
+    "schemaValid": false,
+    "hsCodeVerified": true,
+    "netMassVerified": true,
     "injectedValueNotAccepted": true,
-    "missingFieldsLeftMissing": true,
+    "missingEoriNotAccepted": true,
+    "missingCountryOfActivityNotAccepted": true,
     "everyAcceptedQuoteExistsInSource": true,
-    "noFieldAppliedBeforeHumanAcceptance": true,
-    "errorTextSanitized": true
+    "sourceReferencesChecked": true,
+    "noFieldAppliedBeforeAcceptance": true
   },
-  "notYetVerified": [
-    "a successful model response through the application",
-    "schema compatibility of the structured-output request with this provider",
-    "model-proposed values passing source-span verification, and their page/quote references checked against the document"
-  ],
-  "reset": "Requests-per-day quotas reset at midnight Pacific time (https://ai.google.dev/gemini-api/docs/rate-limits, updated 2026-10-15). For 24 Oct 2026 (PDT, UTC-7) that is 2026-10-25T07:00Z.",
-  "toComplete": "After the reset, run once: node --env-file=.env scripts/ai-live-verify.ts (at most 2 provider requests). If it returns 429 or 503 again, stop; do not loop."
+  "humanAcceptance": {
+    "status": 200,
+    "provenance": {
+      "activityType": "extraction",
+      "description": "extraction",
+      "hsCode": "extraction",
+      "netMassUnit": "extraction",
+      "netMassValue": "extraction",
+      "operatorName": "extraction"
+    }
+  },
+  "fallbackCheck": {
+    "method": "Label parser (deterministic, not AI)",
+    "provider": "label-parser",
+    "error": "Model extraction failed (provider HTTP 404: [{ \"error\": { \"code\": 404, \"message\": \"models/lothold-nonexistent-model-check is not found for API version v1main, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.\", \"status\": \"NOT_FOUND\" } } ]); the label parser (not AI) was used instead.",
+    "errorMentionsFallback": true,
+    "errorSanitized": true
+  },
+  "previousAttempts": [
+    {
+      "label": "ENGINEERING TEST - live AI extraction verification attempt with an invented, labelled document. No commercial data.",
+      "status": "LIVE AI UNVERIFIED. No model extraction has succeeded through the application. The extraction attempt received HTTP 503 from the provider; a later diagnostic call received HTTP 429 (free-tier daily request quota exhausted). Stopped as instructed: no retries, no billing.",
+      "provider": "Google Gemini API (Google AI Studio key, provider confirmed by the user) via the OpenAI-compatible endpoint https://generativelanguage.googleapis.com/v1beta/openai",
+      "model": "gemini-3.8-flash (listed for this key by GET /models, HTTP 200; listed as Stable on https://ai.google.dev/gemini-api/docs/models, page updated 2026-10-22)",
+      "date": "2026-10-24",
+      "providerRequests": [
+        {
+          "at": "2026-10-24T14:27Z",
+          "purpose": "list models (authentication + model availability)",
+          "outcome": "HTTP 200; configured model present"
+        },
+        {
+          "at": "2026-10-24T14:27:21Z",
+          "purpose": "live extraction through the app (POST /api/shipments/:id/extract), structured output",
+          "outcome": "HTTP 503 after ~1.8 s. Stored record: 'Model extraction failed (provider HTTP 503); the label parser (not AI) was used instead.'"
+        },
+        {
+          "at": "2026-10-24T14:27Z",
+          "purpose": "fallback check with a deliberately nonexistent model name",
+          "outcome": "HTTP 404 (expected). Stored record: 'Model extraction failed (provider HTTP 404); the label parser (not AI) was used instead.' Error text contained no key."
+        },
+        {
+          "at": "2026-10-24T14:28Z",
+          "purpose": "diagnostic structured-output call outside the app",
+          "outcome": "no response; client-side timeout after 90 s (cause unknown)"
+        },
+        {
+          "at": "2026-10-24T14:29:32Z",
+          "purpose": "minimal diagnostic call ('Reply with the single word: ready')",
+          "outcome": "HTTP 429",
+          "providerMessageExcerpt": "You exceeded your current quota, please check your plan and billing details. ... Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash, description: Generate content requests per day limit exceeded on Free Tie[r] (captured text truncated at this point)"
+        }
+      ],
+      "interpretation": {
+        "429": "Exhausted daily quota, not zero quota: the provider reports a non-zero free-tier limit ('limit: 20') on the per-day request metric for this model. A project with no free-tier access to a model would report a zero limit. Google's API errors page (updated 2026-10-23) describes daily-quota 429s as: wait for the quota to reset or request an increase.",
+        "503": "Provider temporarily overloaded or down (Google API errors page: 'The service is temporarily overloaded or down'). It says nothing about whether the request format is supported.",
+        "configuration": "Not shown to be unsupported: authentication succeeded, the model is listed and the model name is accepted (a wrong name gives 404, as the fallback check showed). Whether this provider accepts the app's strict json_schema response_format is still unverified.",
+        "quotaAttribution": "Rate limits apply per project, not per API key (rate-limits page, updated 2026-10-15). This work sent 4 generate requests, so other usage in the same Google Cloud project probably accounts for most of the 20; Google's documentation does not say whether failed requests count."
+      },
+      "verifiedThroughTheApp": {
+        "fallbackDisclosedInUiLabel": "Label parser (deterministic, not AI)",
+        "providerFailureRecordedAccurately": true,
+        "injectedValueNotAccepted": true,
+        "missingFieldsLeftMissing": true,
+        "everyAcceptedQuoteExistsInSource": true,
+        "noFieldAppliedBeforeHumanAcceptance": true,
+        "errorTextSanitized": true
+      },
+      "notYetVerified": [
+        "a successful model response through the application",
+        "schema compatibility of the structured-output request with this provider",
+        "model-proposed values passing source-span verification, and their page/quote references checked against the document"
+      ],
+      "reset": "Requests-per-day quotas reset at midnight Pacific time (https://ai.google.dev/gemini-api/docs/rate-limits, updated 2026-10-15). For 24 Oct 2026 (PDT, UTC-7) that is 2026-10-25T07:00Z.",
+      "toComplete": "After the reset, run once: node --env-file=.env scripts/ai-live-verify.ts (at most 2 provider requests). If it returns 429 or 503 again, stop; do not loop."
+    }
+  ]
 }
