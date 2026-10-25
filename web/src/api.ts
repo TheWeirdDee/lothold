@@ -14,7 +14,12 @@ export class ApiError extends Error {
 }
 
 /** True when an /api request was answered by something other than the LotHold server (e.g. a static host's 404 page). */
-export const isBackendUnavailable = (e: unknown) => e instanceof ApiError && (e.code === 'backend_unavailable' || e.code === 'network' || e.code === 'timeout');
+export const isBackendUnavailable = (e: unknown) => e instanceof ApiError && (e.code === 'backend_unavailable' || e.code === 'network' || e.code === 'timeout' || e.code === 'backend_starting');
+
+/** Fired when the backend looks like it is starting (cold start on free hosting): gateway errors or timeouts. */
+export const WAKING_EVENT = 'lothold:backend-starting';
+export const READY_EVENT = 'lothold:backend-ready';
+const signalStarting = () => { try { window.dispatchEvent(new Event(WAKING_EVENT)); } catch { /* not in a browser */ } };
 
 // Timeouts: uploads and model extraction can legitimately take longer than ordinary requests.
 const timeoutFor = (path: string, body: unknown) => (body instanceof FormData ? 180_000 : /\/extract$/.test(path) ? 150_000 : /forest-check|\/documents\//.test(path) ? 90_000 : 45_000);
@@ -32,7 +37,10 @@ export async function api<T = any>(method: string, path: string, body?: unknown,
   try {
     res = await fetch(path, { method, headers, body: payload, credentials: 'same-origin', signal: AbortSignal.timeout(opts.timeoutMs ?? timeoutFor(path, body)) });
   } catch (e) {
-    if ((e as Error).name === 'TimeoutError') throw new ApiError(0, 'timeout', 'The server did not respond in time. Nothing on this page was changed by the browser; reload to see the current state.');
+    if ((e as Error).name === 'TimeoutError') {
+      signalStarting();
+      throw new ApiError(0, 'timeout', 'The server did not respond in time. The outcome may be uncertain. Keep your form entries and check the current record before retrying.');
+    }
     throw new ApiError(0, 'network', 'The server could not be reached. Check your connection and try again.');
   }
   const text = await res.text();
@@ -43,6 +51,11 @@ export async function api<T = any>(method: string, path: string, body?: unknown,
     /* non-JSON */
   }
   // The LotHold API always answers in JSON; anything else means this site is not connected to it.
+  // Gateway errors while a sleeping free server wakes up: "starting", not "missing".
+  if (path.startsWith('/api/') && json === null && [502, 503, 504].includes(res.status)) {
+    signalStarting();
+    throw new ApiError(res.status, 'backend_starting', 'The LotHold server is starting up. Your form entries remain here while readiness is checked.');
+  }
   if (path.startsWith('/api/') && json === null && !(res.ok && text === ''))
     throw new ApiError(res.status, 'backend_unavailable', 'The LotHold server is not available at this address, so this page cannot load its data.');
   if (!res.ok) throw new ApiError(res.status, json?.error?.code ?? 'error', json?.error?.message ?? `Request failed (${res.status}).`);
