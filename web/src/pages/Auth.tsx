@@ -12,8 +12,8 @@ function AuthLayout({ title, intro, children }: { title: string; intro: ReactNod
     <div className="auth">
       <aside className="auth-side">
         <div>
-          <p className="eyebrow" style={{ color: 'var(--forest-glow)' }}>LotHold review desk</p>
-          <h2>Hold the case until the evidence holds.</h2>
+          <p className="eyebrow" style={{ color: 'var(--forest-glow)' }}>LotHold workspace</p>
+          <h2>Review cocoa shipment evidence in one place.</h2>
           {intro}
         </div>
         <ol className="auth-steps small">
