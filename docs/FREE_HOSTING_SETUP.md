@@ -1,6 +1,6 @@
 # Free judging deployment - setup handoff
 
-Status: prepared locally; see [validation and remaining gaps](FREE_HOSTING_VALIDATION.md); no cloud projects, deployment, push, or paid resources created. No projects are available yet. Hosted persistence is **not verified**. This is a bounded engineering pilot, not an unlimited production service.
+Status: prepared locally; see [validation and remaining gaps](FREE_HOSTING_VALIDATION.md); no cloud projects, deployment, push, or paid resources created. Supabase URL, bucket and legacy keys are now configured in the saved workspace .env. The live claim RPC returns HTTP 404; the setup SQL still needs to be applied/exposed before external verification can finish. Hosted persistence is **not verified**. This is a bounded engineering pilot, not an unlimited production service.
 
 ## Architecture and limits
 
@@ -15,12 +15,14 @@ Free hosting has sleep, inactivity and usage constraints. Render free services s
 ## 1. Create Supabase
 
 1. Create a project on the **Free** plan. Store its database password securely; it is not an application setting.
-2. In SQL Editor, review and run `deploy/render/supabase.sql`. It creates the private `lothold-private` bucket, an RLS-protected pointer table and service-role-only functions. This SQL is prepared but has not been executed against a live project. Review its actual execution result before continuing.
+2. In SQL Editor, review and run `deploy/render/supabase.sql`. It creates the private `lothold-private` bucket, an RLS-protected pointer table and service-role-only functions. This SQL creates the pointer table, RLS/permissions, all three RPC functions and the private bucket in one transaction; it also reloads the API schema cache. It has not yet been verified live. Review its SQL Editor result before continuing. The project itself and API keys are created through Supabase, not by this SQL. No Supabase Auth providers, S3 credentials or public storage policies are required. If you use another bucket name, change it consistently in the SQL and SUPABASE_STORAGE_BUCKET. Global Storage file-size settings must permit a checkpoint up to 32 MiB + 32 bytes; the SQL sets this bucket to 40 MiB, within the documented free 50 MB maximum.
 3. In project settings, obtain the HTTPS project URL, server-only `service_role` API key and public legacy `anon` API key. The anon key is required by the permission-denial verifier. Never put the service key in Vercel, frontend variables, screenshots, browser code or Git. Keep the bucket private; no public object policies are needed.
 
 4. Put `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` and optional `SUPABASE_STORAGE_BUCKET=lothold-private` in your local process environment or a separate ignored secret file. Run `node scripts/verify-supabase.ts --live` (or explicitly `node --env-file=YOUR_PRIVATE_FILE scripts/verify-supabase.ts --live`). It creates a unique engineering namespace, tests real RPC, private-object denial and two fresh-cache restores, then cleans up only that namespace. Review `docs/evidence/supabase-live.json`: blocked/failed is not verified. The script never loads `.env` implicitly or modifies operational keys/data.
 
 ## 2. Prepare Render
+
+See [exact account steps, runtime settings and publishing authorization](RENDER_PUBLISH_HANDOFF.md).
 
 Review `render.yaml` and `deploy/render/Dockerfile`. The final production image is built locally and measured as recorded in FREE_HOSTING_VALIDATION.md; hosted verification is still required. `deploy/render/Dockerfile.proof` is a local resource-test overlay, not the deployment Dockerfile.
 
@@ -35,7 +37,7 @@ Set these **Render server settings**:
 | `SUPABASE_STORAGE_BUCKET` | `lothold-private` |
 | `DURABLE_STORE` | `supabase` |
 | `EVIDENCE_STORE` | `sqlite` |
-| `SNAPSHOT_NAMESPACE` | `judging` ? preserve across redeploys |
+| `SNAPSHOT_NAMESPACE` | `judging` - preserve across redeploys |
 | `EVIDENCE_ENCRYPTION_KEY` | New random 32-byte hexadecimal key; preserve securely |
 | `DOWNLOAD_SIGNING_KEY` | Separate random 32-byte hexadecimal key; preserve securely |
 | `PUBLIC_ORIGIN` | Actual Vercel HTTPS frontend origin |
