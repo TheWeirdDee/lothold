@@ -3,6 +3,8 @@ dist
 data
 .env
 .env.*
+deploy/hosting.env
+.git
 research/raw
 test-results
 playwright-report
