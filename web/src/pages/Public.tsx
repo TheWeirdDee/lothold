@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { api, fmtDate } from '../api.ts';
+import { api, fmtDate, isBackendUnavailable } from '../api.ts';
 import { useAuth } from '../main.tsx';
 import { Badge, ENV_STATUS, useAsync, TableWrap } from '../components/ui.tsx';
 import { PixelMap } from '../components/PixelMap.tsx';
+import engineering from '../../../docs/evidence/chain-engineering-sepolia.json' with { type: 'json' };
 
 // ---------------- public forest evidence inspector ----------------
 export function InspectPage() {
@@ -16,6 +17,11 @@ export function InspectPage() {
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [geom, setGeom] = useState<any>(null);
+  // Analysis runs on the LotHold server; say so up front when this site cannot reach it.
+  const [offline, setOffline] = useState(false);
+  useEffect(() => {
+    api('GET', '/api/health').catch((e) => setOffline(isBackendUnavailable(e)));
+  }, []);
 
   async function run(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +70,11 @@ export function InspectPage() {
       </p>
       <div className="split">
         <form className="panel stack" onSubmit={run} aria-describedby="inspect-help">
+          {offline && (
+            <p className="callout amber small" role="status">
+              Analysis needs the LotHold server, which is not available at this address. The method is described in <Link to="/method">Evidence &amp; methods</Link>; to run it, start LotHold locally (<Link to="/docs#local-setup">setup guide</Link>).
+            </p>
+          )}
           <div className="tabs" role="group" aria-label="Area input method" style={{ margin: 0 }}>
             <button type="button" aria-pressed={mode === 'box'} onClick={() => setMode('box')}>
               Coordinate box
@@ -97,7 +108,7 @@ export function InspectPage() {
             Up to 5,000 ha. Coordinates are never swapped or repaired automatically.
           </p>
           <div className="btn-row">
-            <button className="btn" disabled={busy}>
+            <button className="btn" disabled={busy || offline}>
               {busy ? 'Reading dataset pixels…' : 'Run analysis'}
             </button>
           </div>
@@ -238,90 +249,15 @@ export function LossYears({ lossByYear }: { lossByYear: Record<string, { pixels:
   );
 }
 
-// ---------------- method ----------------
-export function MethodPage() {
-  const { data, error, loading } = useAsync(() => api('GET', '/api/public/method'), []);
-  return (
-    <div className="page narrow">
-      <header className="page-head">
-        <div>
-          <p className="eyebrow">Evidence &amp; methods</p>
-          <h1>Method, sources and limits</h1>
-        </div>
-      </header>
-      <p>
-        LotHold separates four kinds of information and never lets one stand in for another: <strong>declared business records</strong> (what a supplier or exporter states), <strong>environmental observations</strong> (published satellite-derived datasets), <strong>human review decisions</strong> (with rationale and evidence), and <strong>allocation commitments</strong> (database ledger, optionally anchored on a public testnet).
-      </p>
-      <section className="section">
-        <h2>Environmental datasets</h2>
-        {loading && <p>Loading dataset register…</p>}
-        {error && <p role="alert">Could not load the dataset register: {error.message}</p>}
-        {data?.datasets.map((d: any) => (
-          <div key={d.id} className="panel" style={{ marginBottom: 12 }}>
-            <h3>{d.title}</h3>
-            <dl className="kv small">
-              <dt>Version</dt>
-              <dd>{d.version}</dd>
-              <dt>Resolution</dt>
-              <dd>{d.resolutionLabel}</dd>
-              <dt>Temporal coverage</dt>
-              <dd>{d.temporalCoverage}</dd>
-              <dt>Meaning of values</dt>
-              <dd>{d.dateSemantics}</dd>
-              <dt>Licence</dt>
-              <dd>{d.license}</dd>
-              <dt>Citation</dt>
-              <dd>{d.citation}</dd>
-              <dt>Source file</dt>
-              <dd className="break">
-                <a href={d.sourceUrl}>{d.sourceUrl}</a>
-              </dd>
-              <dt>Pinned SHA-256</dt>
-              <dd className="mono break">{d.sha256}</dd>
-              <dt>On this server</dt>
-              <dd>{d.availability?.present && d.availability?.sizeMatches ? (d.availability.sha256 === d.sha256 ? 'Present and hash-verified at startup' : 'Present; hash verification pending or failed') : 'Missing; analysis reports “unavailable”'}</dd>
-            </dl>
-          </div>
-        ))}
-      </section>
-      <section className="section">
-        <h2>How a plot is analysed</h2>
-        <ol className="small">
-          <li>The plot geometry is validated (WGS 84 longitude/latitude, closed rings, no self-intersection, no holes, points need an area of 4 ha or less). Invalid geometry is never analysed or repaired automatically.</li>
-          <li>Every 30 m Hansen pixel whose centre lies inside the polygon is sampled. A point plot, or a polygon smaller than one pixel, samples only the pixel that contains it; the result says so.</li>
-          <li>For each pixel: the Hansen data mask (land, water, no data), the Hansen loss year, and the nine 10 m JRC 2020 pixels nested exactly inside it are read.</li>
-          <li>Loss in 2021–2025 sets <em>Land-change signal</em>. No loss on fully covered land sets <em>No post-2020 loss observed</em>. Missing data or out-of-tile areas give <em>Partial coverage</em> or <em>Outside coverage</em>, never a clear result.</li>
-          <li>A reviewer can only set a signal aside with a written rationale (at least 40 characters) <em>and</em> an attached evidence file. A new analysis result invalidates earlier decisions.</li>
-        </ol>
-        <p className="small muted">Areas are computed exactly on the WGS 84 ellipsoid (checked against pyproj to within 0.02 %), but pixel-count totals are approximations of the mapped extent, not statistically valid area estimates.</p>
-      </section>
-      <section className="section">
-        <h2>Regulatory context checked for this build</h2>
-        <ul className="small">
-          <li>Regulation (EU) 2023/1115 as amended by Regulation (EU) 2025/2650 (Official Journal texts retrieved from the EU Publications Office on 24 October 2026): obligations apply from 30 December 2026, and from 30 June 2027 for micro and small operators established by 31 December 2024.</li>
-          <li>“Deforestation-free” refers to land not subject to deforestation after 31 December 2020 (Art. 2(13)). Geolocation needs at least six decimal digits, with polygons for plots over 4 ha other than cattle (Art. 2(28)).</li>
-          <li>Annex I lists cocoa under HS 1801–1806. LotHold supports only <strong>1801 (cocoa beans)</strong>; other cocoa products are outside this tool’s scope, not outside the Regulation.</li>
-          <li>Not supported: the option for micro and small primary operators to give a postal address instead of geolocation (Art. 4a(5), inserted by Regulation (EU) 2025/2650), and the July 2026 Delegated Act on Annex I, which was under scrutiny at retrieval.</li>
-          <li>A schema-valid geometry or XML file passes a format check only. LotHold does not determine scope, risk classification or compliance.</li>
-        </ul>
-      </section>
-      <section className="section">
-        <h2>Rules and versions</h2>
-        <p className="small">
-          Rules {data?.rulesVersion ?? '…'} · analysis method {data?.analysisMethod ?? '…'}. Every generated document records the evidence snapshot digest it was built from. When any source, geometry, quantity, allocation, dataset result or review decision changes, earlier sign-offs and documents are marked out of date. Copies already downloaded cannot be recalled.
-        </p>
-      </section>
-    </div>
-  );
-}
-
 // ---------------- verify ----------------
 export function VerifyPage() {
   const [key, setKey] = useState('');
   const [lookup, setLookup] = useState<any>(null);
   const [lookErr, setLookErr] = useState<string | null>(null);
-  const { data, error, loading } = useAsync(() => api('GET', '/api/public/verify'), []);
-  const eng = data?.engineering;
+  const { data: live, error, loading } = useAsync(() => api('GET', '/api/public/verify', undefined, { timeoutMs: 8000 }), []);
+  // Bundled public engineering evidence is historical, never a substitute for a live balance.
+  const data = live ?? { network: engineering.network, chainId: engineering.chainId, registryAddress: engineering.contract.address, registryExplorer: `https://sepolia.etherscan.io/address/${engineering.contract.address}`, appAnchoredReservations: null, engineering, cannotVerify: ['physical origin or existence of cocoa', 'land rights or legality', 'allocations outside this registry or under a different batch key', 'the truth of private source records'] };
+  const eng = data.engineering;
   return (
     <div className="page">
       <header className="page-head">
@@ -334,7 +270,7 @@ export function VerifyPage() {
         A small contract on the Ethereum Sepolia <strong>test network</strong>. A registered batch can never be reserved beyond its declared mass, and an allocation identifier can only be used once. It holds no tokens and moves no money. It records hashes and gram quantities only: no supplier names, farmer data or plot coordinates.
       </p>
       {loading && <p>Loading registry details…</p>}
-      {error && <p role="alert">Could not load registry details: {error.message}</p>}
+      {error && <p className="callout" role="status">Live registry service unavailable. The public engineering record below is a historical snapshot, not a current balance. <Link to="/docs#troubleshooting">Connection help</Link>.</p>}
       {data && (
         <div className="split">
           <div className="stack">
@@ -347,7 +283,7 @@ export function VerifyPage() {
                 <dt>Contract</dt>
                 <dd className="mono break">{data.registryAddress ? <a href={data.registryExplorer}>{data.registryAddress}</a> : 'Not configured'}</dd>
                 <dt>Anchored from this app</dt>
-                <dd>{data.appAnchoredReservations} confirmed reservation(s)</dd>
+                <dd>{live ? `${data.appAnchoredReservations} confirmed reservation(s)` : 'Live count unavailable'}</dd>
               </dl>
             </div>
             <form
@@ -369,7 +305,7 @@ export function VerifyPage() {
                 <input type="text" className="mono" value={key} onChange={(e) => setKey(e.target.value)} placeholder="0x…" required />
               </label>
               <div>
-                <button className="btn secondary">Read from contract</button>
+                <button className="btn secondary" disabled={!live}>Read from contract</button>
               </div>
               {lookErr && <p role="alert" className="small">{lookErr}</p>}
               {lookup && (lookup.found ? (
@@ -407,8 +343,8 @@ export function VerifyPage() {
                     <strong>Engineering test, not commercial activity.</strong> One declarant and two authorised test reservers exercised the shared balance on {fmtDate(eng.runAt)}. The quantities (1,000 kg declared; 600 kg then 600 kg requested) are test inputs and describe no real cocoa.
                   </p>
                 </div>
-                <TableWrap>
-                  <table className="data">
+                <TableWrap label="Engineering verification steps">
+                  <table className="data stack-sm">
                     <thead>
                       <tr>
                         <th>Step</th>
@@ -419,14 +355,14 @@ export function VerifyPage() {
                     <tbody>
                       {eng.steps.map((s: any, i: number) => (
                         <tr key={i}>
-                          <td className="small">{s.step}</td>
-                          <td className="small nowrap">
+                          <td className="small" data-label="Step">{String(s.step).replace(/-/g, ' ')}</td>
+                          <td className="small" data-label="Outcome">
                             {s.outcome === 'confirmed' && <Badge cls="ready">Confirmed{s.blockNumber ? ` · block ${s.blockNumber}` : ''}</Badge>}
                             {s.outcome === 'reverted' && <Badge cls="hold">Mined, reverted{s.blockNumber ? ` · block ${s.blockNumber}` : ''}</Badge>}
                             {s.outcome === 'preflight_rejected' && <Badge cls="review">Preflight rejected (not mined)</Badge>}
                             {!s.outcome && <span className="muted">state read</span>}
                           </td>
-                          <td className="small break">
+                          <td className="small break" data-label="Evidence">
                             {s.explorer ? <a href={s.explorer}>{s.txHash.slice(0, 12)}…</a> : null}
                             {s.revert ? <div>{s.revert.message}</div> : null}
                             {s.unchanged !== undefined ? <div>Reserved before {s.reservedGramsBefore} g, after {s.reservedGramsAfter} g: {s.unchanged ? 'unchanged' : 'CHANGED'}</div> : null}
