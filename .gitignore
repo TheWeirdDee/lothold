@@ -11,6 +11,7 @@ contracts/broadcast/
 contracts/lib/
 test-results/
 playwright-report/
+.vitest/
 *.log
 research/raw/
 research/totext.py
