@@ -1,0 +1,28 @@
+WARNING: disposable ENGINEERING data; this run does not prove persistence.
+(node:1) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"event":"dataset.verify","id":"hansen_lossyear","ok":true,"present":true,"mode":"build-manifest"}
+{"event":"dataset.verify","id":"hansen_datamask","ok":true,"present":true,"mode":"build-manifest"}
+{"event":"dataset.verify","id":"jrc_gfc2020","ok":true,"present":true,"mode":"build-manifest"}
+{"event":"datasets.verified","ok":true}
+{"event":"listening","url":"http://0.0.0.0:10000"}
+{"t":"2026-10-25T09:53:26.060Z","event":"http","method":"GET","path":"/api/ready","status":200,"ms":401,"user":null}
+{"t":"2026-10-25T09:53:27.354Z","event":"http","method":"GET","path":"/api/health","status":200,"ms":98,"user":null}
+{"t":"2026-10-25T09:53:27.652Z","event":"http","method":"GET","path":"/api/public/method","status":200,"ms":197,"user":null}
+{"t":"2026-10-25T09:53:28.554Z","event":"http","method":"GET","path":"/*","status":200,"ms":598,"user":null}
+{"t":"2026-10-25T09:53:35.157Z","event":"http","method":"POST","path":"/api/auth/register","status":201,"ms":3805,"user":null}
+{"t":"2026-10-25T09:53:35.359Z","event":"http","method":"GET","path":"/api/auth/me","status":200,"ms":4,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:35.655Z","event":"http","method":"POST","path":"/api/shipments","status":201,"ms":202,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:35.960Z","event":"http","method":"PATCH","path":"/api/shipments/:id/fields","status":200,"ms":108,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:37.455Z","event":"http","method":"POST","path":"/api/shipments/:id/uploads","status":201,"ms":1194,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:37.754Z","event":"http","method":"POST","path":"/api/uploads/:id/confirm","status":200,"ms":101,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:38.255Z","event":"http","method":"POST","path":"/api/shipments/:id/uploads","status":201,"ms":494,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:38.358Z","event":"http","method":"POST","path":"/api/uploads/:id/confirm","status":200,"ms":5,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:39.158Z","event":"http","method":"GET","path":"/api/shipments/:id","status":200,"ms":399,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:53:41.857Z","event":"http","method":"GET","path":"/api/shipments/:id","status":200,"ms":104,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"event":"job.succeeded","type":"forest_analysis","jobId":"0ea99336-5f02-4964-8eb5-190add0a91cb","ms":89794}
+{"t":"2026-10-25T09:55:08.558Z","event":"http","method":"GET","path":"/api/shipments/:id","status":200,"ms":396,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:55:27.054Z","event":"http","method":"POST","path":"/api/shipments/:id/documents/:kind","status":201,"ms":18201,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:55:27.160Z","event":"http","method":"GET","path":"/api/download/:token","status":200,"ms":5,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:55:27.257Z","event":"http","method":"POST","path":"/api/uploads/:id/download-link","status":200,"ms":2,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
+{"t":"2026-10-25T09:55:27.357Z","event":"http","method":"GET","path":"/api/download/:token","status":200,"ms":2,"user":"c2cd75dd-aa0f-4f44-ab87-f086aa6c19fa"}
