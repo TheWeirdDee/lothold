@@ -8,7 +8,7 @@ import './styles.css';
 import { StrictMode, createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
-import { api, setCsrf } from './api.ts';
+import { api, setCsrf, WAKING_EVENT, READY_EVENT, ApiError } from './api.ts';
 import { Logo, ToastProvider, useToast } from './components/ui.tsx';
 import { VerifyPage, InspectPage } from './pages/Public.tsx';
 import { gsap } from 'gsap';
@@ -21,23 +21,25 @@ import { ShipmentDesk } from './pages/Shipment.tsx';
 
 export type User = { id: string; email: string; name: string; organisation: string; role: string; chainEnabled: boolean };
 // `unavailable` means the session could not be checked (server unreachable); it is not the same as signed out.
-type AuthState = { user: User | null; loading: boolean; unavailable: string | null; refresh: () => Promise<void>; logout: () => Promise<void> };
-const AuthCtx = createContext<AuthState>({ user: null, loading: true, unavailable: null, refresh: async () => {}, logout: async () => {} });
+type AuthState = { user: User | null; loading: boolean; unavailable: string | null; starting: boolean; refresh: () => Promise<void>; logout: () => Promise<void> };
+const AuthCtx = createContext<AuthState>({ user: null, loading: true, unavailable: null, starting: false, refresh: async () => {}, logout: async () => {} });
 export const useAuth = () => useContext(AuthCtx);
 
 function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const refresh = useCallback(async () => {
     try {
       const r = await api<{ user: User | null; csrf?: string }>('GET', '/api/auth/me');
       setUser(r.user);
       setCsrf(r.csrf ?? null);
-      setUnavailable(null);
+      setUnavailable(null); setStarting(false);
     } catch (e) {
       setUser(null);
       setUnavailable((e as Error).message);
+      setStarting(e instanceof ApiError && ['timeout', 'backend_starting'].includes(e.code));
     } finally {
       setLoading(false);
     }
@@ -51,11 +53,66 @@ function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
-  return <AuthCtx.Provider value={{ user, loading, unavailable, refresh, logout }}>{children}</AuthCtx.Provider>;
+  useEffect(() => {
+    const waking = () => setStarting(true), ready = () => { setStarting(false); void refresh(); };
+    window.addEventListener(WAKING_EVENT, waking); window.addEventListener(READY_EVENT, ready);
+    return () => { window.removeEventListener(WAKING_EVENT, waking); window.removeEventListener(READY_EVENT, ready); };
+  }, [refresh]);
+  return <AuthCtx.Provider value={{ user, loading, unavailable, starting, refresh, logout }}>{children}</AuthCtx.Provider>;
+}
+
+/** Poll readiness without reloading or discarding any form state. */
+function StartingNotice() {
+  const { starting: sessionStarting } = useAuth();
+  const [starting, setStarting] = useState(false);
+  const [waited, setWaited] = useState(0);
+  const [ready, setReady] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { if (sessionStarting) { setStarting(true); setReady(false); } }, [sessionStarting]);
+  useEffect(() => {
+    const on = () => { setStarting(true); setReady(false); };
+    window.addEventListener(WAKING_EVENT, on);
+    return () => window.removeEventListener(WAKING_EVENT, on);
+  }, []);
+  useEffect(() => {
+    if (!starting) return;
+    let stopped = false;
+    const started = Date.now(); setExhausted(false);
+    const poll = async () => {
+      while (!stopped && Date.now() - started < 240_000) {
+        setWaited(Math.round((Date.now() - started) / 1000));
+        try {
+          const r = await fetch('/api/ready', { credentials: 'same-origin', signal: AbortSignal.timeout(20_000) });
+          if (r.ok && (r.headers.get('content-type') ?? '').includes('json') && (await r.json()).ready === true) {
+            setReady(true); window.dispatchEvent(new Event(READY_EVENT)); return;
+          }
+        } catch { /* still starting */ }
+        await new Promise((res) => setTimeout(res, 5_000));
+      }
+      if (!stopped) setExhausted(true);
+    };
+    void poll();
+    return () => { stopped = true; };
+  }, [starting, attempt]);
+  if (!starting) return null;
+  return (
+    <div className="backend-notice" role="status" aria-live="polite">
+      {ready ? (
+        <>
+          <strong>The LotHold server is ready.</strong> Your form entries are still here. Retry the operation when you are ready.
+        </>
+      ) : exhausted ? <><strong>The service is still unavailable.</strong> No empty workspace or successful save is implied. <button className="linkbtn" onClick={() => setAttempt((n) => n + 1)}>Retry connection</button></> : (
+        <>
+          <strong>The LotHold server is starting up.</strong> A free service may take a minute or longer to wake. Your form entries stay on this page{waited > 0 ? ` (waiting ${waited} s)` : ''}.
+        </>
+      )}
+    </div>
+  );
 }
 
 function Shell({ children }: { children: ReactNode }) {
-  const { user, logout, unavailable } = useAuth();
+  const { user, logout, unavailable, starting } = useAuth();
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const loc = useLocation();
@@ -129,7 +186,8 @@ function Shell({ children }: { children: ReactNode }) {
         <nav aria-label="Mobile" onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>{navigation}</nav>
         <p className="drawer-note">Find the source. Ask for the evidence.<br />A review aid for cocoa shipments.</p>
       </dialog>
-      {(isApp || isAuth) && unavailable && <div className="backend-notice" role="status"><strong>The LotHold server is not running at this address.</strong> Account access and case work need a connected server. <Link to="/docs#troubleshooting">Connection help</Link></div>}
+      {(isApp || isAuth) && unavailable && !starting && <div className="backend-notice" role="status"><strong>The LotHold server is not running at this address.</strong> Account access and case work need a connected server. <Link to="/docs#troubleshooting">Connection help</Link></div>}
+      <StartingNotice />
       <main id="main" tabIndex={-1} style={{ outline: 'none' }}>
         {children}
       </main>
