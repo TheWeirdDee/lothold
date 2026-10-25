@@ -25,6 +25,7 @@ async function call(method: string, path: string, body?: unknown, form?: FormDat
   return { status: res.status, json, buf, type: res.headers.get('content-type') ?? '' };
 }
 const results: Record<string, unknown> = {};
+const healthLatencies: number[]=[]; const statusLatencies:number[]=[];
 function check(name: string, ok: boolean, detail?: unknown) {
   results[name] = ok ? 'pass' : { fail: detail };
   console.log(JSON.stringify({ check: name, ok, ...(detail !== undefined ? { detail } : {}) }));
@@ -79,11 +80,18 @@ if (phase === 'seed') {
   check('confirm geojson', r.status === 200, r.status);
   let view: any;
   const analysed = (v: any) => (v.plots?.features ?? []).filter((f: any) => f.report.valid && f.env?.status);
-  for (let i = 0; i < 120; i++) {
+  const analysisStart=performance.now();
+  for (let i = 0; i < 300; i++) {
+    const began=performance.now(); const health=await fetch(base+'/api/health',{signal:AbortSignal.timeout(5000)}); await health.arrayBuffer(); healthLatencies.push(performance.now()-began);
+    if(health.status!==200) throw new Error('Health failed during analysis');
+    const statusStart=performance.now();
     view = (await call('GET', `/api/shipments/${sid}`)).json;
+    statusLatencies.push(performance.now()-statusStart);
     if (view.evaluation.readiness.environment !== 'IN_PROGRESS' && analysed(view).length > 0) break;
     await new Promise((res) => setTimeout(res, 1000));
   }
+  const percentile=(v:number[])=>[...v].sort((a,b)=>a-b)[Math.ceil(v.length*0.95)-1];
+  check('ordinary API responsive during raster job',healthLatencies.length>1 && Math.max(...healthLatencies)<5000 && Math.max(...statusLatencies)<5000,{samples:healthLatencies.length,healthP95ms:percentile(healthLatencies),healthMaxMs:Math.max(...healthLatencies),statusP95ms:percentile(statusLatencies),statusMaxMs:Math.max(...statusLatencies),analysisWaitMs:performance.now()-analysisStart});
   const done = analysed(view);
   check('environmental analysis ran on real rasters', done.length > 0 && done.every((f: any) => f.env.grid && f.env.status !== 'UNAVAILABLE'), done.map((f: any) => ({ plot: f.plotRef, status: f.env.status, summary: f.env.summary })));
   r = await call('POST', `/api/shipments/${sid}/documents/supplier_request_pdf`);
