@@ -344,7 +344,9 @@ dialog .dlg-foot { padding: 14px 20px; border-top: 1px solid var(--line); displa
 .hero h1 { font-size: var(--fs-hero); font-weight: 620; letter-spacing: -0.045em; line-height: 0.98; margin: 0 0 clamp(24px, 3vw, 40px); color: #f7f5ef; max-width: 17ch; }
 .hero h1 .soft { color: var(--night-muted); }
 .hero .lede { font-size: var(--fs-lede); color: #c9cdc6; max-width: 46ch; margin-bottom: 26px; }
-.hero .who { font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: 0.05em; text-transform: uppercase; color: var(--forest-glow); margin-bottom: 18px; }
+.hero .who { font-family: var(--sans); font-size: clamp(0.98rem, 0.9rem + 0.3vw, 1.12rem); font-weight: 560; color: var(--forest-glow); margin-bottom: 18px; }
+.hero .scope-line { margin: 18px 0 0; max-width: 60ch; font-size: 0.86rem; line-height: 1.55; color: var(--night-muted); }
+.hero .scope-line strong { color: var(--night-text); font-weight: 600; }
 .hero-receives { display: grid; gap: 10px; margin: 26px 0 0; padding: 18px 0 0; border-top: 1px solid var(--night-line); list-style: none; color: #c9cdc6; font-size: 0.92rem; }
 .hero-receives li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
 .hero-receives li::before { content: '→'; color: var(--forest-glow); font-family: var(--mono); }
@@ -526,6 +528,8 @@ dialog .dlg-foot { padding: 14px 20px; border-top: 1px solid var(--line); displa
 .workflow h3 { font-size: 1.05rem; margin: 8px 0 6px; }
 .workflow p { font-size: 0.88rem; color: var(--ink-2); }
 @media (max-width: 980px) { .workflow { grid-template-columns: 1fr 1fr; } .workflow li + li { border-left: 0; padding-left: 0; } .workflow li:nth-child(even) { padding-left: 18px; border-left: 1px solid var(--line); } .workflow li:nth-child(n + 3) { border-top: 1px solid var(--line); } }
+.workflow.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 980px) { .workflow.three { grid-template-columns: 1fr; } .workflow.three li, .workflow.three li:nth-child(even) { padding-left: 0; border-left: 0; } .workflow.three li + li { border-top: 1px solid var(--line); } }
 @media (max-width: 560px) { .workflow { grid-template-columns: 1fr; } .workflow li, .workflow li:nth-child(even) { padding-left: 0; border-left: 0; } .workflow li + li { border-top: 1px solid var(--line); } }
 
 /* closing */
@@ -556,3 +560,7 @@ dialog .dlg-foot { padding: 14px 20px; border-top: 1px solid var(--line); displa
 .kit-files li { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--white); }
 .kit-files a { font-size: 0.86rem; overflow-wrap: anywhere; }
 .kit-steps { display: grid; gap: 8px; padding-left: 1.3em; font-size: 0.94rem; }
+
+/* ---------------- server-unavailable notice ---------------- */
+.backend-notice { background: var(--amber-soft); color: var(--amber-ink); border-bottom: 1px solid rgba(181, 112, 31, 0.35); padding: 10px var(--gutter); font-size: 0.9rem; line-height: 1.5; text-align: center; }
+.backend-notice a { color: inherit; }
