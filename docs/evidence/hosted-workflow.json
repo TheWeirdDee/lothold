@@ -158,7 +158,6 @@
     "filesystemReplacingRedeployment": "passed after separate user-reported Render redeploy; Free filesystem loss semantics documented by Render"
   },
   "notVerified": [
-    "Successful approved XML generation/XSD validation on this host",
     "Provider image digest and cgroup measurements"
   ],
   "validatedDeployment": false,
@@ -443,5 +442,9 @@
     "report": "connected-browser.json",
     "scope": "Local compiled production backend, separate from hosted probes",
     "initialAttempt": "An earlier runner stalled without a result; stopped its identified process and reran the entire suite with visible progress. No isolated test results combined."
+  },
+  "laterDemoVerification": {
+    "evidence": "demo-artifacts-final.json",
+    "scope": "Hosted recorded engineering case: stored XML freshly downloaded, digest matched and independently XSD-validated; stale snapshot new export refused. Separate from the original recovery scenarios."
   }
 }
