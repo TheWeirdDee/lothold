@@ -1,3 +1,5 @@
+> Reliability follow-up (25 October 2026): [current verification and manual actions](FREE_HOSTING_VALIDATION.md), [checkpoint protocol](CHECKPOINT_PROTOCOL.md), and [free-tier usage](FREE_TIER_USAGE.md). Earlier counts and hosting statements below are historical; they do not validate a free hosted deployment.
+
 > Updated free-project preparation: see [FREE_HOSTING_SETUP.md](FREE_HOSTING_SETUP.md). Its checkpoint setup supersedes older hosting recommendations below. No cloud deployment has been verified.
 
 # LotHold public-experience handoff — 25 October 2026
