@@ -1,0 +1,18 @@
+# LEGACY EXPERIMENT ONLY: not used by render.yaml/start.sh. Async backups do not guarantee acknowledged-write durability.
+# Continuous replication of the LotHold SQLite database to a private S3-compatible bucket.
+# Values come from the environment (set them as secrets on the host). Supabase Storage: enable S3 access in
+# Storage settings, create a private bucket, and use endpoint https://<project-ref>.storage.supabase.co/storage/v1/s3.
+dbs:
+  - path: ${DATABASE_PATH}
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET}
+        path: ${LITESTREAM_PATH}
+        endpoint: ${LITESTREAM_ENDPOINT}
+        region: ${LITESTREAM_REGION}
+        force-path-style: true
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        sync-interval: 1s
+        snapshot-interval: 6h
+        retention: 168h
