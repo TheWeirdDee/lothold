@@ -9,7 +9,7 @@ import { fromFile, type GeoTIFF, type GeoTIFFImage } from 'geotiff';
 import { pointInGeometry, type PlotGeometry } from '../../core/geometry.ts';
 import { cellAreaM2 } from '../../core/ellipsoid.ts';
 
-export const ANALYSIS_METHOD_VERSION = 'forest-analysis/2026-10-24.4';
+export const ANALYSIS_METHOD_VERSION = 'forest-analysis/2026-10-25.1';
 export const CUTOFF_YEAR = 2020;
 const MAX_BBOX_DEG = 0.25; // ~27 km; plots larger than this are refused rather than silently sampled.
 
@@ -383,9 +383,14 @@ export async function analysePlot(geometry: PlotGeometry, opts: { geometryValid:
       const lossPixels = Object.entries(res.lossByYear).filter(([y]) => Number(y) > CUTOFF_YEAR).reduce((s, [, e]) => s + e.pixels, 0);
       const onForest = res.areaHa.postCutoffLossOnJrcForest > 0 ? `≈${ha(res.areaHa.postCutoffLossOnJrcForest)} ha of it on land mapped as forest in 2020 by JRC` : 'none of it on land mapped as forest in 2020 by JRC';
       res.summary = `Annual tree-cover loss recorded in ${postYears} on ${lossPixels} of ${count} sampled 30 m pixels (≈${ha(res.areaHa.postCutoffLoss)} ha; ${onForest}). This is a land-change signal after the cut-off that needs investigation, not a finding of deforestation.`;
-    } else if (outsideTile || noData > 0) {
+    } else if (land === 0) {
+      // Only water or no-data pixels: there is no land observation at all, so this is never a clear result.
+      res.status = 'UNAVAILABLE';
+      res.summary = `No land observation: the ${count} sampled pixel${count === 1 ? ' is' : 's are'} ${water} water and ${noData} no-data${outsideTile ? ', and the plot extends beyond the installed tile' : ''}. No conclusion is drawn; check the geometry or provide other evidence for this plot.`;
+    } else if (outsideTile || noData > 0 || water > 0) {
+      // Water inside a declared production plot is a coverage gap, not land observed without loss.
       res.status = 'PARTIAL_COVERAGE';
-      res.summary = `Part of the plot has no usable observation (${noData} no-data, ${water} water pixels${outsideTile ? '; extends beyond the installed tile' : ''}). No post-2020 loss was recorded in the covered part; the uncovered part cannot be assessed.`;
+      res.summary = `Part of the plot has no usable land observation (${land} land, ${water} water, ${noData} no-data pixels${outsideTile ? '; extends beyond the installed tile' : ''}). No post-2020 loss was recorded on the land part; the rest cannot be assessed.`;
     } else {
       res.status = 'NO_POST_2020_LOSS_OBSERVED';
       res.summary = `No Hansen annual loss recorded for 2021–2025 on ${count} sampled 30 m pixel${count === 1 ? '' : 's'} (≈${ha(res.areaHa.sampled)} ha). This is not evidence that the plot is deforestation-free.`;
