@@ -9,7 +9,7 @@
 // Document text is untrusted: it is passed to the model as delimited data and instructions inside it are
 // never executed (the model can only return candidate fields; the server ignores anything else).
 import { createHash } from 'node:crypto';
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { type DB, audit, get, id, now, run } from '../db.ts';
 import { type SessionUser } from '../security.ts';
@@ -185,6 +185,7 @@ function documentPrompt(pages: PageText[]): string {
 
 export async function callModel(cfg: ProviderConfig, pages: PageText[]): Promise<unknown> {
   if (cfg.provider === 'anthropic') {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
     const client = new Anthropic({ apiKey: cfg.apiKey, timeout: 90_000, maxRetries: 2 });
     const response = await client.messages.create({
       model: cfg.model,
