@@ -1,6 +1,7 @@
 // ENGINEERING CHECK of a running production container (throwaway volume, LOTHOLD_INSTANCE=engineering).
 //   node scripts/container-verify.ts seed          <base> <state.json>   before a restart
 //   node scripts/container-verify.ts after-restart <base> <state.json>   after `docker restart`
+// Add --hosted only for an explicitly authorized HTTPS host. Store state under ignored test-results/.
 // "seed" checks readiness, datasets, migrations (via the API surface), auth, uploads, analysis and exports and
 // saves what it created; "after-restart" logs in again and checks that all of it survived. Prints JSON lines;
 // exits non-zero on the first failed check. The state file holds an engineering test password only.
@@ -8,6 +9,10 @@ import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const [phase, base = 'http://127.0.0.1:8790', stateFile = 'container-state.json'] = process.argv.slice(2);
+// Explicit opt-in permits isolated engineering records on an authorized hosted deployment.
+// Keep the state file private: it contains the generated engineering account password.
+const hosted = process.argv.includes('--hosted');
+if (hosted && new URL(base).protocol !== 'https:') throw new Error('Hosted checks require HTTPS.');
 if (phase !== 'seed' && phase !== 'after-restart') { console.error('usage: seed|after-restart <base> <state.json>'); process.exit(1); }
 
 let cookie = '', csrf = '';
@@ -16,7 +21,7 @@ async function call(method: string, path: string, body?: unknown, form?: FormDat
   if (cookie) headers.cookie = cookie;
   if (csrf) headers['x-csrf-token'] = csrf;
   if (body !== undefined) headers['content-type'] = 'application/json';
-  const res = await fetch(base + path, { method, headers, body: form ?? (body !== undefined ? JSON.stringify(body) : undefined) });
+  const res = await fetch(base + path, { method, headers, body: form ?? (body !== undefined ? JSON.stringify(body) : undefined), signal: AbortSignal.timeout(45_000) });
   const sc = res.headers.get('set-cookie');
   if (sc) cookie = sc.split(';')[0]!;
   const buf = Buffer.from(await res.arrayBuffer());
@@ -44,7 +49,7 @@ async function waitReady() {
 const ready = await waitReady();
 check('ready', ready.ready === true);
 const health = (await call('GET', '/api/health')).json;
-check('engineering instance', health.instance === 'engineering', health.instance);
+check(hosted ? 'authorized hosted API reachable' : 'engineering instance', hosted ? health.ok === true : health.instance === 'engineering', health.instance);
 const method = (await call('GET', '/api/public/method')).json;
 check('datasets present and hash-verified at startup', method.datasets.length === 3 && method.datasets.every((d: any) => d.availability?.present && d.availability.sizeMatches && d.availability.sha256 === d.sha256), method.datasets.map((d: any) => ({ id: d.id, ...d.availability, pinned: d.sha256 })));
 const spa = await call('GET', '/');
@@ -56,11 +61,13 @@ if (phase === 'seed') {
   let r = await call('POST', '/api/auth/register', { email, password, name: 'Engineering Container Check', organisation: 'ENGINEERING TEST ORG (container)' });
   check('register', r.status === 201 || r.status === 200, r.status);
   csrf = r.json.csrf;
+  writeFileSync(stateFile, JSON.stringify({ email, password }, null, 2));
   r = await call('GET', '/api/auth/me');
   check('session', r.status === 200 && r.json.user?.email === email, r.status);
   r = await call('POST', '/api/shipments', { reference: 'ENG-CONTAINER-001' });
   check('create shipment', r.status === 201, r.status);
   const sid = r.json.id;
+  writeFileSync(stateFile, JSON.stringify({ email, password, sid }, null, 2));
   r = await call('PATCH', `/api/shipments/${sid}/fields`, { activityType: 'IMPORT', hsCode: '1801', description: 'ENGINEERING TEST cocoa beans', netMassValue: '1000', netMassUnit: 'kg', operatorName: 'ENGINEERING TEST OPERATOR', countryOfActivity: 'BE' });
   check('fields', r.status === 200, r.status);
   const up = async (kind: string, file: string, type: string) => {
@@ -85,7 +92,11 @@ if (phase === 'seed') {
     const began=performance.now(); const health=await fetch(base+'/api/health',{signal:AbortSignal.timeout(5000)}); await health.arrayBuffer(); healthLatencies.push(performance.now()-began);
     if(health.status!==200) throw new Error('Health failed during analysis');
     const statusStart=performance.now();
-    view = (await call('GET', `/api/shipments/${sid}`)).json;
+    const statusResponse = await call('GET', `/api/shipments/${sid}`);
+    if (statusResponse.status !== 200 || !statusResponse.json?.evaluation) {
+      check('analysis status endpoint', false, { status: statusResponse.status, error: statusResponse.json?.error?.code ?? null });
+    }
+    view = statusResponse.json;
     statusLatencies.push(performance.now()-statusStart);
     if (view.evaluation.readiness.environment !== 'IN_PROGRESS' && analysed(view).length > 0) break;
     await new Promise((res) => setTimeout(res, 1000));
