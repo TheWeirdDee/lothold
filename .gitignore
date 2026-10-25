@@ -20,3 +20,11 @@ research/totext.py
 deploy/hosting.env
 
 server-dist/
+
+# Demo production artifacts: keep the final deliverable local, not in Git.
+/lothold-demo.mp4
+/docs/demo/raw/
+/docs/demo/audio/
+/docs/demo/build/
+/docs/demo/qa/
+__pycache__/
