@@ -20,7 +20,7 @@
 |---|---|
 | Climate impact | Targets a concrete bottleneck in forest-risk supply chains: cocoa shipments whose plot evidence is incomplete or contradictory cannot be checked for post-2020 forest conversion. Links declared plots to real published forest data (JRC 2020 forest baseline, Hansen annual loss to 2025) and turns gaps into specific supplier requests. It does **not** claim measured avoided deforestation or emissions. |
 | Innovation | Separates declared records, satellite observations, human decisions and shared allocation commitments, and never lets one stand in for another. An evidence snapshot digest invalidates sign-offs and documents when any input changes. A testnet registry enforces source-lot conservation across actors. |
-| Technical execution | Pixel-level raster intersection on hash-pinned data; official DDS V3 XSD validation including imports; deterministic fixed-point rules; durable jobs; encrypted evidence; organisation isolation; contract with fuzzed conservation. 66 + 18 + 4 automated tests plus an independent GDAL/pyproj cross-check; public-testnet transactions. |
+| Technical execution | Pixel-level raster intersection on hash-pinned data; official DDS V3 XSD validation including imports; deterministic fixed-point rules; durable jobs; encrypted evidence; organisation isolation; contract with fuzzed conservation. 123 unit/integration + 18 contract + 23 browser tests (25 Oct 2026) plus an independent GDAL/pyproj cross-check; public-testnet transactions. |
 | Practical usefulness | Works from files a compliance desk already has (CSV, GeoJSON, PDF). Output is a one-page supplier request and a review draft usable in an existing workflow. Honest empty state: no fake data. |
 | Presentation | Restrained review-desk interface; every hold links to its source row or plot; mobile-usable; documents rendered and checked. |
 
@@ -58,7 +58,7 @@ Cocoa is one of seven commodities the EU names as associated with deforestation,
 
 ## Accomplishments (with denominators)
 
-- 93/93 unit + integration tests (4 of them need a local Anvil devnet and are skipped without Foundry), 18/18 contract tests (512-run conservation fuzz), 16/16 browser tests; environmental results reproduced independently with GDAL/pyproj (pixel counts exact; areas within 0.02 %).
+- 123/123 unit + integration tests (4 of them need a local Anvil devnet and are skipped without Foundry), 18/18 contract tests (512-run conservation fuzz), 23/23 browser tests; environmental results reproduced independently with GDAL/pyproj (pixel counts exact; areas within 0.02 %). Dated records: `docs/evidence/submission-unit.json`, `docs/evidence/submission-browser.json` (25 Oct 2026).
 - Sepolia engineering run: 1 of 1 excess reservation rejected (preflight) and 1 of 1 mined revert with the balance unchanged. In 1 of 1 concurrent pair, exactly one reservation confirmed. Declared total = reserved total at the end.
 - In-app anchoring: 6 of 6 transactions confirmed, 2 of 2 reservations read back matching the ledger.
 - Environmental reads: real pixel analysis on engineering probe areas, e.g. a 1 km box in Taï National Park (100 % JRC 2020 forest, no 2021–2025 loss) and a box with loss recorded in 2021–2025.
