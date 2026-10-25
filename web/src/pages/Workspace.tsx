@@ -100,7 +100,7 @@ export function Workspace() {
       )}
       {rows.length > 0 && (
         <>
-        <TableWrap>
+        <TableWrap stack label="Shipment cases">
           <table className="data">
             <thead>
               <tr>
