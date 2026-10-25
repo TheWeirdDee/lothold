@@ -1,12 +1,12 @@
-# Free judging deployment ? setup handoff
+# Free judging deployment - setup handoff
 
-Status: prepared locally; see [validation and remaining gaps](FREE_HOSTING_VALIDATION.md); no cloud projects, deployment, push, or paid resources created. The user selected ?No projects yet ? prepare setup.? Hosted persistence is **not verified**. This is a bounded engineering pilot, not an unlimited production service.
+Status: prepared locally; see [validation and remaining gaps](FREE_HOSTING_VALIDATION.md); no cloud projects, deployment, push, or paid resources created. No projects are available yet. Hosted persistence is **not verified**. This is a bounded engineering pilot, not an unlimited production service.
 
 ## Architecture and limits
 
 Vercel serves the frontend and proxies `/api` to one Render Docker web service. Pinned, SHA-256-verified raster tiles are baked into its image. Supabase provides a private Storage bucket and a Postgres checkpoint pointer. Existing LotHold accounts and sessions remain in encrypted SQLite snapshots; Supabase Auth is not used.
 
-A successful API write waits for upload of an AES-256-GCM encrypted database snapshot and an atomic, fenced pointer commit. Startup restores that checkpoint before opening SQLite. A newer process fences the previous writer. Storage failures return an uncertain-operation error; inspect the current record before retrying. Never run independent operational services against the same namespace. Deployment overlap can briefly return unavailable responses from the fenced instance.
+A successful API write waits for upload of an AES-256-GCM encrypted database snapshot, byte-integrity read-back and an atomic, fenced pointer commit. Startup restores that checkpoint before opening SQLite, then checks database integrity, evidence decryption/digests and key continuity before accepting requests. See [protocol audit](CHECKPOINT_PROTOCOL.md). A newer process fences the previous writer. Storage failures return an uncertain-operation error; inspect the current record before retrying. Never run independent operational services against the same namespace. Deployment overlap can briefly return unavailable responses from the fenced instance.
 
 Pilot limits: 1 MiB request bodies and a 32 MiB SQLite database, with conservative admission headroom. Entire snapshots are uploaded after changes; latency and bandwidth grow with the database. The current and previous committed objects are retained. Failed uploads can leave orphan objects; monitor private bucket usage and remove only objects confirmed absent from both checkpoint pointers. Keep an independent encrypted backup before maintenance. Keys must remain unchanged across redeployments. Losing the encryption key loses access to data.
 
@@ -16,11 +16,13 @@ Free hosting has sleep, inactivity and usage constraints. Render free services s
 
 1. Create a project on the **Free** plan. Store its database password securely; it is not an application setting.
 2. In SQL Editor, review and run `deploy/render/supabase.sql`. It creates the private `lothold-private` bucket, an RLS-protected pointer table and service-role-only functions. This SQL is prepared but has not been executed against a live project. Review its actual execution result before continuing.
-3. In project settings, obtain the HTTPS project URL and server-only `service_role` API key. Never put the service key in Vercel, frontend variables, screenshots, browser code or Git. Keep the bucket private; no public object policies are needed.
+3. In project settings, obtain the HTTPS project URL, server-only `service_role` API key and public legacy `anon` API key. The anon key is required by the permission-denial verifier. Never put the service key in Vercel, frontend variables, screenshots, browser code or Git. Keep the bucket private; no public object policies are needed.
+
+4. Put `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` and optional `SUPABASE_STORAGE_BUCKET=lothold-private` in your local process environment or a separate ignored secret file. Run `node scripts/verify-supabase.ts --live` (or explicitly `node --env-file=YOUR_PRIVATE_FILE scripts/verify-supabase.ts --live`). It creates a unique engineering namespace, tests real RPC, private-object denial and two fresh-cache restores, then cleans up only that namespace. Review `docs/evidence/supabase-live.json`: blocked/failed is not verified. The script never loads `.env` implicitly or modifies operational keys/data.
 
 ## 2. Prepare Render
 
-Review `render.yaml` and `deploy/render/Dockerfile`. The final production Dockerfile still needs its own clean build and hosted verification. `deploy/render/Dockerfile.proof` is a local resource-test overlay, not the deployment Dockerfile.
+Review `render.yaml` and `deploy/render/Dockerfile`. The final production image is built locally and measured as recorded in FREE_HOSTING_VALIDATION.md; hosted verification is still required. `deploy/render/Dockerfile.proof` is a local resource-test overlay, not the deployment Dockerfile.
 
 Create a Blueprint from the repository only when publishing is explicitly authorized, or configure a Docker web service manually with repository-root context and `deploy/render/Dockerfile`. Select **Free**, one service, no disk and no paid database. Disable automatic deployment until the configuration is reviewed. Use `/api/ready?strict=1` for the health check.
 
@@ -68,6 +70,8 @@ Until these pass, describe the deployment as prepared, not verified or judge-rea
 
 ## Local checks and reproduction
 
-`npm run typecheck`, `npm test`, `npm run test:e2e`, and `node scripts/responsive-sweep.ts docs/screenshots/responsive-final` cover local behavior. The responsive sweep checked ten widths from 320 to 1920 px and reported zero flagged overflow combinations. Full browser run: 20 passed; the cold-start check subsequently passed after fixing an initial-mount event race and measuring navigation after the page settled.
+Run `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run build`, and `npm run build:server`. Latest results are in [FREE_HOSTING_VALIDATION.md](FREE_HOSTING_VALIDATION.md). The complete browser suite must pass together after final product changes.
 
-On a Linux Docker host, run `sh scripts/free-resource-proof.sh lothold-free-verified:local` for the local proof image. Evidence is under `docs/evidence/free-resource-*`. The script currently targets the provided WSL workspace path; adjust `REPORT_DIR` for another machine. The 512 MiB / 0.1 CPU proof passed 16 sequential checks at about 275 MiB peak memory, with no OOM. Cold startup took roughly 324 seconds and raster analysis roughly 90 seconds. This tests a representative local workflow, not provider uptime, hosted persistence, responsiveness or concurrency capacity.
+Build the normal portable production image with `docker build -f deploy/render/Dockerfile -t lothold-release:reliability .`. It downloads and verifies pinned rasters in a separate data stage. To reuse existing dataset bytes locally, supply `--build-context datasets=docker-image://lothold-render:local`; the release stage copies only rasters from that input, rehashes all of them, and builds the current frontend/backend. No frontend/backend is inherited. This does not publish an image.
+
+On Linux/WSL run `sh scripts/free-resource-proof.sh lothold-release:reliability`. It owns an isolated 512 MiB, no-swap, 0.1 CPU container, uses disposable engineering keys/data, verifies actual analysis/PDF/evidence and HTTP responsiveness, records startup phases and the exact image identity, then cleans up. It does not prove live Supabase or hosted persistence. `docs/evidence/release/` contains its results. [Usage assessment](FREE_TIER_USAGE.md) includes measured checkpoint sizes and official provider limits; full snapshots can exhaust free quotas even though a single workflow fits memory.
