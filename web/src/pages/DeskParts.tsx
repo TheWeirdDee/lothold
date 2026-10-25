@@ -573,7 +573,28 @@ export function PlotsTab({ view, reload, focus, onReview }: { view: View; reload
                   {f.env?.grid ? (
                     <PixelMap grid={f.env.grid} geometry={f.geometry} label={f.plotRef ?? 'plot'} />
                   ) : f.report.valid ? (
-                    <div className="empty small">{ENV_STATUS[statusOf(f)]?.explain}{f.env?.summary ? ` ${f.env.summary}` : ''}</div>
+                    <div className="empty small">
+                      {ENV_STATUS[statusOf(f)]?.explain}
+                      {f.env?.summary ? ` ${f.env.summary}` : ''}
+                      {statusOf(f) === 'failed' && f.plotRef && (
+                        <div style={{ marginTop: 10 }}>
+                          <button
+                            className="btn secondary small"
+                            onClick={async () => {
+                              try {
+                                await api('POST', `/api/shipments/${view.shipment.id}/plots/${encodeURIComponent(f.plotRef)}/retry-analysis`);
+                                toast('Analysis queued again.');
+                                reload();
+                              } catch (e) {
+                                toast((e as Error).message, 'error');
+                              }
+                            }}
+                          >
+                            Retry analysis
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ) : null}
                   {f.env?.summary && f.env?.grid && envFinding?.ruleId !== 'ENV-LOSS' && <p>{f.env.summary}</p>}
                   {f.env?.lossByYear && <LossYears lossByYear={f.env.lossByYear} />}
@@ -929,6 +950,7 @@ export function DocumentsTab({ view, reload }: { view: View; reload: Reload }) {
         </div>
       </div>
       {err && <p className="callout rust small" role="alert">{err}</p>}
+      <SupplierEmail view={view} />
       <section className="section">
         <h2>Generated documents</h2>
         <p className="small muted">A document marked out of date was built from earlier evidence. Copies already downloaded or sent cannot be recalled; send a new version.</p>
@@ -1146,5 +1168,150 @@ export function SignOff({ view, reload }: { view: View; reload: Reload }) {
         </>
       )}
     </div>
+  );
+}
+
+/** Audited correction of a source lot's recorded total to the value in the confirmed source table. */
+export function LotCorrectionDialog({ view, findingKey, onClose, onDone }: { view: View; findingKey: string | null; onClose: () => void; onDone: () => Promise<void> }) {
+  const f = view.evaluation.findings.find((x: any) => x.key === findingKey);
+  const [rationale, setRationale] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    setRationale('');
+    setErr(null);
+  }, [findingKey]);
+  const [supplierId, sourceLotRef] = (findingKey ?? '').replace(/^ALLOC-REG-MISMATCH:/, '').split('::');
+  return (
+    <Dialog
+      open={!!f}
+      onClose={onClose}
+      title="Correct the recorded total"
+      footer={
+        <>
+          <button className="btn secondary" onClick={onClose}>Cancel</button>
+          <button
+            className="btn"
+            disabled={busy}
+            onClick={async () => {
+              setErr(null);
+              const file = fileRef.current?.files?.[0];
+              if (!file) return setErr('Attach the document that supports the corrected total.');
+              setBusy(true);
+              try {
+                const fd = new FormData();
+                fd.append('file', file);
+                const ev = (await api('POST', `/api/shipments/${view.shipment.id}/uploads?kind=review_evidence`, fd)).uploadId;
+                await api('POST', `/api/shipments/${view.shipment.id}/source-lots/correct`, { supplierId, sourceLotRef, rationale, evidenceUploadId: ev });
+                await onDone();
+              } catch (e) {
+                setErr((e as Error).message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy ? 'Saving…' : 'Record correction'}
+          </button>
+        </>
+      }
+    >
+      {f && (
+        <>
+          <p className="small" style={{ margin: 0 }}>
+            The recorded total for source lot <strong>{sourceLotRef}</strong> becomes <strong>{f.original}</strong> (now {f.normalized}). The first total and this correction both stay in the history. Sign-offs in other cases that used the old total become out of date. Not possible once the lot is on the testnet registry.
+          </p>
+          <label className="field">
+            Why is the earlier total wrong? <span className="muted">(at least 40 characters)</span>
+            <textarea rows={3} value={rationale} onChange={(e) => setRationale(e.target.value)} />
+          </label>
+          <label className="field">
+            Supporting document
+            <input type="file" ref={fileRef} accept=".pdf,.png,.jpg,.jpeg,.txt,.csv" />
+          </label>
+          {err && <p className="callout rust small" role="alert">{err}</p>}
+        </>
+      )}
+    </Dialog>
+  );
+}
+
+/** Editable, copyable supplier email built from the outstanding supplier actions (nothing is sent by LotHold). */
+function supplierEmailText(view: View): string {
+  const items = view.evaluation.findings.filter((f: any) => f.supplierActionable && f.severity !== 'warning' && f.requestedAction);
+  const resolved = view.evaluation.findings.filter((f: any) => f.reviewedWithEvidence);
+  const lines = [
+    `Subject: Evidence needed for shipment ${view.shipment.reference}`,
+    '',
+    'Hello,',
+    '',
+    items.length
+      ? `While reviewing the records for shipment ${view.shipment.reference}, we found ${items.length} item${items.length === 1 ? '' : 's'} that we need you to correct or support with evidence:`
+      : `We have reviewed the records for shipment ${view.shipment.reference} and currently need nothing further from you.`,
+    '',
+    ...items.map((f: any, i: number) => `${i + 1}. ${f.requestedAction}`),
+    ...(resolved.length ? ['', `Already reviewed with your evidence (no action needed): ${resolved.map((f: any) => f.title).join('; ')}.`] : []),
+    '',
+    'Forest-change observations come from published satellite datasets (Hansen Global Forest Change, https://glad.earthengine.app/view/global-forest-change; JRC Global Forest Cover 2020, https://forobs.jrc.ec.europa.eu/GFC). A recorded loss is a reason to ask for evidence, not a finding of deforestation.',
+    '',
+    'This is a request for information, not a regulatory determination.',
+    '',
+    'Kind regards,',
+  ];
+  return lines.join('\n');
+}
+
+function SupplierEmail({ view }: { view: View }) {
+  const toast = useToast();
+  const generated = supplierEmailText(view);
+  const [text, setText] = useState(generated);
+  const [edited, setEdited] = useState(false);
+  useEffect(() => {
+    if (!edited) setText(generated);
+  }, [generated, edited]);
+  return (
+    <section className="section" aria-labelledby="supplier-email-title">
+      <h2 id="supplier-email-title">Supplier email</h2>
+      <p className="small muted">Built from the items still outstanding. Edit it, then copy it into your own email; LotHold does not send anything.</p>
+      <label className="field">
+        <span className="sr-only">Supplier email text</span>
+        <textarea
+          rows={12}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            setEdited(true);
+          }}
+          style={{ fontFamily: 'var(--mono)', fontSize: '0.82rem' }}
+        />
+      </label>
+      <div className="row" style={{ gap: 8 }}>
+        <button
+          className="btn small"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(text);
+              toast('Email text copied.');
+            } catch {
+              toast('Copy failed; select the text and copy it manually.', 'error');
+            }
+          }}
+        >
+          Copy email text
+        </button>
+        {edited && (
+          <button
+            className="btn secondary small"
+            onClick={() => {
+              setEdited(false);
+              setText(generated);
+            }}
+          >
+            Reset to current findings
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
