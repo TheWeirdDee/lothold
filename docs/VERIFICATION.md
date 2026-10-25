@@ -12,7 +12,9 @@
 | Fresh-clone walkthrough | separate checkout: `pnpm install --frozen-lockfile` → `npm run setup` → `npm run data:fetch` (3/3 SHA-256, ~431 MB) → `npm run build` → `npm start` → `/api/ready?strict=1` returned 200 with `datasetsVerified: true` | performed 25 October 2026 |
 | Live AI verification attempt | **still unverified**: provider timeout after 90 s (earlier attempts: 503, then 429 daily quota). Deterministic fallback verified live again | `docs/evidence/ai-live-verification.json` |
 | Sepolia contract re-check | code present at `0x1645604d915c55cfd61cf1492ad58ab5e4150b57` (`eth_getCode`, block 11991100) | `docs/CHAIN.md` |
-| Public site check | `https://lothold.vercel.app/` 200 (static frontend); `/api/ready` → Vercel 404 (no backend routed) | [EXPERIENCE_HOSTING.md](EXPERIENCE_HOSTING.md) |
+| Public site check | `https://lothold.vercel.app/` 200 (static frontend); `/api/ready` → Vercel 404 (the deployed routing has no `/api` proxy) | [EXPERIENCE_HOSTING.md](EXPERIENCE_HOSTING.md) |
+| Hosted backend check (read-only) | `https://lothold.onrender.com/api/ready?strict=1` → 200 `datasetsVerified: true` (89 s cold wake, 1.5 s warm); `/api/health` → 200; `/api/public/method` → 200 JSON; unknown `/api/*` → JSON 404. No account created, no mutation sent | `docs/evidence/hosted-readiness.json` |
+| Fresh-clone README walk-through | clone → install → setup → data:fetch (3/3 pins) → build → start → strict readiness 200 → 123 tests → 23 browser tests → `docs:check` pass | `docs/evidence/readme-quickstart.json` |
 
 ## Commands and results (24 October 2026 run)
 
