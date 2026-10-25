@@ -1,6 +1,6 @@
 # Free judging deployment - setup handoff
 
-Status: prepared locally; see [validation and remaining gaps](FREE_HOSTING_VALIDATION.md); no cloud projects, deployment, push, or paid resources created. Supabase URL, bucket and legacy keys are now configured in the saved workspace .env. The live claim RPC returns HTTP 404; the setup SQL still needs to be applied/exposed before external verification can finish. Hosted persistence is **not verified**. This is a bounded engineering pilot, not an unlimited production service.
+Status: prepared locally; see [validation and remaining gaps](FREE_HOSTING_VALIDATION.md). Supabase URL, bucket and legacy keys are configured in the saved workspace `.env`, `deploy/render/supabase.sql` has been applied to the project, and the live verifier **passed** on 25 October 2026 in an isolated engineering namespace (`docs/evidence/supabase-live.json`). No hosting deployment, push, purchase or paid resource has been created: the application is still not published behind a backend, and hosted recovery under real traffic is unverified. This is a bounded engineering pilot, not an unlimited production service.
 
 ## Architecture and limits
 
