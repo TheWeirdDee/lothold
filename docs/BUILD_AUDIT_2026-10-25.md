@@ -1,3 +1,5 @@
+> Reliability follow-up (25 October 2026): [current verification and manual actions](FREE_HOSTING_VALIDATION.md), [checkpoint protocol](CHECKPOINT_PROTOCOL.md), and [free-tier usage](FREE_TIER_USAGE.md). Earlier counts and hosting statements below are historical; they do not validate a free hosted deployment.
+
 # Build audit — 25 October 2026
 
 Scope: local source, configuration, requirement/document comparison, production build, TypeScript, automated suites, and isolated adversarial probes. Application code and .env were not changed. Secret values were not read. This is a bounded engineering review, not a guarantee that every defect has been discovered. Hosted state, current legal requirements, and live model behavior were not independently verified.
