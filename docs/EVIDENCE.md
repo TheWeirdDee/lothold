@@ -8,11 +8,12 @@ Machine-checked on every run; pass or fail without human judgement.
 
 | Suite | Count | Covers |
 |---|---|---|
-| `tests/unit` | 55 | Demo-video configuration and CSP, runtime-dependency guard for the production image, quantities, product scope, geometry rules, parsers, decision engine, ellipsoidal areas, edge rule, extraction span checks, official-XSD validation, real-raster analysis on probe areas |
+| `tests/unit` | 57 | Water-only and partial-coverage classification on real rasters, demo-video configuration and CSP, runtime-dependency guard for the production image, quantities, product scope, geometry rules, parsers, decision engine, ellipsoidal areas, edge rule, extraction span checks, official-XSD validation, real-raster analysis on probe areas |
 | `tests/integration` | 26 | HTTP API: auth, CSRF/Origin, rate limits (direct and behind a proxy), isolation, uploads, ledger, append-only history, jobs, full review workflow, review-integrity bypass attempts, approval binding, extraction fallback, hostile PDFs, backup/restore, Anvil chain lifecycle and signing safeguards |
 | `contracts/test` | 18 | Registry authorisation, conservation (512-run fuzz), duplicates, zero values, events |
 | `tests/integration/test-kit.test.ts` | 4 | Every downloadable engineering-test kit file produces the outcomes promised in docs/AUDIT_GUIDE.md |
-| `tests/e2e` | 15 | Browser journeys in Chrome on a throwaway server, including labelled landing demonstrations, live readings, reduced motion and AI/parser disclosure; demo-video playback (generated engineering test clip, captions, keyboard) and YouTube facade; test-kit downloads; plus axe WCAG 2.2 A/AA scans, keyboard-only use, dialog focus and live regions |
+| `tests/integration/audit-fixes.test.ts` | 6 | Regressions for the 24 Oct independent audit: plot-country conflicts across rows, water-only plots, restoring a released reservation, supplier requests after review, truncated images, revision freeze after anchoring |
+| `tests/e2e` | 16 | Server-unavailable state (static host), browser journeys in Chrome on a throwaway server, including labelled landing demonstrations, live readings, reduced motion and AI/parser disclosure; demo-video playback (generated engineering test clip, captions, keyboard) and YouTube facade; test-kit downloads; plus axe WCAG 2.2 A/AA scans, keyboard-only use, dialog focus and live regions |
 | `scripts/container-verify.ts` | 16 + 10 checks | Production container: datasets, auth, uploads, analysis, exports; recovery after restart, redeploy and hard kill (`docs/evidence/container-verification.json`) |
 | `scripts/gis-crosscheck.py` | 6 polygons × 9 checks | Independent GDAL/pyproj recomputation of the environmental analysis (`docs/evidence/gis-crosscheck.json`) |
 
@@ -45,7 +46,7 @@ Real transactions on a test network with **engineering quantities**. They prove 
 | Processing a real exporter's shipment | No permissioned records available | An anonymised source CSV and plot GeoJSON from an exporter, with permission |
 | Live model extraction | A Gemini key is configured and authenticates. The in-app extraction got HTTP 503 (provider overloaded); a later call got HTTP 429 (free-tier daily quota exhausted, limit 20). No model extraction has succeeded. Fallback behaviour was verified live | After the quota resets: `node --env-file=.env scripts/ai-live-verify.ts` (see `docs/evidence/ai-live-verification.json`) |
 | Near-real-time disturbance alerts | GFW Data API requires a key | GFW API key and an adapter |
-| Hosted deployment | Not authorised. The production container itself was built and verified locally (`docs/evidence/container-verification.json`) | First `fly deploy` after authorisation (see DEPLOYMENT.md) |
+| Hosted backend | No server is hosted. https://lothold.vercel.app serves the frontend only; its `/api` requests return 404 and the site shows a "server not running" notice. The production container was built and verified locally (`docs/evidence/container-verification.json`) | Hosting the container with a persistent volume (see DEPLOYMENT.md) |
 | EU Information System acceptance of the XML | Requires operator credentials and authorisation | Acceptance-environment submission by an authorised operator |
 | Screen-reader usability | Automated accessibility checks pass (`docs/ACCESSIBILITY.md`), but no screen-reader session has been run | Manual NVDA/VoiceOver pass |
 | Organiser eligibility confirmation | External | Reply from organisers on Devpost |
