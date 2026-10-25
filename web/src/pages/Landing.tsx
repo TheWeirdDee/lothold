@@ -1,13 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { api } from '../api.ts';
 import { useAuth } from '../main.tsx';
-import { Badge, ENV_STATUS, Logo, useReveal } from '../components/ui.tsx';
-import { PixelMap } from '../components/PixelMap.tsx';
-
-/* Every visual on this page is either an abstract illustration (labelled as such), a capture or recording of the
-   running application with clearly labelled engineering-test records, or a live reading from a real dataset/testnet.
-   No exporter, shipment, farm, quantity, review or finding is invented for presentation. */
+import { Walkthrough } from '../components/Walkthrough.tsx';
+import { usePageMotion } from '../components/motion.ts';
 
 function EvidenceTrace() {
   return (
@@ -87,548 +82,78 @@ function EvidenceTrace() {
   );
 }
 
-type DemoVideoState =
-  | { status: 'coming_soon' }
-  | { status: 'unavailable'; message: string }
-  | { status: 'ready'; kind: 'youtube' | 'vimeo'; provider: string; embedUrl: string; poster: string | null }
-  | { status: 'ready'; kind: 'file'; src: string; type: string; poster: string | null; captions: string | null };
+const QUESTIONS = [
+  ['Who is LotHold for?', 'Cocoa exporters and EU importers reviewing shipment evidence. It helps a reviewer find gaps and prepare follow-up requests before preparing a due-diligence draft.'],
+  ['What files do I need?', 'A source-lot CSV listing suppliers, batches, quantities, countries and plot references, plus a GeoJSON file containing those plot boundaries. A shipping document is optional. Docs includes the blank template and field definitions.'],
+  ['Does it certify EUDR compliance?', 'No. LotHold supports information gathering and human review. It cannot establish legality, land rights, physical origin or deforestation-free status, and never submits a statement to the EU.'],
+  ['What does a forest-change signal mean?', 'Published data records annual tree-cover loss after 2020 in the sampled area. Fire, clearing, plantation rotation or a map error may contribute. Investigate the context and attach supporting evidence; the signal is not a legal determination.'],
+  ['Can I use it outside the covered region?', 'You can review structured records, but installed environmental data covers one tile: longitude −10 to 0, latitude 0 to 10, including Côte d’Ivoire and western Ghana. Other plots report outside coverage and require independent evidence.'],
+  ['Do I need a wallet?', 'No. Database allocations work without a wallet. Optional Ethereum Sepolia anchoring uses server-held pilot signers, is enabled per organisation, and cannot see allocations outside the registry.'],
+  ['Where are my files and account stored?', 'The connected LotHold server stores accounts, password hashes, sessions and case records in SQLite. Evidence files are encrypted on its persistent disk. The public Vercel frontend currently has no connected backend; uploading and accounts require the local server until hosting is connected.'],
+  ['Can I log in from another device?', 'Yes, when both devices reach the same persistent backend. Sign in with the same account to access your organisation’s records. Sessions are separate for each browser; records are not stored authoritatively in browser storage.'],
+  ['What happens if AI is unavailable?', 'A deterministic label parser can propose fields from labelled text. The interface names the extraction method. You must check the quoted source and accept fields yourself; extraction never changes a review decision. Scanned PDFs need text extraction elsewhere first.'],
+  ['What can I export?', 'A supplier evidence request PDF, an editable supplier email you copy into your own email client, and a human-readable review draft. After sign-off of the current evidence snapshot, you can export a DDS V3 XML draft validated against the official schema. It remains a draft and is never submitted by LotHold.'],
+];
 
-/** The poster drawn in CSS/SVG when no poster image is configured: sharp at any size, and not a screenshot. */
-function DesignedPoster({ soon }: { soon: boolean }) {
-  return (
-    <div className="video-poster" aria-hidden="true">
-      <div className="vp-mark">
-        <Logo />
-        <span>LotHold</span>
-      </div>
-      <p className="vp-title">Evidence review walkthrough</p>
-      <p className="vp-sub">{soon ? 'Recording in progress' : 'Upload · findings · land evidence · supplier request · sign-off'}</p>
-    </div>
-  );
-}
-
-/** Landing demo video. Shows "coming soon" until a real recording is configured (docs/DEMO_VIDEO.md); embedded
- *  players load only after the visitor presses play, and nothing plays with sound on its own. */
-function DemoVideo() {
-  const [cfg, setCfg] = useState<DemoVideoState | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  useEffect(() => {
-    api<DemoVideoState>('GET', '/api/public/demo-video')
-      .then(setCfg)
-      // A failed request is reported as such, never disguised as "no video configured".
-      .catch((e: Error) => setCfg({ status: 'unavailable', message: e.message }));
-  }, []);
-  useEffect(() => {
-    if (playing) frameRef.current?.focus();
-  }, [playing]);
-
-  let stage: ReactNode;
-  if (!cfg) stage = <div className="video-frame skeleton" aria-busy="true" aria-label="Loading the demo video" />;
-  else if (cfg.status === 'unavailable')
-    stage = (
-      <div className="video-frame soon">
-        <DesignedPoster soon={false} />
-        <div className="video-soon-card" role="status">
-          <h3>The demo video settings could not be loaded</h3>
-          <p>{cfg.message} Whether a recording is configured is unknown from here.</p>
-          <div className="row">
-            <Link className="btn light small" to="/test-kit">
-              Get the engineering test kit
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  else if (cfg.status === 'coming_soon')
-    stage = (
-      <div className="video-frame soon">
-        <DesignedPoster soon />
-        <div className="video-soon-card">
-          <h3>Demo video coming soon</h3>
-          <p>A recorded walkthrough of the review desk will appear here. Until then you can try the desk yourself with your own files or the labelled engineering test kit.</p>
-          <div className="row">
-            <Link className="btn light small" to="/test-kit">
-              Get the engineering test kit
-            </Link>
-            <Link className="btn ghost-dark small" to="/register">
-              Open the desk
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  else if (cfg.kind === 'file')
-    stage = (
-      <div className="video-frame">
-        <video controls preload="none" playsInline poster={cfg.poster ?? undefined} aria-label="LotHold demo video" crossOrigin={cfg.captions ? 'anonymous' : undefined}>
-          <source src={cfg.src} type={cfg.type} />
-          {cfg.captions && <track kind="captions" src={cfg.captions} srcLang="en" label="English" default />}
-          <p>
-            Your browser cannot play this video. <a href={cfg.src}>Download the demo video</a>.
-          </p>
-        </video>
-      </div>
-    );
-  else
-    stage = playing ? (
-      <div className="video-frame">
-        <iframe
-          ref={frameRef}
-          src={cfg.embedUrl}
-          title="LotHold demo video"
-          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-          allowFullScreen
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
-      </div>
-    ) : (
-      <div className="video-frame">
-        <button type="button" className="video-facade" onClick={() => setPlaying(true)} aria-describedby="demo-provider">
-          {cfg.poster ? <img src={cfg.poster} alt="" width={1280} height={720} decoding="async" /> : <DesignedPoster soon={false} />}
-          <span className="video-play-btn">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 5.5v13l11-6.5z" fill="currentColor" />
-            </svg>
-            <span>Play demo video</span>
-          </span>
-        </button>
-        <span id="demo-provider" className="video-provider">
-          Loads {cfg.provider} when you press play
-        </span>
-      </div>
-    );
-
-  return (
-    <section className="demo enter d4" aria-labelledby="demo-heading">
-      <div className="demo-head">
-        <h2 id="demo-heading">Product walkthrough</h2>
-        <span className="eng-tag">Engineering test records</span>
-      </div>
-      {stage}
-      <p className="demo-note">
-        The walkthrough uses <strong>engineering test records</strong>: invented, labelled cases, suppliers and plots (references start with ENG-). The forest data it reads (Hansen GFC v1.13, JRC GFC2020 V4) is genuine, and any registry transactions shown are genuine Sepolia testnet transactions.
-      </p>
-    </section>
-  );
-}
-
-/** A live reading from the real datasets for a fixed coordinate box. Not a farm; nothing is stored. */
-function LiveReading() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<{ status: 'idle' | 'loading' | 'done' | 'error'; data?: any; error?: string }>({ status: 'idle' });
-  const geometry = { type: 'Polygon', coordinates: [[[-7.5595, 6.2405], [-7.5505, 6.2405], [-7.5505, 6.2495], [-7.5595, 6.2495], [-7.5595, 6.2405]]] };
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const run = () => {
-      setState({ status: 'loading' });
-      api('POST', '/api/public/forest-check', { geometry })
-        .then((r) => setState({ status: r.analysis ? 'done' : 'error', data: r.analysis, error: r.analysis ? undefined : 'Geometry not analysed.' }))
-        .catch((e) => setState({ status: 'error', error: (e as Error).message }));
-    };
-    if (!('IntersectionObserver' in window)) return run();
-    const io = new IntersectionObserver((en) => {
-      if (en.some((x) => x.isIntersecting)) {
-        io.disconnect();
-        run();
-      }
-    }, { rootMargin: '200px' });
-    io.observe(el);
-    return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const a = state.data;
-  const st = a ? ENV_STATUS[a.status] : null;
-  return (
-    <div className="live-reading" ref={ref}>
-      <div className="v-label">
-        <span>Live reading · lon −7.555, lat 6.245 · 1 km box</span>
-        <span>Coordinates only — not a farm</span>
-      </div>
-      {state.status !== 'done' && state.status !== 'error' && <div className="skeleton" role="status">Reading published dataset pixels…</div>}
-      {state.status === 'error' && (
-        <div className="callout" role="status">
-          <p className="small">The live reading is unavailable right now ({state.error}). No result is shown rather than a placeholder.</p>
-        </div>
-      )}
-      {a && a.grid && <PixelMap grid={a.grid} geometry={geometry} label="Probe box" />}
-      {a && st && (
-        <div className="lr-status">
-          <Badge cls={st.cls}>{st.label}</Badge>
-          <span className="small muted">{a.summary}</span>
-        </div>
-      )}
-      {a && !a.grid && a.status === 'UNAVAILABLE' && <p className="small muted">{a.summary}</p>}
-    </div>
-  );
-}
-
-function RegistryLedger() {
-  const [data, setData] = useState<any>(null);
-  const [err, setErr] = useState<string | null>(null);
-  useEffect(() => {
-    api('GET', '/api/public/verify').then(setData).catch((e) => setErr((e as Error).message));
-  }, []);
-  // Routine authorisation transactions are omitted here for length; the registry page lists every step.
-  const steps = (data?.engineering?.steps ?? []).filter((s: any) => (s.outcome || s.unchanged !== undefined || s.conserved !== undefined) && !/authorises/.test(s.step));
-  const label = (s: any) =>
-    s.step
-      .replace('registrar-authorises-declarant', 'Registrar authorises a declarant')
-      .replace('unauthorised-registration-attempt (actor A is not a declarant)', 'Unauthorised actor tries to register a batch')
-      .replace('declarant-registers-test-batch (1,000,000 g)', 'Declarant registers a 1,000 kg test batch')
-      .replace('declarant-authorises-actor-A', 'Declarant authorises reviewer A')
-      .replace('declarant-authorises-actor-B', 'Declarant authorises reviewer B')
-      .replace('actor-A-reserves-600000g', 'Reviewer A reserves 600 kg')
-      .replace('actor-B-requests-600000g (preflight)', 'Reviewer B requests 600 kg')
-      .replace('actor-B-submits-600000g-without-preflight (mined)', 'Reviewer B submits 600 kg anyway')
-      .replace('state-after-rejection', 'Shared balance after rejection')
-      .replace('actor-A-retries-same-allocation-id', 'Reviewer A retries the same allocation')
-      .replace('concurrent-A-300000g', 'Simultaneous request A · 300 kg')
-      .replace('concurrent-B-300000g', 'Simultaneous request B · 300 kg')
-      .replace(/actor-B-reserves-exact-remainder-(\d+)g/, 'Reviewer B reserves the exact remainder')
-      .replace('final-state', 'Final state');
-  return (
-    <div className="ledger">
-      <div className="ledger-head">
-        <span>ETHEREUM SEPOLIA · ENGINEERING RUN</span>
-        <span>{data?.engineering ? `test quantities · ${String(data.engineering.runAt).slice(0, 10)} · key steps` : 'loading'}</span>
-      </div>
-      {err && <p style={{ padding: 16 }} className="small">Registry details unavailable: {err}</p>}
-      {!data && !err && <p style={{ padding: 16 }} className="small">Reading the engineering record…</p>}
-      {data && !data.engineering && <p style={{ padding: 16 }} className="small">No engineering verification record on this server.</p>}
-      {steps.length > 0 && (
-        <ol>
-          {steps.map((s: any, i: number) => (
-            <li key={i}>
-              <span>
-                {label(s)}
-                {s.unchanged !== undefined && <span className="mono" style={{ display: 'block', fontSize: '0.72rem', color: 'var(--night-muted)' }}>reserved {s.reservedGramsBefore} g → {s.reservedGramsAfter} g ({s.unchanged ? 'unchanged' : 'changed'})</span>}
-                {s.conserved !== undefined && <span className="mono" style={{ display: 'block', fontSize: '0.72rem', color: 'var(--night-muted)' }}>declared {s.declaredGrams} g = reserved {s.reservedGrams} g</span>}
-                {s.explorer && (
-                  <a href={s.explorer} style={{ display: 'block' }}>
-                    {s.txHash.slice(0, 14)}… ↗
-                  </a>
-                )}
-              </span>
-              <span className={`l-state ${s.outcome === 'confirmed' ? 'l-ok' : s.outcome === 'reverted' ? 'l-rev' : s.outcome === 'preflight_rejected' ? 'l-pre' : ''}`}>
-                {s.outcome === 'confirmed' ? 'CONFIRMED' : s.outcome === 'reverted' ? 'REVERTED ON-CHAIN' : s.outcome === 'preflight_rejected' ? 'REJECTED · NOT MINED' : 'READ'}
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
-    </div>
-  );
+function FAQ() {
+  const [open, setOpen] = useState<number | null>(0);
+  return <section className="band-white" id="faq" aria-labelledby="faq-title"><div className="wrap faq-layout" data-reveal>
+    <div><p className="eyebrow">Before you start</p><h2 id="faq-title">A few useful answers.</h2><p>Know what the evidence can show, and what still needs your judgement.</p><Link to="/docs">Read the user guide →</Link></div>
+    <div className="faq-list">{QUESTIONS.map(([q, a], i) => <article key={q} className={`faq-item ${open === i ? 'expanded' : ''}`}>
+      <h3><button id={`faq-q-${i}`} aria-expanded={open === i} aria-controls={`faq-a-${i}`} onClick={() => setOpen(open === i ? null : i)}><span>{q}</span><span className="faq-indicator" aria-hidden="true">+</span></button></h3>
+      <div id={`faq-a-${i}`} role="region" aria-labelledby={`faq-q-${i}`} className="faq-answer" inert={open !== i}><div><p>{a}</p></div></div>
+    </article>)}</div>
+  </div></section>;
 }
 
 export function Landing() {
   const { user } = useAuth();
-  useReveal();
-  const primary = user ? { to: '/app', label: 'Open your workspace' } : { to: '/register', label: 'Create a review case' };
-  return (
-    <>
-      {/* ---------------- hero ---------------- */}
-      <section className="band-dark hero">
-        <div className="wrap">
-          <p className="who enter">For cocoa exporters and EU importers who review shipment evidence</p>
-          <h1 className="enter d1">
-            Find missing evidence <span className="soft">before you prepare cocoa shipment paperwork.</span>
-          </h1>
-          <div className="hero-grid">
-            <div>
-              <p className="lede enter d2">
-                Missing or conflicting supplier records stop you from checking where a shipment’s cocoa was grown. Upload your supplier spreadsheet and plot boundary file: LotHold shows what is missing or contradictory, flags published forest-change evidence for review, and prepares a clear correction request for your supplier.
-              </p>
-              <div className="btn-row enter d3">
-                <Link className="btn light" to={primary.to}>
-                  {primary.label} <span className="arrow" aria-hidden="true">→</span>
-                </Link>
-                <Link className="btn ghost-dark" to="/test-kit">
-                  Try it with labelled test files
-                </Link>
-              </div>
-              <p className="scope-line enter d3">
-                <strong>Scope:</strong> cocoa beans (HS 1801) only · forest data covers Côte d’Ivoire and western Ghana · annual historical data, not live monitoring · a review aid: nothing is submitted to the EU.
-              </p>
-              <ul className="hero-receives enter d4" aria-label="What a reviewer receives">
-                <li>The exact spreadsheet row or plot behind every issue</li>
-                <li>A one-page correction request for your supplier</li>
-                <li>A review draft and, after sign-off, an EU-format due-diligence draft that passes the official file-format check</li>
-              </ul>
-            </div>
-            <EvidenceTrace />
-          </div>
-          <DemoVideo />
-        </div>
-      </section>
+  const root = useRef<HTMLDivElement>(null);
+  usePageMotion(root);
+  const workspace = user ? '/app' : '/login';
+  return <div ref={root} className="landing">
+    <section className="band-dark hero"><div className="wrap">
+      <p className="who" data-enter>For cocoa exporters and EU importers reviewing shipment evidence.</p>
+      <div className="hero-grid"><div>
+        <h1 data-enter>Find missing farm evidence <span className="soft">before shipment paperwork moves.</span></h1>
+        <p className="lede" data-enter>Review supplier records and plot boundaries together. See what is missing, investigate published forest-change observations, and prepare a clear request for the evidence you still need.</p>
+        <div className="btn-row" data-enter><Link className="btn light" to={workspace}>Open workspace <span aria-hidden="true">→</span></Link><a className="btn ghost-dark" href="#walkthrough">Watch the process</a></div>
+        <p className="scope-line">Cocoa beans only · annual forest observations in one West African tile · human review required · nothing is submitted to the EU.</p>
+      </div><div data-enter><EvidenceTrace /></div></div>
+    </div></section>
 
-      {/* ---------------- three steps ---------------- */}
-      <section className="band-light" aria-labelledby="steps-title">
-        <div className="wrap">
-          <div className="section-head reveal">
-            <h2 id="steps-title">How it works</h2>
-            <p>Your workspace starts empty. Everything in a case comes from files you upload.</p>
-          </div>
-          <ol className="workflow three reveal">
-            <li>
-              <span className="w-num">01</span>
-              <h3>Upload your records</h3>
-              <p>The supplier spreadsheet (which batches and plots supply the shipment, as CSV) and the plot boundary file (GeoJSON). Check the parsed preview before anything counts.</p>
-            </li>
-            <li>
-              <span className="w-num">02</span>
-              <h3>Review the issues</h3>
-              <p>Each issue links to the row or plot that causes it. Plots with forest loss recorded after 2020 need your investigation and an evidence file.</p>
-            </li>
-            <li>
-              <span className="w-num">03</span>
-              <h3>Request corrections, then sign off</h3>
-              <p>Download a one-page request for your supplier. When nothing is outstanding, sign off the exact version you reviewed and download the drafts.</p>
-            </li>
-          </ol>
-        </div>
-      </section>
+    <section className="band-light" aria-labelledby="problem-title"><div className="wrap story-grid" data-reveal>
+      <p className="eyebrow">01 / The problem</p><div><h2 id="problem-title">The evidence arrives in pieces.</h2><p className="story-lede">Supplier records arrive in separate spreadsheets and map files. A missing boundary, conflicting quantity, or unresolved land-change observation can be difficult to trace back to the exact record.</p><p>A reviewer needs the source behind the issue and a clear next step before preparing the paperwork.</p></div>
+    </div></section>
 
-      {/* ---------------- feature narrative ---------------- */}
-      <section className="band-white" id="how" aria-labelledby="how-title">
-        <div className="wrap">
-          <div className="section-head reveal">
-            <h2 id="how-title">What you get back</h2>
-            <p>From one supplier spreadsheet and one plot file, each result tied to the record that produced it.</p>
-          </div>
+    <section className="band-white" aria-labelledby="solution-title"><div className="wrap story-grid" data-reveal>
+      <p className="eyebrow">02 / One connected review</p><div><h2 id="solution-title">See the gap. Follow the source. Ask for what’s missing.</h2><p className="story-lede">LotHold brings those checks into one review. Each finding points to its source and explains what to request next.</p><p>Keep record completeness, environmental evidence and declared inventory separate. A clean result in one does not erase a gap in another.</p></div>
+    </div></section>
 
-          <article className="feature reveal">
-            <div className="f-copy">
-              <span className="f-num">01 · SOURCE FIELDS</span>
-              <h3>Find the exact field that blocks the case</h3>
-              <p>Every hold links back to its file, row and column, with the value as received next to its interpretation. Quantities are converted exactly, never rounded, and ambiguous entries such as “1,000” are refused rather than guessed.</p>
-              <ul className="f-points">
-                <li>Missing geometry, invalid boundaries, swapped coordinates</li>
-                <li>Unknown countries, out-of-scope HS codes, impossible quantities</li>
-              </ul>
-            </div>
-            <div className="f-visual">
-              <div className="v-label">
-                <span>Source table · preview</span>
-                <span>Engineering example</span>
-              </div>
-              <table className="mini-table">
-                <thead>
-                  <tr>
-                    <th>Row</th>
-                    <th>source_lot_ref</th>
-                    <th>allocated</th>
-                    <th>plot_refs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>2</td>
-                    <td>ENG-LOT-001</td>
-                    <td>600 kg</td>
-                    <td>ENG-PLOT-A; ENG-PLOT-B</td>
-                  </tr>
-                  <tr className="hit">
-                    <td>3</td>
-                    <td>ENG-LOT-002</td>
-                    <td>0.4 t</td>
-                    <td>ENG-PLOT-C</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="mini-finding">
-                <div className="row" style={{ gap: 8 }}>
-                  <Badge cls="hold">Hold</Badge>
-                  <strong style={{ fontSize: '0.9rem' }}>Plot ENG-PLOT-C has no geometry</strong>
-                </div>
-                <span className="muted small">Declared in row 3 · column plot_refs · not present in the plot file</span>
-              </div>
-            </div>
-          </article>
+    <section className="band-dark"><div className="wrap" data-reveal><div className="section-head"><h2>Watch a case move through review.</h2><p>A recording of real interactions, from upload to a draft export and an out-of-date sign-off.</p></div><Walkthrough /></div></section>
 
-          <article className="feature flip reveal">
-            <div className="f-copy">
-              <span className="f-num">02 · LAND EVIDENCE</span>
-              <h3>Inspect dated land-change evidence and its limits</h3>
-              <p>Each valid plot is read against the JRC 2020 forest map and Hansen annual tree-cover loss. A loss after 2020 opens an investigation, never a verdict. No data, partial coverage and “no loss observed” each stay visibly different.</p>
-              <ul className="f-points">
-                <li>Pixel-level analysis, cross-checked with GDAL; areas on the WGS 84 ellipsoid</li>
-                <li>Signals clear only with a written rationale and an evidence file</li>
-              </ul>
-            </div>
-            <div className="f-visual">
-              <LiveReading />
-            </div>
-          </article>
+    <section className="band-light" id="how" aria-labelledby="steps-title"><div className="wrap" data-reveal>
+      <div className="section-head"><h2 id="steps-title">How it works</h2><p>Your workspace starts empty. Only the records you confirm become active evidence.</p></div>
+      <ol className="workflow three">
+        <li data-reveal><span className="w-num">01</span><h3>Bring the records together</h3><p>Upload the source-lot CSV and plot GeoJSON. Inspect the parsed preview and confirm the version you want to review.</p></li>
+        <li data-reveal><span className="w-num">02</span><h3>Work through the findings</h3><p>Follow each issue to its row or plot. Check published land observations and attach evidence to your investigation.</p></li>
+        <li data-reveal><span className="w-num">03</span><h3>Request evidence. Prepare a draft.</h3><p>Download a supplier request. Reserve allocations and sign off the current snapshot before exporting the XML draft.</p></li>
+      </ol>
+    </div></section>
 
-          <article className="feature reveal">
-            <div className="f-copy">
-              <span className="f-num">03 · SUPPLIER REQUEST</span>
-              <h3>Send a request the supplier can act on</h3>
-              <p>LotHold drafts a one-page request: each missing or contradictory item, its source reference, the exact action needed, and citations for any land-change observation. Missing values stay marked as missing.</p>
-            </div>
-            <div className="f-visual">
-              <div className="v-label">
-                <span>Generated PDF · page 1 of 1</span>
-                <span>Engineering example</span>
-              </div>
-              <img src="/demo/supplier-request.webp" alt="A generated supplier evidence request for an engineering-test case, listing three items with their source rows and the data citations." width={1000} height={760} loading="lazy" decoding="async" />
-            </div>
-          </article>
+    <section className="band-white" aria-labelledby="outputs-title"><div className="wrap" data-reveal>
+      <div className="section-head"><h2 id="outputs-title">Useful outputs, with a trace back.</h2><p>Take the result into your existing review process.</p></div>
+      <div className="output-grid"><figure className="output-capture"><img src="/demo/supplier-request.webp" alt="Supplier evidence request generated from labelled engineering records, listing outstanding actions and source references." width="1000" height="760" loading="lazy" /><figcaption>Generated supplier request · engineering example</figcaption></figure>
+        <div className="output-list"><article><span className="eyebrow">Findings</span><h3>The exact record behind the issue</h3><p>File, row, column or plot references let you check the original value and request a specific correction.</p></article><article><span className="eyebrow">Documents</span><h3>A request you can share</h3><p>A supplier evidence request PDF, a review draft and, after sign-off, a schema-validated DDS XML draft.</p></article><article><span className="eyebrow">Review history</span><h3>A sign-off tied to its evidence</h3><p>When relevant evidence changes, earlier sign-offs and documents are marked out of date. Downloaded copies cannot be recalled.</p></article></div>
+      </div>
+    </div></section>
 
-          <article className="feature flip reveal">
-            <div className="f-copy">
-              <span className="f-num">04 · SNAPSHOTS</span>
-              <h3>Sign off a snapshot and see when it goes stale</h3>
-              <p>Sign-off binds to a digest of the exact source files, plot geometry, analysis results, dataset versions, reservations and decisions. Change any of them and the sign-off, and every document built from it, is marked out of date.</p>
-            </div>
-            <div className="f-visual">
-              <div className="v-label">
-                <span>Review history · schematic</span>
-                <span>Illustration</span>
-              </div>
-              <ol className="timeline">
-                <li className="ok">
-                  <span>
-                    <span className="tl-title">Reviewer signs off snapshot</span>
-                    <br />
-                    <span className="tl-meta">digest of files · plots · analyses · ledger · decisions</span>
-                  </span>
-                </li>
-                <li className="ok">
-                  <span>
-                    <span className="tl-title">DDS V3 XML draft exported</span>
-                    <br />
-                    <span className="tl-meta">validated against the official XSD set · marked DRAFT_NOT_SUBMITTED</span>
-                  </span>
-                </li>
-                <li className="warn">
-                  <span>
-                    <span className="tl-title">A source file is replaced</span>
-                    <br />
-                    <span className="tl-meta">new digest · decisions bound to old results lapse</span>
-                  </span>
-                </li>
-                <li className="warn">
-                  <span>
-                    <span className="tl-title">
-                      Sign-off and documents marked <Badge cls="stale">Out of date</Badge>
-                    </span>
-                    <br />
-                    <span className="tl-meta">XML export disabled until the new snapshot is signed off</span>
-                  </span>
-                </li>
-              </ol>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      {/* ---------------- principle statement ---------------- */}
-      <section className="band-light statement">
-        <div className="wrap reveal">
-          <blockquote>
-            A loss signal is a reason to ask. <span className="soft">A clean result is not proof.</span>
-          </blockquote>
-          <p className="attrib">How LotHold reads satellite data</p>
-        </div>
-      </section>
-
-      {/* ---------------- four kinds of evidence ---------------- */}
-      <section className="band-light">
-        <div className="wrap">
-          <div className="section-head reveal">
-            <h2>How LotHold keeps evidence honest</h2>
-            <p>A satellite reading does not make a supplier’s declaration true, and a testnet receipt does not prove cocoa exists. LotHold keeps them apart and says what each cannot show.</p>
-          </div>
-          <div className="kinds reveal">
-            <div>
-              <span className="k-num">01 · DECLARED</span>
-              <h3>Shipment information</h3>
-              <p>Your source-lot table, plot file and shipping documents, stored encrypted with their hashes and row references.</p>
-              <p className="cannot">Cannot show that the declaration is true.</p>
-            </div>
-            <div>
-              <span className="k-num">02 · OBSERVED</span>
-              <h3>Published environmental data</h3>
-              <p>Annual tree-cover loss and 2020 forest cover read pixel by pixel inside each plot, with dates and coverage.</p>
-              <p className="cannot">Cannot show legality. A loss signal is not a deforestation finding.</p>
-            </div>
-            <div>
-              <span className="k-num">03 · DECIDED</span>
-              <h3>Human review</h3>
-              <p>A reviewer’s investigation, rationale and evidence file, bound to the exact snapshot they looked at.</p>
-              <p className="cannot">Lapses automatically when any source, plot or quantity changes.</p>
-            </div>
-            <div>
-              <span className="k-num">04 · COMMITTED</span>
-              <h3>Allocation receipts</h3>
-              <p>Ledger reservations, optionally anchored on a public testnet registry that rejects over-allocation.</p>
-              <p className="cannot">Cannot show physical origin, or allocations made elsewhere.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------- registry (dark rhythm break) ---------------- */}
-      <section className="band-dark">
-        <div className="wrap registry reveal">
-          <div>
-            <span className="f-num">05 · SHARED LIMITS</span>
-            <h2>One declared batch, no matter who reserves from it</h2>
-            <p>A small registry contract on a public testnet keeps every authorised reviewer inside the declared balance. Over-allocation is rejected before it is mined, and still rejected on-chain if someone forces it through.</p>
-            <p>It cannot prove that cocoa exists, or see allocations recorded outside the registry. The ledger alongside is a real engineering run with test quantities.</p>
-            <div className="btn-row" style={{ marginTop: 20 }}>
-              <Link className="btn ghost-dark" to="/verify">
-                Open the registry page
-              </Link>
-            </div>
-          </div>
-          <RegistryLedger />
-        </div>
-      </section>
-
-      {/* ---------------- sources (instead of a logo strip) ---------------- */}
-      <section className="band-dark sources-strip" aria-label="Sources and standards used">
-        <div className="wrap">
-          <p className="eyebrow">Built on published sources and standards</p>
-          <ul>
-            <li>Hansen Global Forest Change<span>v1.13 · annual loss 2001–2025</span></li>
-            <li>JRC Global Forest Cover 2020<span>V4 · 10 m</span></li>
-            <li>EUDR DDS V3 schema<span>EU Information System</span></li>
-            <li>Regulation (EU) 2023/1115<span>as amended by 2025/2650</span></li>
-            <li>Ethereum Sepolia<span>testnet</span></li>
-          </ul>
-        </div>
-      </section>
-
-      {/* ---------------- closing ---------------- */}
-      <section className="band-light">
-        <div className="wrap" style={{ paddingTop: 0 }}>
-          <div className="closing reveal">
-            <div>
-              <h2>Start a review case with your own files.</h2>
-              <p>Your workspace starts empty: no sample shipments. An optional, clearly labelled engineering test kit is available if you want to try it first.</p>
-              <div className="btn-row" style={{ marginTop: 22 }}>
-                <Link className="btn light" to={primary.to}>
-                  {primary.label} <span className="arrow" aria-hidden="true">→</span>
-                </Link>
-                <a className="btn ghost-dark" href="/api/templates/sources.csv">
-                  Download the spreadsheet template
-                </a>
-                <Link className="btn ghost-dark" to="/test-kit">
-                  Engineering test kit
-                </Link>
-              </div>
-            </div>
-            <div className="stamp" aria-hidden="true">
-              HOLD
-              <small>UNTIL THE EVIDENCE HOLDS</small>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
-  );
+    <section className="band-light" aria-labelledby="evidence-title"><div className="wrap" data-reveal>
+      <div className="section-head"><h2 id="evidence-title">Published observations. Visible limits.</h2><p>A loss signal is a reason to investigate. No observed loss is not proof of deforestation-free status.</p></div>
+      <div className="source-notes"><article><span className="eyebrow">Annual loss</span><h3>Hansen Global Forest Change</h3><p>Annual tree-cover loss through 2025, sampled from pinned public raster data. It is historical evidence, not live monitoring.</p><a href="https://glad.earthengine.app/view/global-forest-change">Explore the primary source ↗</a></article><article><span className="eyebrow">2020 baseline</span><h3>JRC Global Forest Cover</h3><p>Forest presence circa 2020 provides context for the loss observations. A map cannot establish the legality of a land-use change.</p><a href="https://forobs.jrc.ec.europa.eu/GFC">Read the JRC source ↗</a></article></div>
+      <div className="evidence-links"><Link to="/method">Evidence &amp; methods →</Link><Link to="/inspect">Inspect a coordinate area →</Link><Link to="/verify">Testnet allocation registry →</Link></div>
+    </div></section>
+    <FAQ />
+    <section className="band-dark"><div className="wrap closing-plain" data-reveal><p className="eyebrow">Start with the evidence you have</p><h2>A clearer next step for every missing record.</h2><p>Your workspace starts empty: no sample shipments. Try your own files or the separate, clearly labelled engineering test kit.</p><div className="btn-row"><Link className="btn light" to={workspace}>Open workspace →</Link><Link className="btn ghost-dark" to="/test-kit">Get the engineering test kit</Link></div></div></section>
+  </div>;
 }
