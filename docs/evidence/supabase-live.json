@@ -1,10 +1,22 @@
 {
-  "status": "blocked",
+  "status": "failed",
   "liveVerified": false,
-  "missing": [
-    "SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_ANON_KEY"
+  "scope": "actual Supabase services; isolated engineering namespace",
+  "namespace": "engineering-ed5aaac8-0d9c-4e04-9afa-639c9d768af0",
+  "checks": [],
+  "operations": [
+    {
+      "operation": "RPC claim",
+      "ms": 724,
+      "pass": false
+    }
   ],
-  "requiredAction": "Create a free Supabase project, apply deploy/render/supabase.sql, set the missing server-shell variables, then run node scripts/verify-supabase.ts --live."
+  "failureStage": "RPC claim",
+  "failureHttpStatus": 404,
+  "checkpointCount": 0,
+  "encryptedCheckpointBytes": [],
+  "totalUploadedBytes": 0,
+  "totalReadBackAndRestoreBytes": 0,
+  "retainedTwoSnapshotsBytes": 0,
+  "cleanup": "claim RPC missing; no checkpoints uploaded"
 }
