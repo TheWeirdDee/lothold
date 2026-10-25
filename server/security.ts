@@ -142,3 +142,10 @@ export function sanitizeFilename(name: string): string {
   const cleaned = base.replace(/[\u0000-\u001f\u007f<>:"|?*]/g, '_').replace(/^\.+/, '').slice(0, 180);
   return cleaned || 'upload';
 }
+
+/** Deletes expired sessions and rate-limit events older than the longest window in use (24 h). */
+export function housekeeping(db: DB, nowMs = Date.now()): { rateEvents: number; sessions: number } {
+  const rate = run(db, 'DELETE FROM rate_events WHERE at_ms < ?', nowMs - 24 * 60 * 60 * 1000);
+  const sessions = run(db, 'DELETE FROM sessions WHERE expires_at < ?', new Date(nowMs).toISOString());
+  return { rateEvents: Number(rate.changes), sessions: Number(sessions.changes) };
+}
