@@ -7,12 +7,17 @@ import { createApp } from './app.ts';
 import { startWorker } from './jobs.ts';
 import { createJobHandlers, verifyDatasets } from './handlers.ts';
 import { housekeeping, secrets } from './security.ts';
+import { cloudDurabilityFromEnv } from './durability.ts';
 
 secrets.evidenceKey();
 secrets.signingKey();
 
+const durable = await cloudDurabilityFromEnv();
 const db = openDb();
-const app = createApp(db);
+if (durable) { durable.attach(db); await durable.flush(); }
+const app = createApp(db, { durability: durable });
+const durabilityTimer = durable ? setInterval(() => { void durable.flush().catch(() => console.log(JSON.stringify({ event: 'durability.unavailable' }))); }, 5000) : null;
+durabilityTimer?.unref();
 
 if (existsSync('dist/index.html')) {
   // Built files (hashed assets, favicon, images) first; then the SPA shell for client-side routes.
@@ -54,7 +59,9 @@ const sweepTimer = setInterval(sweep, 15 * 60 * 1000);
 sweepTimer.unref();
 
 async function shutdown() {
+  if (durabilityTimer) clearInterval(durabilityTimer);
   await worker?.stop();
+  await durable?.flush().catch(() => console.log(JSON.stringify({ event: 'durability.shutdown_unconfirmed' })));
   server.close();
   db.close();
   process.exit(0);
