@@ -1,22 +1,280 @@
 {
-  "status": "failed",
-  "liveVerified": false,
+  "status": "passed",
+  "liveVerified": true,
   "scope": "actual Supabase services; isolated engineering namespace",
-  "namespace": "engineering-ed5aaac8-0d9c-4e04-9afa-639c9d768af0",
-  "checks": [],
+  "namespace": "engineering-4c4a4ccb-ac43-4555-bf86-498d972a259a",
+  "checks": [
+    {
+      "name": "create engineering case",
+      "pass": true
+    },
+    {
+      "name": "upload",
+      "pass": true
+    },
+    {
+      "name": "PDF",
+      "pass": true
+    },
+    {
+      "name": "same account after fresh-cache restore",
+      "pass": true
+    },
+    {
+      "name": "same records",
+      "pass": true
+    },
+    {
+      "name": "evidence decrypts byte-identically",
+      "pass": true
+    },
+    {
+      "name": "stale writer rejected",
+      "pass": true
+    },
+    {
+      "name": "second replacement restores evidence",
+      "pass": true
+    },
+    {
+      "name": "stored PDF decrypts and hashes correctly",
+      "pass": true
+    },
+    {
+      "name": "anon key is accepted by this project",
+      "pass": true
+    },
+    {
+      "name": "bucket metadata readable by service role",
+      "pass": true
+    },
+    {
+      "name": "configured bucket is private",
+      "pass": true
+    },
+    {
+      "name": "bucket permits bounded encrypted checkpoints",
+      "pass": true
+    },
+    {
+      "name": "anon cannot claim checkpoint",
+      "pass": true
+    },
+    {
+      "name": "anon cannot read checkpoint row",
+      "pass": true
+    },
+    {
+      "name": "anonymous cannot download private snapshot",
+      "pass": true
+    },
+    {
+      "name": "anon-key cannot download private snapshot",
+      "pass": true
+    }
+  ],
   "operations": [
     {
       "operation": "RPC claim",
-      "ms": 724,
-      "pass": false
+      "ms": 995,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 1134,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 1118,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 199,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 299,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 862,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 672,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 247,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 182,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 183,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 701,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 732,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 258,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 222,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 1932,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 549,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 264,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 181,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 822,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 1260,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 201,
+      "pass": true
+    },
+    {
+      "operation": "RPC claim",
+      "ms": 243,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 265,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 2158,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 884,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 228,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 174,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 483,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 1114,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 181,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 204,
+      "pass": true
+    },
+    {
+      "operation": "RPC status",
+      "ms": 176,
+      "pass": true
+    },
+    {
+      "operation": "RPC claim",
+      "ms": 586,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 574,
+      "pass": true
+    },
+    {
+      "operation": "private immutable upload",
+      "ms": 682,
+      "pass": true
+    },
+    {
+      "operation": "private checkpoint download",
+      "ms": 575,
+      "pass": true
+    },
+    {
+      "operation": "RPC conditional commit",
+      "ms": 184,
+      "pass": true
     }
   ],
-  "failureStage": "RPC claim",
-  "failureHttpStatus": 404,
-  "checkpointCount": 0,
-  "encryptedCheckpointBytes": [],
-  "totalUploadedBytes": 0,
-  "totalReadBackAndRestoreBytes": 0,
-  "retainedTwoSnapshotsBytes": 0,
-  "cleanup": "claim RPC missing; no checkpoints uploaded"
+  "failureStage": null,
+  "failureHttpStatus": null,
+  "checkpointCount": 8,
+  "encryptedCheckpointBytes": [
+    282656,
+    282656,
+    282656,
+    282656,
+    294944,
+    294944,
+    294944,
+    294944
+  ],
+  "totalUploadedBytes": 2310400,
+  "totalReadBackAndRestoreBytes": 2900288,
+  "retainedTwoSnapshotsBytes": 589888,
+  "cleanup": "isolated namespace removed"
 }
