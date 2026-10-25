@@ -1,6 +1,6 @@
 # Environmental interpretation method
 
-Implementation: `server/env/forest.ts` (method version `forest-analysis/2026-10-24.4`).
+Implementation: `server/env/forest.ts` (method version `forest-analysis/2026-10-25.1`).
 
 ## Inputs
 
@@ -28,10 +28,10 @@ Implementation: `server/env/forest.ts` (method version `forest-analysis/2026-10-
 | Status | Condition | Meaning in the review |
 |---|---|---|
 | `NEEDS_HUMAN_REVIEW` | Any sampled land pixel with loss year 2021–2025 | Land-change signal after the 31 Dec 2020 cut-off. Needs investigation; not a finding of deforestation. |
-| `NO_POST_2020_LOSS_OBSERVED` | Fully covered, no 2021–2025 loss | No annual loss observed in the covered interval. **Not** proof of deforestation-free status. |
-| `PARTIAL_COVERAGE` | No post-2020 loss in covered part, but no-data pixels or outside-tile area | Uncovered part cannot be assessed |
+| `NO_POST_2020_LOSS_OBSERVED` | Every sampled pixel is land inside the tile, no 2021–2025 loss | No annual loss observed in the covered interval. **Not** proof of deforestation-free status. |
+| `PARTIAL_COVERAGE` | Some land observed without post-2020 loss, but water pixels, no-data pixels or outside-tile area also present | Coverage gap: the rest cannot be assessed; needs investigation before sign-off |
 | `PLOT_OUTSIDE_COVERAGE` | Outside the tile | No inference |
-| `UNAVAILABLE` | Too large to analyse (> 0.25°), no pixel sampled, or read error | No inference |
+| `UNAVAILABLE` | No land pixel observed (only water or no-data), too large to analyse (> 0.25°), no pixel sampled, or read error | No inference; needs investigation before sign-off |
 | `PLOT_GEOMETRY_INVALID` | Geometry failed validation | Not analysed until corrected |
 
 These map to the readiness dimension *Land evidence*. Only `NO_POST_2020_LOSS_OBSERVED` on every declared plot, or reviewer investigations recorded **with rationale (≥ 40 characters) and an evidence file**, allow sign-off. A reviewer decision is bound to the specific analysis result ID; a new geometry or method version voids it.
