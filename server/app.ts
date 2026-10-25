@@ -8,7 +8,7 @@ import {
   PASSWORD_MIN, SESSION_COOKIE, SESSION_TTL_MS, createSession, csrfMatches, destroySession, hashPassword, rateLimit, sessionUser, signDownload, verifyDownload, verifyPassword, readBytes, type SessionUser,
 } from './security.ts';
 import {
-  HttpError, LIMITS, SHIPMENT_FIELDS, approve, computeState, confirmUpload, createShipment, getUpload, handleUpload, listShipments, recordDecision, reserveAllocations, setFields, uploadBytes, getShipment, type UploadKind,
+  HttpError, LIMITS, SHIPMENT_FIELDS, approve, computeState, confirmUpload, createShipment, getUpload, handleUpload, listShipments, recordDecision, reserveAllocations, retryAnalysis, correctSourceLotTotal, setFields, uploadBytes, getShipment, type UploadKind,
 } from './service.ts';
 import { enqueue } from './jobs.ts';
 import { analysePlot, DATASETS, COVERAGE_BBOX, ANALYSIS_METHOD_VERSION, datasetAvailability, CUTOFF_YEAR, isVerificationDone } from './env/forest.ts';
@@ -25,6 +25,9 @@ import { demoVideoFromEnv, contentSecurityPolicy } from './demo-video.ts';
 type Env = { Variables: { user: SessionUser | null; db: DB } };
 
 const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ t: now(), ...o }));
+const PUBLIC_ANALYSIS_CONCURRENCY = Number(process.env.PUBLIC_ANALYSIS_CONCURRENCY ?? 2);
+const PUBLIC_MAX_VERTICES = 2_000;
+let publicAnalysesInFlight = 0;
 
 export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?: boolean } = {}) {
   const app = new Hono<Env>();
@@ -71,6 +74,8 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
 
   app.onError((err, c) => {
     if (err instanceof HttpError) return c.json({ error: { code: err.code, message: err.message } }, err.status as 400);
+    // c.req.json() throws SyntaxError for a missing or malformed JSON body: a client error, not a server failure.
+    if (err instanceof SyntaxError && c.req.path.startsWith('/api/')) return c.json({ error: { code: 'invalid_json', message: 'The request body is missing or is not valid JSON.' } }, 400);
     if (err instanceof z.ZodError) return c.json({ error: { code: 'invalid_request', message: err.issues.map((i) => `${i.path.join('.') || 'body'}: ${i.message}`).join('; ') } }, 400);
     log({ event: 'error', path: c.req.path, message: (err as Error).message });
     return c.json({ error: { code: 'internal', message: 'Unexpected server error. The request was not completed.' } }, 500);
@@ -110,7 +115,14 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   app.get('/api/health', (c) => c.json({ ok: true, instance: process.env.LOTHOLD_INSTANCE === 'engineering' ? 'engineering' : 'operational', rulesVersion: RULES_VERSION, analysisMethod: ANALYSIS_METHOD_VERSION, datasets: datasetAvailability() }));
 
   // Readiness: 200 once the startup dataset verification has finished (successfully or not).
-  app.get('/api/ready', (c) => (isVerificationDone() ? c.json({ ready: true, datasets: datasetAvailability() }) : c.json({ ready: false }, 503)));
+  // Readiness: 200 once startup verification has finished. `datasetsVerified` says whether environmental analysis
+  // is fully available; with ?strict=1 the endpoint returns 503 unless every raster passed verification.
+  app.get('/api/ready', (c) => {
+    if (!isVerificationDone()) return c.json({ ready: false }, 503);
+    const datasets = datasetAvailability();
+    const datasetsVerified = datasets.every((d) => d.sha256 !== null && d.sha256 === DATASETS[d.id].sha256);
+    return c.json({ ready: true, datasetsVerified, degraded: !datasetsVerified, datasets }, c.req.query('strict') === '1' && !datasetsVerified ? 503 : 200);
+  });
 
   app.get('/api/public/method', (c) =>
     c.json({
@@ -125,14 +137,27 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
 
   app.post('/api/public/forest-check', async (c) => {
     limit(c, `forest-public:${ip(c)}`, 20, 60 * 60 * 1000);
+    // Shared capacity: a small global cap on concurrent public analyses, whoever sends them.
+    if (publicAnalysesInFlight >= PUBLIC_ANALYSIS_CONCURRENCY) {
+      c.header('Retry-After', '10');
+      throw new HttpError(503, 'busy', 'The public inspector is busy. Try again in a few seconds.');
+    }
     const body = z.object({ geometry: z.unknown() }).parse(await c.req.json().catch(() => ({})));
+    const vertices = JSON.stringify(body.geometry ?? null).split('],[').length;
+    if (vertices > PUBLIC_MAX_VERTICES) throw new HttpError(422, 'too_complex', `Public inspection is limited to ${PUBLIC_MAX_VERTICES} vertices.`);
     const report = validatePlotGeometry(body.geometry, { declaredAreaHa: 1 });
     if (!report.valid) return c.json({ report, analysis: null });
     if ((report.areaHa ?? 0) > 5_000) throw new HttpError(422, 'too_large', 'Public inspection is limited to areas of 5,000 ha or less.');
     // Only analyse against rasters that passed SHA-256 verification at startup (same rule as the job worker).
     const verified = datasetAvailability().every((d) => d.sha256 !== null && d.sha256 === DATASETS[d.id].sha256);
     if (!verified) return c.json({ report, analysis: { status: 'UNAVAILABLE', summary: 'Environmental datasets are missing or failed hash verification on this server; no conclusion is drawn.', limitations: [], hansenPixels: { total: 0, land: 0, water: 0, noData: 0 }, areaHa: { sampled: 0, jrcForest2020: 0, postCutoffLoss: 0, postCutoffLossOnJrcForest: 0, preCutoffLoss: 0 }, lossByYear: {}, coveredInterval: '', methodVersion: ANALYSIS_METHOD_VERSION, analysedAt: new Date().toISOString(), grid: null }, stored: false });
-    const analysis = await analysePlot(body.geometry as never, { geometryValid: true });
+    publicAnalysesInFlight++;
+    let analysis;
+    try {
+      analysis = await analysePlot(body.geometry as never, { geometryValid: true });
+    } finally {
+      publicAnalysesInFlight--;
+    }
     log({ event: 'public.forest_check', status: analysis.status });
     return c.json({ report, analysis, stored: false });
   });
@@ -192,7 +217,10 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   });
 
   // ---------------- shipments ----------------
-  app.get('/api/shipments', (c) => c.json({ shipments: listShipments(db, requireUser(c)) }));
+  app.get('/api/shipments', (c) => {
+    const page = listShipments(db, requireUser(c), { limit: Number(c.req.query('limit') ?? 50), offset: Number(c.req.query('offset') ?? 0) });
+    return c.json({ shipments: page.items, total: page.total, limit: page.limit, offset: page.offset });
+  });
 
   app.post('/api/shipments', async (c) => {
     const u = requireUser(c);
@@ -267,6 +295,18 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   app.post('/api/shipments/:id/plots/:index/swap-correction', (c) => {
     const u = requireUser(c);
     return c.json(swapAxesCorrection(db, u, c.req.param('id'), Number(c.req.param('index'))), 201);
+  });
+
+  app.post('/api/shipments/:id/plots/:ref/retry-analysis', (c) => {
+    const u = requireUser(c);
+    limit(c, `retry:${u.id}`, 30, 60 * 60 * 1000);
+    return c.json(retryAnalysis(db, u, c.req.param('id'), c.req.param('ref')), 202);
+  });
+
+  app.post('/api/shipments/:id/source-lots/correct', async (c) => {
+    const u = requireUser(c);
+    const b = z.object({ supplierId: z.string().max(200), sourceLotRef: z.string().max(200), rationale: z.string().max(4000), evidenceUploadId: z.string().uuid() }).parse(await c.req.json());
+    return c.json(correctSourceLotTotal(db, u, c.req.param('id'), b), 201);
   });
 
   app.post('/api/shipments/:id/reserve', (c) => {
