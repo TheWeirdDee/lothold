@@ -1,0 +1,295 @@
+1
+00:00:00,493 --> 00:00:02,480
+Imagine you're importing cocoa from another
+
+2
+00:00:02,500 --> 00:00:05,061
+country. Before you can confidently accept a
+
+3
+00:00:05,081 --> 00:00:07,415
+shipment, you need to understand where that
+
+4
+00:00:07,435 --> 00:00:09,742
+cocoa came from and whether the supporting
+
+5
+00:00:09,762 --> 00:00:11,423
+land evidence is consistent.
+
+6
+00:00:11,756 --> 00:00:13,811
+But that information can be spread across
+
+7
+00:00:13,830 --> 00:00:16,682
+supplier spreadsheets, shipment documents, and
+
+8
+00:00:16,702 --> 00:00:19,568
+satellite data. A shipment might look complete
+
+9
+00:00:19,588 --> 00:00:22,254
+on paper while important details are missing
+
+10
+00:00:22,274 --> 00:00:25,153
+or contradictory. That's the problem LotHold
+
+11
+00:00:25,173 --> 00:00:26,734
+is built to help solve.
+
+12
+00:00:28,082 --> 00:00:31,053
+LotHold brings those records together into one
+
+13
+00:00:31,073 --> 00:00:34,338
+review workflow. It helps cocoa exporters and
+
+14
+00:00:34,359 --> 00:00:37,503
+importers organize shipment evidence, identify
+
+15
+00:00:37,524 --> 00:00:40,641
+inconsistencies, examine available satellite
+
+16
+00:00:40,661 --> 00:00:43,442
+observations, and document their decisions.
+
+17
+00:00:43,760 --> 00:00:45,400
+Let me show you how it works.
+
+18
+00:00:46,821 --> 00:00:49,460
+First, I create a case for a shipment and
+
+19
+00:00:49,480 --> 00:00:51,170
+upload the supplier records.
+
+20
+00:00:51,487 --> 00:00:54,021
+LotHold reads the information and shows me
+
+21
+00:00:54,042 --> 00:00:55,438
+exactly what it found.
+
+22
+00:00:55,757 --> 00:00:58,630
+I can inspect the quantities, land references,
+
+23
+00:00:58,709 --> 00:01:00,716
+and source files before accepting them.
+
+24
+00:01:01,050 --> 00:01:03,317
+This matters because uploading a document
+
+25
+00:01:03,337 --> 00:01:05,644
+doesn't automatically mean its information is
+
+26
+00:01:05,664 --> 00:01:08,606
+correct. The reviewer stays in control.
+
+27
+00:01:09,962 --> 00:01:12,908
+Next, LotHold examines published satellite
+
+28
+00:01:12,928 --> 00:01:14,803
+data for the supplied locations.
+
+29
+00:01:15,162 --> 00:01:17,855
+Here, we can see observations about tree-cover
+
+30
+00:01:17,875 --> 00:01:20,355
+loss, including the years associated with
+
+31
+00:01:20,375 --> 00:01:21,558
+those observations.
+
+32
+00:01:21,891 --> 00:01:24,317
+These results help identify areas that may
+
+33
+00:01:24,337 --> 00:01:26,093
+need closer investigation.
+
+34
+00:01:26,425 --> 00:01:28,998
+But satellite observations alone don't prove
+
+35
+00:01:29,018 --> 00:01:31,758
+that a supplier broke a law or that a shipment
+
+36
+00:01:31,851 --> 00:01:34,623
+is non-compliant. They're evidence for a human
+
+37
+00:01:34,643 --> 00:01:36,203
+reviewer to consider.
+
+38
+00:01:37,562 --> 00:01:40,641
+When LotHold finds a gap or a concern, it
+
+39
+00:01:40,661 --> 00:01:43,074
+doesn't simply give the shipment a pass or
+
+40
+00:01:43,094 --> 00:01:46,306
+fail. It shows the issue and links it back to
+
+41
+00:01:46,326 --> 00:01:47,709
+the supporting information.
+
+42
+00:01:48,028 --> 00:01:50,468
+The reviewer can then generate a request
+
+43
+00:01:50,488 --> 00:01:52,862
+asking the supplier for the specific evidence
+
+44
+00:01:52,882 --> 00:01:55,494
+needed. Instead of a vague request for more
+
+45
+00:01:55,514 --> 00:01:58,034
+documents, the supplier gets a clearer
+
+46
+00:01:58,054 --> 00:02:00,080
+explanation of what's missing.
+
+47
+00:02:01,456 --> 00:02:03,603
+Once the evidence has been examined, the
+
+48
+00:02:03,623 --> 00:02:05,784
+reviewer records what they checked, their
+
+49
+00:02:05,804 --> 00:02:08,557
+reasoning, and any supporting documents.
+
+50
+00:02:08,876 --> 00:02:11,316
+LotHold keeps that decision connected to the
+
+51
+00:02:11,336 --> 00:02:13,105
+evidence used during the review.
+
+52
+00:02:13,424 --> 00:02:15,804
+If important information changes afterward,
+
+53
+00:02:15,963 --> 00:02:18,469
+the previous decision may need to be reviewed
+
+54
+00:02:18,490 --> 00:02:21,436
+again. This is about making the process easier
+
+55
+00:02:21,456 --> 00:02:24,228
+to inspect, not automatically certifying the
+
+56
+00:02:24,248 --> 00:02:25,117
+shipment.
+
+57
+00:02:26,474 --> 00:02:29,274
+LotHold also supports preparing structured
+
+58
+00:02:29,294 --> 00:02:30,783
+due-diligence records.
+
+59
+00:02:31,102 --> 00:02:33,316
+A due-diligence statement is a formal
+
+60
+00:02:33,336 --> 00:02:35,909
+declaration supported by the information a
+
+61
+00:02:35,929 --> 00:02:37,299
+business has reviewed.
+
+62
+00:02:37,618 --> 00:02:40,537
+Any generated XML is a draft for further
+
+63
+00:02:40,557 --> 00:02:42,545
+validation and submission through the
+
+64
+00:02:42,565 --> 00:02:44,493
+appropriate official process.
+
+65
+00:02:44,812 --> 00:02:47,542
+It is not proof of regulatory acceptance.
+
+66
+00:02:48,904 --> 00:02:51,477
+What you've seen is a real LotHold engineering
+
+67
+00:02:51,497 --> 00:02:54,402
+test workflow, using clearly labelled test
+
+68
+00:02:54,422 --> 00:02:56,976
+records rather than an actual cocoa shipment.
+
+69
+00:02:57,308 --> 00:03:00,074
+The hosted pilot has demonstrated uploads,
+
+70
+00:03:00,180 --> 00:03:03,365
+satellite analysis, PDF generation, and
+
+71
+00:03:03,385 --> 00:03:04,436
+evidence recovery.
+
+72
+00:03:04,755 --> 00:03:07,926
+Our goal is simple: make cocoa supply-chain
+
+73
+00:03:07,946 --> 00:03:11,197
+evidence easier to organize, investigate, and
+
+74
+00:03:11,217 --> 00:03:13,389
+review. This is LotHold.
