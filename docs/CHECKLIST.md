@@ -9,7 +9,7 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 | | Real environmental dataset retrieved, licensed, pinned, spatially queried | Verified | METHOD.md, real-raster unit tests |
 | | Genuine cocoa plots / permissioned shipment records | **Blocked** | None available; workspace empty |
 | | Working testnet RPC and secure signing | Verified | Sepolia transactions, CHAIN.md |
-| | Model provider | **Blocked** | No API key; label parser used and labelled |
+| | Model provider | **Blocked** | Gemini key configured; live extraction unverified (503, then 429 quota exhausted); label parser used and labelled |
 | Architecture | React/TS web app, server-side validation, relational storage, private evidence storage | Verified | ARCHITECTURE.md, tests |
 | | Deterministic rules; environmental adapter; extraction adapter with fallback; document generation; registry; append-only audit | Verified (model path Implemented) | tests |
 | | Fixed-point quantities with original units | Verified | unit tests |
@@ -40,6 +40,8 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 | | DDS XML only after official-schema validation; draft marker outside envelope | Verified | tests |
 | Testing | Unit, integration, contract, browser, real-data, testnet | Verified | VERIFICATION.md |
 | Docs | README, .env.example, architecture, sources/licences, method, AI, chain, verification, submission, recording script | Verified | this folder |
-| Delivery | Production start path, persistent storage, dataset provisioning, backup/restore, deployment plan with costs | Verified (container build pending) | DEPLOYMENT.md; backup test |
+| Delivery | Production start path, persistent storage, dataset provisioning, backup/restore, deployment plan with costs | Verified (container built and recovery-tested locally) | DEPLOYMENT.md; `docs/evidence/container-verification.json`; backup test |
 | | Local commits, one file per commit, no co-author trailers | Done | `git log` |
-| | Push / deploy / submit | Awaiting authorisation | — |
+| | Push | Done for commits up to `a9abd0d` (authorised 24 Oct); later commits local until authorised | `git log` |
+| | Hosted backend | **Not hosted.** A frontend-only copy exists on Vercel; it shows a "server not running" notice | DEPLOYMENT.md |
+| | Submit | Not done; awaiting the entrant | — |
