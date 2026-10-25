@@ -5,6 +5,7 @@ import { pipeline } from 'node:stream/promises';
 import { type DB, id, now, run } from './db.ts';
 import { analysePlot, DATASETS, setDatasetHashes, markVerificationDone, datasetAvailability, ANALYSIS_METHOD_VERSION, type DatasetId } from './env/forest.ts';
 import { DATASETS_KEY } from './service.ts';
+import { analyseOffThread } from './analysis.ts';
 import { anchorAllocationJob } from './chain/anchor.ts';
 import type { JobHandler } from './jobs.ts';
 
@@ -61,7 +62,7 @@ export function createJobHandlers(db: DB, opts: { datasetsOk: boolean }): Record
   return {
     async forest_analysis(p: { geometryHash: string; geometry: never }) {
       if (!opts.datasetsOk) throw new Error('environmental datasets missing or failed SHA-256 verification');
-      const result = await analysePlot(p.geometry, { geometryValid: true });
+      const result = await analyseOffThread(p.geometry);
       // A read failure is retried and finally recorded as a failed job; it never becomes a result.
       if (result.status === 'UNAVAILABLE' && result.error) throw new Error(result.error);
       run(db, 'INSERT OR IGNORE INTO env_results (id, geometry_hash, method_version, datasets_key, status, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', id(), p.geometryHash, ANALYSIS_METHOD_VERSION, DATASETS_KEY, result.status, JSON.stringify(result), now());
