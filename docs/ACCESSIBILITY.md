@@ -2,6 +2,14 @@
 
 Last run: 24 October 2026, Chrome via Playwright, `tests/e2e/accessibility.spec.ts` (part of `npm run test:e2e`).
 
+## Public-experience follow-up ? 25 October 2026
+
+The final Chrome Playwright run passed all 18 browser tests. It adds Docs to the public axe scans at 1440 and 390 px; verifies the new FAQ with Enter/Space; checks mobile modal navigation focus confinement, Escape, selection, focus restoration and scroll unlocking; and plays the actual bundled recording without the API on desktop and mobile, including captions, pause and fullscreen.
+
+A dark-section paragraph contrast failure found during this run was corrected. All informational pages remain readable without the API and the marketing footer is confined to the landing route. Responsive captures at 320, 360, 390, 480, 768, 900, 1024 and 1440 px were visually inspected. A 720 CSS px viewport at 2? device scale plus text-spacing overrides checks 200% reflow equivalence; it is not a manual browser zoom or assistive-technology session. Evidence: `docs/screenshots/experience/`, `docs/evidence/experience-layout.json`.
+
+The manual screen-reader, forced-colours, voice-control and cognitive testing limitations below still apply.
+
 ## What was checked automatically
 
 These are scripted checks. They catch rule violations and broken keyboard paths, but they are **not a screen-reader test**.
