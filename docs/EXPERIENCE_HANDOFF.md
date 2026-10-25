@@ -1,3 +1,5 @@
+> Updated free-project preparation: see [FREE_HOSTING_SETUP.md](FREE_HOSTING_SETUP.md). Its checkpoint setup supersedes older hosting recommendations below. No cloud deployment has been verified.
+
 # LotHold public-experience handoff — 25 October 2026
 
 Implemented locally; no push, external deployment, purchase or account migration performed.
