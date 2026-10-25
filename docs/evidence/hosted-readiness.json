@@ -1,0 +1,33 @@
+{
+  "label": "Read-only availability checks of the public surfaces. No account was created, no mutation was sent, no secrets were read.",
+  "checkedAt": "2026-10-25T17:55:00Z",
+  "surfaces": [
+    {
+      "name": "hosted backend and application (Render Free Docker service)",
+      "origin": "https://lothold.onrender.com",
+      "checks": [
+        { "request": "GET /api/ready?strict=1", "status": 200, "latencySeconds": 89.6, "note": "cold wake on the first request", "body": { "ready": true, "state": "ready", "datasetsVerified": true, "degraded": false } },
+        { "request": "GET /api/ready?strict=1 (immediately after)", "status": 200, "latencySeconds": 1.55, "note": "warm" },
+        { "request": "GET /api/health", "status": 200, "latencySeconds": 0.67, "body": { "ok": true, "instance": "operational", "rulesVersion": "lothold-rules/2026-10-25.1", "analysisMethod": "forest-analysis/2026-10-25.2", "datasets": "all three present, size-matched, hash-reported" } },
+        { "request": "GET /", "status": 200, "contentType": "text/html; charset=utf-8", "title": "LotHold — cocoa shipment evidence review" },
+        { "request": "GET /api/public/method", "status": 200, "contentType": "application/json" },
+        { "request": "GET /api/nope", "status": 404, "contentType": "application/json", "note": "unknown API paths return JSON, not the HTML shell" }
+      ],
+      "notChecked": [
+        "registration, login, session cookies, uploads, analysis, PDF/XML export on this origin (would require creating an account and sending mutations; not authorised in this pass)",
+        "cold-start behaviour after a sleep beyond the single wake observed here",
+        "durability under a redeploy or filesystem replacement"
+      ]
+    },
+    {
+      "name": "public frontend (Vercel)",
+      "origin": "https://lothold.vercel.app",
+      "checks": [
+        { "request": "GET /", "status": 200, "note": "static landing page" },
+        { "request": "GET /api/ready", "status": 404, "contentType": "text/plain", "note": "Vercel NOT_FOUND: the deployed vercel.json has no /api rewrite, so the frontend is not routed to the hosted backend yet" }
+      ],
+      "related": "A reviewed proxy candidate exists at deploy/vercel.connected.json, which would route /api/:path* to https://lothold.onrender.com/api/:path*. It has not been copied to vercel.json or deployed in this pass."
+    }
+  ],
+  "interpretation": "A hosted backend exists and is healthy on read-only endpoints; the public site still does not reach it. Hosted end-to-end workflow (register, upload, analyse, export) remains unverified."
+}
