@@ -4,13 +4,15 @@ import '@fontsource/ibm-plex-mono/400.css';
 import './styles.css';
 
 // Animation classes only hide content once JavaScript is running, so pages stay readable without it.
-document.documentElement.classList.add('js');
+
 import { StrictMode, createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
-import { api, isBackendUnavailable, setCsrf } from './api.ts';
+import { api, setCsrf } from './api.ts';
 import { Logo, ToastProvider, useToast } from './components/ui.tsx';
-import { MethodPage, VerifyPage, InspectPage } from './pages/Public.tsx';
+import { VerifyPage, InspectPage } from './pages/Public.tsx';
+import { gsap } from 'gsap';
+import { DocsPage, MethodsPage } from './pages/Docs.tsx';
 import { Landing } from './pages/Landing.tsx';
 import { TestKitPage } from './pages/TestKit.tsx';
 import { LoginPage, RegisterPage } from './pages/Auth.tsx';
@@ -52,28 +54,34 @@ function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthCtx.Provider value={{ user, loading, unavailable, refresh, logout }}>{children}</AuthCtx.Provider>;
 }
 
-/** Shown when this site cannot reach the LotHold server (for example a static-only deployment). */
-function BackendNotice() {
-  const [down, setDown] = useState(false);
-  useEffect(() => {
-    api('GET', '/api/health').catch((e) => setDown(isBackendUnavailable(e)));
-  }, []);
-  if (!down) return null;
-  return (
-    <div className="backend-notice" role="status">
-      <strong>The LotHold server is not running at this address.</strong> This site shows the interface only: sign-in, uploads, forest analysis and the registry need the server (API, database and forest datasets). Run it locally by following the{' '}
-      <a href="https://github.com/TheWeirdDee/lothold#run-it-locally">README</a>.
-    </div>
-  );
-}
-
 function Shell({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logout, unavailable } = useAuth();
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const loc = useLocation();
   const nav = useNavigate();
   const firstRender = useRef(true);
+  const menu = useRef<HTMLDialogElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const isApp = loc.pathname.startsWith('/app');
+  const isAuth = ['/login', '/register'].includes(loc.pathname);
+  const isLanding = loc.pathname === '/';
+  useEffect(() => {
+    const dialog = menu.current;
+    if (!dialog) return;
+    if (!open) { if (dialog.open) dialog.close(); return; }
+    dialog.showModal();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const media = gsap.matchMedia();
+    media.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.from(dialog.querySelectorAll('nav > *'), { x: 12, duration: 0.28, stagger: 0.035, clearProps: 'transform' });
+    });
+    const desktop = matchMedia('(min-width: 1051px)');
+    const closeOnResize = () => { if (desktop.matches) setOpen(false); };
+    desktop.addEventListener('change', closeOnResize);
+    return () => { media.revert(); document.body.style.overflow = previousOverflow; desktop.removeEventListener('change', closeOnResize); if (dialog.open) dialog.close(); };
+  }, [open]);
   useEffect(() => setOpen(false), [loc.pathname]);
   // Move focus to the new page's content on client-side navigation (not on the initial load, so the
   // skip link stays the first keyboard stop).
@@ -94,59 +102,38 @@ function Shell({ children }: { children: ReactNode }) {
     const t = window.setTimeout(() => document.getElementById(loc.hash.slice(1))?.scrollIntoView({ block: 'start' }), 30);
     return () => window.clearTimeout(t);
   }, [loc.pathname, loc.hash]);
+  const navigation = <>
+    <Link to="/#how">How it works</Link>
+    <NavLink to="/docs">Docs</NavLink>
+    <NavLink to="/method">Evidence &amp; methods</NavLink>
+    <NavLink to="/inspect">Forest inspector</NavLink>
+    <NavLink to="/verify">Registry</NavLink>
+    {user ? <button className="linkbtn" onClick={async () => {
+      try { await logout(); setOpen(false); nav('/'); }
+      catch (e) { toast(`Sign-out could not be confirmed: ${(e as Error).message}`, 'error'); }
+    }}>Sign out</button> : <NavLink to="/register">Create an account</NavLink>}
+    <NavLink to={user ? '/app' : '/login'} className="nav-cta">Open workspace</NavLink>
+  </>;
   return (
     <>
-      <a href="#main" className="skip">
-        Skip to content
-      </a>
+      <a href="#main" className="skip">Skip to content</a>
       <header className="topbar">
-        <Link to="/" className="brand" aria-label="LotHold home">
-          <Logo />
-          LotHold
-        </Link>
-        <button className="linkbtn menu-toggle" aria-expanded={open} aria-controls="topnav" onClick={() => setOpen((o) => !o)}>
-          {open ? 'Close menu' : 'Menu'}
+        <Link to="/" className="brand" aria-label="LotHold home"><Logo />LotHold</Link>
+        <button ref={toggle} className="menu-toggle" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen(true)}>
+          <span className="menu-icon" aria-hidden="true"><i /><i /></span>
         </button>
-        <nav id="topnav" className={`topnav ${open ? 'open' : ''}`} aria-label="Main">
-          <Link to="/#how">How it works</Link>
-          <NavLink to="/method">Evidence &amp; methods</NavLink>
-          <NavLink to="/inspect">Forest inspector</NavLink>
-          <NavLink to="/verify">Registry</NavLink>
-          <span className="divider" aria-hidden="true" />
-          {user ? (
-            <>
-              <button
-                className="linkbtn"
-                onClick={async () => {
-                  try {
-                    await logout();
-                    nav('/');
-                  } catch (e) {
-                    toast(`Sign-out could not be confirmed by the server: ${(e as Error).message}`, 'error');
-                  }
-                }}
-              >
-                Sign out
-              </button>
-              <NavLink to="/app" className="nav-cta" end={false}>
-                Workspace
-              </NavLink>
-            </>
-          ) : (
-            <>
-              <NavLink to="/login">Sign in</NavLink>
-              <NavLink to="/register" className="nav-cta">
-                Open the desk
-              </NavLink>
-            </>
-          )}
-        </nav>
+        <nav className="topnav" aria-label="Main">{navigation}</nav>
       </header>
-      <BackendNotice />
+      <dialog ref={menu} id="mobile-nav" className="mobile-drawer" aria-labelledby="mobile-nav-title" onCancel={() => setOpen(false)} onClose={() => { setOpen(false); toggle.current?.focus(); }} onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="drawer-head"><span id="mobile-nav-title">LotHold / Explore</span><button className="menu-toggle is-open" aria-label="Close navigation" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen(false)}><span className="menu-icon" aria-hidden="true"><i /><i /></span></button></div>
+        <nav aria-label="Mobile" onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>{navigation}</nav>
+        <p className="drawer-note">Find the source. Ask for the evidence.<br />A review aid for cocoa shipments.</p>
+      </dialog>
+      {(isApp || isAuth) && unavailable && <div className="backend-notice" role="status"><strong>The LotHold server is not running at this address.</strong> Account access and case work need a connected server. <Link to="/docs#troubleshooting">Connection help</Link></div>}
       <main id="main" tabIndex={-1} style={{ outline: 'none' }}>
         {children}
       </main>
-      <footer className="footer">
+      {isLanding && <footer className="footer">
         <div className="inner">
           <div>
             <Link to="/" className="brand" aria-label="LotHold home">
@@ -165,8 +152,9 @@ function Shell({ children }: { children: ReactNode }) {
           </nav>
           <nav aria-label="Resources">
             <ul>
+              <li><Link to="/docs">Docs &amp; getting started</Link></li>
               <li><a href="https://github.com/TheWeirdDee/lothold">Source code (GitHub)</a></li>
-              <li><a href="/api/templates/sources.csv">Source-table template (CSV)</a></li>
+              <li><a href="/templates/sources.csv">Source-table template (CSV)</a></li>
               <li><Link to="/test-kit">Engineering test kit</Link></li>
               <li><a href="https://glad.earthengine.app/view/global-forest-change">Hansen Global Forest Change</a></li>
               <li><a href="https://forobs.jrc.ec.europa.eu/GFC">JRC Global Forest Cover 2020</a></li>
@@ -177,7 +165,8 @@ function Shell({ children }: { children: ReactNode }) {
             <span>Testnet registry on Ethereum Sepolia · no tokens, no value transfer</span>
           </div>
         </div>
-      </footer>
+      </footer>}
+      {!isLanding && !isApp && <footer className="utility-footer"><Link to="/docs">User guide</Link><Link to="/method">Evidence &amp; methods</Link><Link to="/">LotHold home</Link></footer>}
     </>
   );
 }
@@ -221,7 +210,8 @@ createRoot(document.getElementById('root')!).render(
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/inspect" element={<InspectPage />} />
-              <Route path="/method" element={<MethodPage />} />
+              <Route path="/method" element={<MethodsPage />} />
+              <Route path="/docs" element={<DocsPage />} />
               <Route path="/verify" element={<VerifyPage />} />
               <Route path="/test-kit" element={<TestKitPage />} />
               <Route path="/login" element={<LoginPage />} />
