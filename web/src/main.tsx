@@ -21,8 +21,8 @@ import { ShipmentDesk } from './pages/Shipment.tsx';
 
 export type User = { id: string; email: string; name: string; organisation: string; role: string; chainEnabled: boolean };
 // `unavailable` means the session could not be checked (server unreachable); it is not the same as signed out.
-type AuthState = { user: User | null; loading: boolean; unavailable: string | null; starting: boolean; refresh: () => Promise<void>; logout: () => Promise<void> };
-const AuthCtx = createContext<AuthState>({ user: null, loading: true, unavailable: null, starting: false, refresh: async () => {}, logout: async () => {} });
+type AuthState = { user: User | null; loading: boolean; unavailable: string | null; starting: boolean; signedOut: boolean; refresh: () => Promise<void>; logout: () => Promise<void> };
+const AuthCtx = createContext<AuthState>({ user: null, loading: true, unavailable: null, starting: false, signedOut: false, refresh: async () => {}, logout: async () => {} });
 export const useAuth = () => useContext(AuthCtx);
 
 function AuthProvider({ children }: { children: ReactNode }) {
@@ -30,25 +30,30 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [signedOut, setSignedOut] = useState(false);
+  const refreshVersion = useRef(0);
   const refresh = useCallback(async () => {
+    const version = ++refreshVersion.current;
     try {
       const r = await api<{ user: User | null; csrf?: string }>('GET', '/api/auth/me');
-      setUser(r.user);
+      if (version !== refreshVersion.current) return;
+      setUser(r.user); if (r.user) setSignedOut(false);
       setCsrf(r.csrf ?? null);
       setUnavailable(null); setStarting(false);
     } catch (e) {
+      if (version !== refreshVersion.current) return;
       setUser(null);
       setUnavailable((e as Error).message);
       setStarting(e instanceof ApiError && ['timeout', 'backend_starting'].includes(e.code));
     } finally {
-      setLoading(false);
+      if (version === refreshVersion.current) setLoading(false);
     }
   }, []);
   // Local state is cleared only when the server confirms the session ended; otherwise the error is reported.
   const logout = useCallback(async () => {
     await api('POST', '/api/auth/logout');
-    setCsrf(null);
-    setUser(null);
+    ++refreshVersion.current; setSignedOut(true);
+    setCsrf(null); setUser(null);
   }, []);
   useEffect(() => {
     void refresh();
@@ -58,7 +63,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener(WAKING_EVENT, waking); window.addEventListener(READY_EVENT, ready);
     return () => { window.removeEventListener(WAKING_EVENT, waking); window.removeEventListener(READY_EVENT, ready); };
   }, [refresh]);
-  return <AuthCtx.Provider value={{ user, loading, unavailable, starting, refresh, logout }}>{children}</AuthCtx.Provider>;
+  return <AuthCtx.Provider value={{ user, loading, unavailable, starting, signedOut, refresh, logout }}>{children}</AuthCtx.Provider>;
 }
 
 /** Poll readiness without reloading or discarding any form state. */
@@ -68,10 +73,11 @@ function StartingNotice() {
   const [waited, setWaited] = useState(0);
   const [ready, setReady] = useState(false);
   const [exhausted, setExhausted] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => { if (sessionStarting) { setStarting(true); setReady(false); } }, [sessionStarting]);
   useEffect(() => {
-    const on = () => { setStarting(true); setReady(false); };
+    const on = (event: Event) => { setStarting(true); setReady(false); setFailed(false); if ((event as CustomEvent).detail?.state === 'unavailable') setExhausted(true); };
     window.addEventListener(WAKING_EVENT, on);
     return () => window.removeEventListener(WAKING_EVENT, on);
   }, []);
@@ -84,8 +90,11 @@ function StartingNotice() {
         setWaited(Math.round((Date.now() - started) / 1000));
         try {
           const r = await fetch('/api/ready', { credentials: 'same-origin', signal: AbortSignal.timeout(20_000) });
-          if (r.ok && (r.headers.get('content-type') ?? '').includes('json') && (await r.json()).ready === true) {
-            setReady(true); window.dispatchEvent(new Event(READY_EVENT)); return;
+          if ((r.headers.get('content-type') ?? '').includes('json')) {
+            const status = await r.json();
+            if (r.ok && status.ready === true) { if (!stopped) { setReady(true); window.dispatchEvent(new Event(READY_EVENT)); } return; }
+            if (status.state === 'failed') { if (!stopped) setFailed(true); return; }
+            if (status.state === 'unavailable') { if (!stopped) setExhausted(true); return; }
           }
         } catch { /* still starting */ }
         await new Promise((res) => setTimeout(res, 5_000));
@@ -102,7 +111,7 @@ function StartingNotice() {
         <>
           <strong>The LotHold server is ready.</strong> Your form entries are still here. Retry the operation when you are ready.
         </>
-      ) : exhausted ? <><strong>The service is still unavailable.</strong> No empty workspace or successful save is implied. <button className="linkbtn" onClick={() => setAttempt((n) => n + 1)}>Retry connection</button></> : (
+      ) : failed ? <><strong>Server readiness failed.</strong> Required integrity checks did not pass; no successful operation is implied. <button className="linkbtn" onClick={() => { setFailed(false); setAttempt((n) => n + 1); }}>Retry connection</button></> : exhausted ? <><strong>The service is still unavailable.</strong> No empty workspace or successful save is implied. <button className="linkbtn" onClick={() => setAttempt((n) => n + 1)}>Retry connection</button></> : (
         <>
           <strong>The LotHold server is starting up.</strong> A free service may take a minute or longer to wake. Your form entries stay on this page{waited > 0 ? ` (waiting ${waited} s)` : ''}.
         </>
@@ -230,7 +239,7 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading, unavailable, refresh } = useAuth();
+  const { user, loading, unavailable, refresh, signedOut } = useAuth();
   const loc = useLocation();
   if (loading) return <div className="page">Checking your session…</div>;
   if (!user && unavailable)
@@ -244,7 +253,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
         </button>
       </div>
     );
-  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname)}`} replace />;
+  if (!user) return <Navigate to={signedOut ? '/' : `/login?next=${encodeURIComponent(loc.pathname)}`} replace />;
   return <>{children}</>;
 }
 
