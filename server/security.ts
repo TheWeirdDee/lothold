@@ -84,7 +84,37 @@ export function rateLimit(db: DB, bucket: string, limit: number, windowMs: numbe
 // ---------- private evidence storage (AES-256-GCM at rest) ----------
 const STORAGE_DIR = () => resolve(process.env.EVIDENCE_DIR ?? 'data/evidence');
 
-export function storeBytes(orgId: string, bytes: Buffer): string {
+// Where encrypted objects live. Default: files under EVIDENCE_DIR. With EVIDENCE_STORE=sqlite (see app.ts), the same
+// ciphertext is kept in the evidence_blobs table instead. Encryption, format and organisation binding are identical.
+type BlobStore = { put(orgId: string, storageKey: string, blob: Buffer): void; get(storageKey: string): Buffer | null };
+const fileStore: BlobStore = {
+  put(_orgId, storageKey, blob) {
+    const path = resolve(STORAGE_DIR(), storageKey);
+    if (!path.startsWith(STORAGE_DIR() + sep)) throw new Error('invalid storage path');
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, blob, { mode: 0o600 });
+  },
+  get(storageKey) {
+    const path = resolve(STORAGE_DIR(), storageKey);
+    if (!path.startsWith(STORAGE_DIR() + sep) || !existsSync(path)) return null;
+    return readFileSync(path);
+  },
+};
+function blobStoreFor(db?: DB): BlobStore {
+  if (process.env.EVIDENCE_STORE !== 'sqlite') return fileStore;
+  if (!db) throw new Error('SQLite evidence storage requires the owning database.');
+  return {
+    put(orgId, storageKey, blob) {
+      run(db, 'INSERT INTO evidence_blobs (storage_key, org_id, bytes, created_at) VALUES (?, ?, ?, ?)', storageKey, orgId, blob, now());
+    },
+    get(storageKey) {
+      const r = get<{ bytes: Uint8Array }>(db, 'SELECT bytes FROM evidence_blobs WHERE storage_key = ?', storageKey);
+      return r ? Buffer.from(r.bytes) : null;
+    },
+  };
+}
+
+export function storeBytes(orgId: string, bytes: Buffer, db?: DB): string {
   const key = secrets.evidenceKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
@@ -92,18 +122,14 @@ export function storeBytes(orgId: string, bytes: Buffer): string {
   const enc = Buffer.concat([cipher.update(bytes), cipher.final()]);
   const tag = cipher.getAuthTag();
   const storageKey = `${orgId}/${id()}.bin`;
-  const path = resolve(STORAGE_DIR(), storageKey);
-  if (!path.startsWith(STORAGE_DIR() + sep)) throw new Error('invalid storage path');
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, Buffer.concat([Buffer.from('LH1'), iv, tag, enc]), { mode: 0o600 });
+  blobStoreFor(db).put(orgId, storageKey, Buffer.concat([Buffer.from('LH1'), iv, tag, enc]));
   return storageKey;
 }
 
-export function readBytes(orgId: string, storageKey: string): Buffer {
+export function readBytes(orgId: string, storageKey: string, db?: DB): Buffer {
   if (!storageKey.startsWith(orgId + '/') || storageKey.includes('..')) throw new Error('storage key does not belong to organisation');
-  const path = resolve(STORAGE_DIR(), storageKey);
-  if (!path.startsWith(STORAGE_DIR() + sep) || !existsSync(path)) throw new Error('stored object missing');
-  const buf = readFileSync(path);
+  const buf = blobStoreFor(db).get(storageKey);
+  if (!buf) throw new Error('stored object missing');
   if (buf.subarray(0, 3).toString() !== 'LH1') throw new Error('unknown storage format');
   const iv = buf.subarray(3, 15), tag = buf.subarray(15, 31), enc = buf.subarray(31);
   const d = createDecipheriv('aes-256-gcm', secrets.evidenceKey(), iv);
