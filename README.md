@@ -17,7 +17,7 @@ The EU Deforestation Regulation names cocoa among seven “commodities associate
 | Capability | Status | Evidence |
 |---|---|---|
 | Upload → parse → preview → confirm (CSV source table, GeoJSON plots) | Working | Browser + integration tests |
-| Deterministic rules: required fields, HS 1801 scope, ISO countries, exact fixed-point quantities, unit conversion, allocation conservation, geometry validity (EUDR GeoJSON rules), coverage, staleness | Working | 40 unit tests |
+| Deterministic rules: required fields, HS 1801 scope, ISO countries, exact fixed-point quantities, unit conversion, allocation conservation, geometry validity (EUDR GeoJSON rules), coverage, snapshot staleness (sign-off lapses when evidence changes); observation recency is disclosed, not enforced | Working | unit and integration tests |
 | Environmental analysis on **real** pinned rasters (Hansen GFC v1.13 annual loss 2001–2025; JRC GFC2020 V4 forest 2020) with pixel-level intersection and WGS 84 ellipsoidal areas | Working for lon −10…0, lat 0…10 (Côte d’Ivoire and western Ghana) | Unit tests on real rasters; independent GDAL/pyproj cross-check; [method](docs/METHOD.md) |
 | Review decisions (rationale + evidence required), sign-off bound to an evidence snapshot digest, automatic invalidation | Working | Integration + browser tests |
 | One-page supplier evidence request PDF; review draft PDF | Working, rendered and visually inspected | [screenshot](docs/screenshots/supplier-request-pdf.png) |
