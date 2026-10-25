@@ -1,0 +1,197 @@
+[
+  {
+    "start": 0.0,
+    "end": 3.16,
+    "text": "Imagine you're importing cocoa from another country."
+  },
+  {
+    "start": 3.16,
+    "end": 5.8,
+    "text": "Before you can confidently accept a shipment,"
+  },
+  {
+    "start": 5.8,
+    "end": 8.64,
+    "text": "you need to understand where that cocoa came from"
+  },
+  {
+    "start": 8.64,
+    "end": 11.5,
+    "text": "and whether the supporting land evidence is consistent."
+  },
+  {
+    "start": 11.5,
+    "end": 15.200000000000001,
+    "text": "But that information can be spread across supplier spreadsheets,"
+  },
+  {
+    "start": 15.200000000000001,
+    "end": 17.84,
+    "text": "shipment documents, and satellite data."
+  },
+  {
+    "start": 17.84,
+    "end": 23.48,
+    "text": "A shipment might look complete on paper while important details are missing or contradictory."
+  },
+  {
+    "start": 23.48,
+    "end": 27.0,
+    "text": "That's the problem Lothold is built to help solve."
+  },
+  {
+    "start": 28.0,
+    "end": 32.4,
+    "text": "Lothold brings those records together into one review workflow."
+  },
+  {
+    "start": 32.4,
+    "end": 36.8,
+    "text": "It helps cocoa exporters and importers organize shipment evidence,"
+  },
+  {
+    "start": 36.8,
+    "end": 41.8,
+    "text": "identify inconsistencies, examine available satellite observations,"
+  },
+  {
+    "start": 41.8,
+    "end": 43.6,
+    "text": "and document their decisions."
+  },
+  {
+    "start": 43.6,
+    "end": 45.8,
+    "text": "Let me show you how it works."
+  },
+  {
+    "start": 46.6,
+    "end": 51.400000000000006,
+    "text": "First, I create a case for a shipment and upload the supplier records."
+  },
+  {
+    "start": 51.400000000000006,
+    "end": 55.6,
+    "text": "Lothold reads the information and shows me exactly what it found."
+  },
+  {
+    "start": 55.6,
+    "end": 61.0,
+    "text": "I can inspect the quantities, land references, and source files before accepting them."
+  },
+  {
+    "start": 61.0,
+    "end": 66.6,
+    "text": "This matters because uploading a document doesn't automatically mean its information is correct."
+  },
+  {
+    "start": 66.6,
+    "end": 68.6,
+    "text": "The reviewer stays in control."
+  },
+  {
+    "start": 69.8,
+    "end": 75.0,
+    "text": "Next, Lothold examines published satellite data for the supplied locations."
+  },
+  {
+    "start": 75.0,
+    "end": 78.6,
+    "text": "Here, we can see observations about tree cover loss,"
+  },
+  {
+    "start": 78.6,
+    "end": 81.8,
+    "text": "including the years associated with those observations."
+  },
+  {
+    "start": 81.8,
+    "end": 86.39999999999999,
+    "text": "These results help identify areas that may need closer investigation."
+  },
+  {
+    "start": 86.39999999999999,
+    "end": 93.2,
+    "text": "But satellite observations alone don't prove that a supplier broke a law or that a shipment is non-compliant."
+  },
+  {
+    "start": 93.2,
+    "end": 96.0,
+    "text": "They're evidence for a human reviewer to consider."
+  },
+  {
+    "start": 97.6,
+    "end": 104.0,
+    "text": "When Lothold finds a gap or a concern, it doesn't simply give the shipment a pass or fail."
+  },
+  {
+    "start": 104.0,
+    "end": 108.0,
+    "text": "It shows the issue and links it back to the supporting information."
+  },
+  {
+    "start": 108.0,
+    "end": 113.6,
+    "text": "The reviewer can then generate a request asking the supplier for the specific evidence needed."
+  },
+  {
+    "start": 113.6,
+    "end": 121.0,
+    "text": "Instead of a vague request for more documents, the supplier gets a clearer explanation of what's missing."
+  },
+  {
+    "start": 121.0,
+    "end": 128.8,
+    "text": "Once the evidence has been examined, the reviewer records what they checked, their reasoning, and any supporting documents."
+  },
+  {
+    "start": 128.8,
+    "end": 133.4,
+    "text": "Lothold keeps that decision connected to the evidence used during the review."
+  },
+  {
+    "start": 133.4,
+    "end": 139.4,
+    "text": "If important information changes afterward, the previous decision may need to be reviewed again."
+  },
+  {
+    "start": 139.4,
+    "end": 146.4,
+    "text": "This is about making the process easier to inspect, not automatically certifying the shipment."
+  },
+  {
+    "start": 146.4,
+    "end": 151.0,
+    "text": "Lothold also supports preparing structured due diligence records."
+  },
+  {
+    "start": 151.0,
+    "end": 157.6,
+    "text": "A due diligence statement is a formal declaration supported by the information a business has reviewed."
+  },
+  {
+    "start": 157.6,
+    "end": 164.6,
+    "text": "Any generated XML is a draft for further validation and submission through the appropriate official process."
+  },
+  {
+    "start": 164.6,
+    "end": 168.6,
+    "text": "It is not proof of regulatory acceptance."
+  },
+  {
+    "start": 168.6,
+    "end": 177.2,
+    "text": "What you've seen is a real Lothold engineering test workflow using clearly labeled test records rather than an actual cocoa shipment."
+  },
+  {
+    "start": 177.2,
+    "end": 184.6,
+    "text": "The hosted pilot has demonstrated uploads, satellite analysis, PDF generation, and evidence recovery."
+  },
+  {
+    "start": 184.6,
+    "end": 193.6,
+    "text": "Our goal is simple. Make cocoa supply chain evidence easier to organize, investigate, and review. This is Lothold."
+  }
+]
