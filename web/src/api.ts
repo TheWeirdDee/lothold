@@ -19,7 +19,7 @@ export const isBackendUnavailable = (e: unknown) => e instanceof ApiError && (e.
 /** Fired when the backend looks like it is starting (cold start on free hosting): gateway errors or timeouts. */
 export const WAKING_EVENT = 'lothold:backend-starting';
 export const READY_EVENT = 'lothold:backend-ready';
-const signalStarting = () => { try { window.dispatchEvent(new Event(WAKING_EVENT)); } catch { /* not in a browser */ } };
+const signalStarting = (state: 'starting' | 'unavailable' = 'starting') => { try { window.dispatchEvent(new CustomEvent(WAKING_EVENT, { detail: {state} })); } catch { /* not in a browser */ } };
 
 // Timeouts: uploads and model extraction can legitimately take longer than ordinary requests.
 const timeoutFor = (path: string, body: unknown) => (body instanceof FormData ? 180_000 : /\/extract$/.test(path) ? 150_000 : /forest-check|\/documents\//.test(path) ? 90_000 : 45_000);
@@ -41,6 +41,7 @@ export async function api<T = any>(method: string, path: string, body?: unknown,
       signalStarting();
       throw new ApiError(0, 'timeout', 'The server did not respond in time. The outcome may be uncertain. Keep your form entries and check the current record before retrying.');
     }
+    signalStarting('unavailable');
     throw new ApiError(0, 'network', 'The server could not be reached. Check your connection and try again.');
   }
   const text = await res.text();
