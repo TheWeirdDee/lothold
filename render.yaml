@@ -1,0 +1,36 @@
+# Render Blueprint for LotHold's backend (free web service). Creates nothing until you apply it in the Render
+# dashboard (New > Blueprint). Secrets marked sync: false are entered there, never committed.
+services:
+  - type: web
+    name: lothold-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/ready?strict=1
+    autoDeploy: false
+    envVars:
+      - key: PUBLIC_ORIGIN
+        value: https://lothold.vercel.app
+      - key: REGISTRATION_OPEN
+        value: 'true'
+      - key: REGISTER_RATE_LIMIT
+        value: '50'
+      # Trust only Render's immediate proxy entry. Two-hop trust is unsafe on a
+      # backend that can also receive direct requests with client-supplied XFF.
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      - key: EVIDENCE_ENCRYPTION_KEY
+        sync: false
+      - key: DOWNLOAD_SIGNING_KEY
+        sync: false
+      - key: DURABLE_STORE
+        value: supabase
+      - key: SNAPSHOT_NAMESPACE
+        value: judging
+      - key: SUPABASE_STORAGE_BUCKET
+        value: lothold-private
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
