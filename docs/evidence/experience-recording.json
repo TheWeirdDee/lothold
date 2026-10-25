@@ -1,0 +1,82 @@
+{
+  "recordedAt": "2026-10-25T05:48:05.796Z",
+  "engineeringOnly": true,
+  "fullDurationSeconds": 63.965,
+  "chapters": [
+    {
+      "seconds": 0.81,
+      "text": "This is a separate engineering instance. The cases, quantities and coordinate probe boxes are not commercial records or farms."
+    },
+    {
+      "seconds": 4.732,
+      "text": "Upload a labelled document. The deterministic label parser is not AI. Each proposed field quotes its source."
+    },
+    {
+      "seconds": 8.695,
+      "text": "Accept the quoted fields and enter the remaining engineering details. No official operator identity is represented."
+    },
+    {
+      "seconds": 12.458,
+      "text": "Inspect the parsed preview of A1_ENGINEERING_TEST_sources.csv. Confirming makes this version active."
+    },
+    {
+      "seconds": 15.305,
+      "text": "Inspect the parsed preview of ENGINEERING_TEST_missing_boundary.geojson. Confirming makes this version active."
+    },
+    {
+      "seconds": 17.915,
+      "text": "A missing plot boundary holds the case. Follow the finding to the exact source row."
+    },
+    {
+      "seconds": 21.514,
+      "text": "The source row references the missing plot. These are declared engineering quantities."
+    },
+    {
+      "seconds": 26.351,
+      "text": "Inspect the parsed preview of A2_ENGINEERING_TEST_plots.geojson. Confirming makes this version active."
+    },
+    {
+      "seconds": 29.031,
+      "text": "Inspect real pinned Hansen and JRC pixels inside a coordinate probe box. The shape is not a farm."
+    },
+    {
+      "seconds": 33.464,
+      "text": "Generate the supplier evidence request from outstanding findings. The download is a real PDF."
+    },
+    {
+      "seconds": 37.098,
+      "text": "Open the generated supplier request PDF. It asks for evidence and does not certify compliance."
+    },
+    {
+      "seconds": 43.208,
+      "text": "Attach clearly labelled engineering evidence and record a rationale. A real review would need relevant independent records."
+    },
+    {
+      "seconds": 46.988,
+      "text": "Reserve the declared allocation in the database ledger. No blockchain transaction is sent in this recording."
+    },
+    {
+      "seconds": 50.693,
+      "text": "Sign off the exact evidence snapshot. This remains a reviewed draft, never an official submission."
+    },
+    {
+      "seconds": 54.589,
+      "text": "Export a DDS XML draft only after sign-off and schema validation. No official reference number is invented."
+    },
+    {
+      "seconds": 58.45,
+      "text": "Change the evidence. Earlier sign-off and documents become out of date; XML export is blocked until a new review."
+    }
+  ],
+  "checks": {
+    "actualUIRecording": true,
+    "pdfOpened": true,
+    "xmlDraft": true,
+    "staleExportBlocked": true,
+    "crossContextLogin": true,
+    "backendRestartSameDatabaseAndKeys": true,
+    "evidenceDecryptionAfterRestart": true,
+    "logout": true,
+    "unexpectedServerOrPageErrors": []
+  }
+}
