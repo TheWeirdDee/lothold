@@ -13,7 +13,13 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T = any>(method: string, path: string, body?: unknown): Promise<T> {
+/** True when an /api request was answered by something other than the LotHold server (e.g. a static host's 404 page). */
+export const isBackendUnavailable = (e: unknown) => e instanceof ApiError && (e.code === 'backend_unavailable' || e.code === 'network' || e.code === 'timeout');
+
+// Timeouts: uploads and model extraction can legitimately take longer than ordinary requests.
+const timeoutFor = (path: string, body: unknown) => (body instanceof FormData ? 180_000 : /\/extract$/.test(path) ? 150_000 : /forest-check|\/documents\//.test(path) ? 90_000 : 45_000);
+
+export async function api<T = any>(method: string, path: string, body?: unknown, opts: { timeoutMs?: number } = {}): Promise<T> {
   const headers: Record<string, string> = {};
   let payload: BodyInit | undefined;
   if (body instanceof FormData) payload = body;
@@ -24,8 +30,9 @@ export async function api<T = any>(method: string, path: string, body?: unknown)
   if (csrf && method !== 'GET') headers['x-csrf-token'] = csrf;
   let res: Response;
   try {
-    res = await fetch(path, { method, headers, body: payload, credentials: 'same-origin' });
-  } catch {
+    res = await fetch(path, { method, headers, body: payload, credentials: 'same-origin', signal: AbortSignal.timeout(opts.timeoutMs ?? timeoutFor(path, body)) });
+  } catch (e) {
+    if ((e as Error).name === 'TimeoutError') throw new ApiError(0, 'timeout', 'The server did not respond in time. Nothing on this page was changed by the browser; reload to see the current state.');
     throw new ApiError(0, 'network', 'The server could not be reached. Check your connection and try again.');
   }
   const text = await res.text();
@@ -35,6 +42,9 @@ export async function api<T = any>(method: string, path: string, body?: unknown)
   } catch {
     /* non-JSON */
   }
+  // The LotHold API always answers in JSON; anything else means this site is not connected to it.
+  if (path.startsWith('/api/') && json === null && !(res.ok && text === ''))
+    throw new ApiError(res.status, 'backend_unavailable', 'The LotHold server is not available at this address, so this page cannot load its data.');
   if (!res.ok) throw new ApiError(res.status, json?.error?.code ?? 'error', json?.error?.message ?? `Request failed (${res.status}).`);
   return json as T;
 }
