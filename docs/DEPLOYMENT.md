@@ -1,4 +1,6 @@
-# Deployment plan (for review; nothing is deployed)
+# Deployment plan
+
+**Current state (25 Oct 2026):** no LotHold server is hosted. https://lothold.vercel.app is a frontend-only copy (static files). Vercel cannot run LotHold's long-running server, SQLite database, encrypted evidence store and 431 MB of forest rasters, so every `/api` request there returns 404. The frontend detects this and shows a "server not running" notice instead of failing silently. `vercel.json` makes direct links and page refreshes load the app, while `/api` stays a genuine 404. Verifying this needs a redeploy and was not done locally.
 
 ## What production needs
 
