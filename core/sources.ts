@@ -6,8 +6,8 @@ import { ISO_ALPHA2 } from './reference.ts';
 import { validatePlotGeometry, type GeometryReport } from './geometry.ts';
 import { COUNTRY_BBOX } from './reference.ts';
 
-export const SOURCES_PARSER_VERSION = 'sources-csv/2026-10-24.1';
-export const PLOTS_PARSER_VERSION = 'plots-geojson/2026-10-24.1';
+export const SOURCES_PARSER_VERSION = 'sources-csv/2026-10-25.1';
+export const PLOTS_PARSER_VERSION = 'plots-geojson/2026-10-25.1';
 export const MAX_CSV_ROWS = 2_000;
 export const MAX_FEATURES = 1_000;
 
@@ -72,6 +72,10 @@ export function parseSourcesCsv(text: string): SourcesParse {
   }
   const fatal = parsed.errors.find((e) => e.type === 'Delimiter' || e.code === 'UndetectableDelimiter');
   if (fatal) return { ok: false, parserVersion, error: `Could not read CSV structure: ${fatal.message}` };
+  // A row with the wrong number of values or a broken quote would otherwise lose or shift values silently.
+  const structural = parsed.errors.filter((e) => e.type === 'FieldMismatch' || e.type === 'Quotes');
+  if (structural.length)
+    return { ok: false, parserVersion, error: `The CSV structure is broken, so no row was used: ${structural.slice(0, 3).map((e) => `row ${(e.row ?? 0) + 2}: ${e.message}`).join('; ')}${structural.length > 3 ? ` (and ${structural.length - 3} more)` : ''}. Every row needs exactly ${fields.length} values; quote values that contain commas.` };
   if (parsed.data.length > MAX_CSV_ROWS) return { ok: false, parserVersion, error: `The file has ${parsed.data.length} data rows; the limit is ${MAX_CSV_ROWS}.` };
   if (parsed.data.length === 0) return { ok: false, parserVersion, error: 'The file has a header row but no data rows.' };
 
@@ -91,6 +95,9 @@ export function parseSourcesCsv(text: string): SourcesParse {
     };
     const supplierId = req('supplier_id', 'Supplier ID');
     const sourceLotRef = req('source_lot_ref', 'Source lot reference');
+    // "::" joins supplier and lot in LotHold's lot keys, so it is not allowed inside either identifier.
+    for (const [col, v] of [['supplier_id', supplierId], ['source_lot_ref', sourceLotRef]] as const)
+      if (v?.includes('::')) issues.push({ code: 'reserved_separator', severity: 'hold', column: col, message: `"${v}" contains "::", which is reserved. Use another separator in identifiers.`, original: v });
     const declaredQuantity = parseQuantity(raw.source_lot_declared_quantity, raw.quantity_unit);
     const allocatedQuantity = parseQuantity(raw.allocated_quantity, raw.quantity_unit);
     if (!declaredQuantity.ok)
@@ -169,17 +176,21 @@ export function parsePlotsGeoJson(text: string): PlotsParse {
   if (rawFeatures.length === 0) return { ok: false, parserVersion, error: 'The FeatureCollection contains no features.' };
   if (rawFeatures.length > MAX_FEATURES) return { ok: false, parserVersion, error: `The file has ${rawFeatures.length} features; the limit is ${MAX_FEATURES}.` };
 
-  // Count numeric literals inside arrays (coordinate positions) exactly as written in the file.
-  let coarse = 0, total = 0;
-  for (const m of text.matchAll(/[\[,]\s*-?\d+(?:\.(\d+))?(?:[eE][-+]?\d+)?\s*(?=[,\]])/g)) {
-    total++;
-    if ((m[1]?.length ?? 0) < 6) coarse++;
-  }
-  const rawPrecision = { coarse, total };
+  // Coordinate precision exactly as written in the file, measured per geometry (JSON.parse loses trailing zeros).
+  const perGeometry = coordinatePrecisionInOrder(text);
+  const withCoords = rawFeatures.filter((f) => Array.isArray((f as { geometry?: { coordinates?: unknown } } | null)?.geometry?.coordinates));
+  const usePerFeature = perGeometry.length === withCoords.length;
+  const fileWide = perGeometry.reduce((s, x) => ({ coarse: s.coarse + x.coarse, total: s.total + x.total }), { coarse: 0, total: 0 });
+  let geometryOrdinal = 0;
   const features: PlotFeature[] = rawFeatures.map((f, i) => {
-    const feat = (f ?? {}) as { type?: string; properties?: Record<string, unknown> | null; geometry?: unknown };
-    const props = feat.properties ?? {};
+    const feat = (f && typeof f === 'object' && !Array.isArray(f) ? f : {}) as { type?: string; properties?: unknown; geometry?: unknown };
     const issues: PlotFeature['issues'] = [];
+    if (feat.type !== 'Feature') issues.push({ code: 'not_a_feature', severity: 'hold', message: `Member ${i + 1} has type "${String(feat.type)}"; every member of the FeatureCollection must be a "Feature".` });
+    const propsOk = feat.properties === undefined || feat.properties === null || (typeof feat.properties === 'object' && !Array.isArray(feat.properties));
+    if (!propsOk) issues.push({ code: 'invalid_properties', severity: 'hold', message: 'The feature\'s "properties" must be an object.' });
+    const props = (propsOk ? feat.properties ?? {} : {}) as Record<string, unknown>;
+    const hasCoords = Array.isArray((feat.geometry as { coordinates?: unknown } | null)?.coordinates);
+    const rawPrecision = usePerFeature ? (hasCoords ? perGeometry[geometryOrdinal++]! : { coarse: 0, total: 0 }) : fileWide;
     const ref = typeof props.plot_ref === 'string' && props.plot_ref.trim() ? props.plot_ref.trim() : null;
     const place = typeof props.ProductionPlace === 'string' && props.ProductionPlace.trim() ? props.ProductionPlace.trim() : null;
     const plotRef = ref ?? place;
@@ -220,4 +231,24 @@ export function parsePlotsGeoJson(text: string): PlotsParse {
 
 export function blankSourcesTemplate(): string {
   return SOURCE_COLUMNS.map((c) => c.name).join(',') + '\n';
+}
+
+/** Decimal precision of the numbers inside each "coordinates" array, in document order, read from the raw text. */
+function coordinatePrecisionInOrder(text: string): { coarse: number; total: number }[] {
+  const out: { coarse: number; total: number }[] = [];
+  for (const m of text.matchAll(/"coordinates"\s*:\s*\[/g)) {
+    let depth = 0, end = -1;
+    for (let i = m.index! + m[0].length - 1; i < text.length; i++) {
+      if (text[i] === '[') depth++;
+      else if (text[i] === ']' && --depth === 0) { end = i; break; }
+    }
+    if (end < 0) break;
+    let coarse = 0, total = 0;
+    for (const n of text.slice(m.index!, end + 1).matchAll(/[\[,]\s*-?\d+(?:\.(\d+))?(?:[eE][-+]?\d+)?\s*(?=[,\]])/g)) {
+      total++;
+      if ((n[1]?.length ?? 0) < 6) coarse++;
+    }
+    out.push({ coarse, total });
+  }
+  return out;
 }
