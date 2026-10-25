@@ -118,6 +118,8 @@ export async function supplierRequestPdf(st: ShipmentState, issuer: SessionUser)
   ]);
   rule(doc);
   text(doc, 'b', 10.5, items.length ? `Please provide the following (${items.length} item${items.length === 1 ? '' : 's'})` : 'No supplier action is currently requested');
+  const resolved = st.evaluation.findings.filter((f) => f.reviewedWithEvidence);
+  if (resolved.length) text(doc, 'r', 8.6, `Already investigated by the reviewer with supporting evidence (no action requested): ${resolved.map((f) => f.title).join('; ')}.`, { color: MUTED });
   doc.moveDown(0.3);
 
   const bottomLimit = doc.page.height - doc.page.margins.bottom - 150;
