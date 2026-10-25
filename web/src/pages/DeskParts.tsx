@@ -97,7 +97,7 @@ function UploadPreview({ uploadId, reload, onDone, replaces }: { uploadId: strin
         Parsed by <code>{data.parser}</code> ({data.parserVersion}). SHA-256 <code className="break">{data.sha256}</code>. {data.kind === 'sources_csv' ? `${p.rows.length} rows` : `${p.features.length} features`}; {holdCount} problem(s) found. Confirming makes this the active source{replaces ? `, replacing ${replaces}` : ''}. Existing sign-offs and documents become out of date.
       </p>
       {data.kind === 'sources_csv' ? (
-        <TableWrap>
+        <TableWrap stack label="Source rows preview">
           <table className="data">
             <thead>
               <tr>
@@ -128,7 +128,7 @@ function UploadPreview({ uploadId, reload, onDone, replaces }: { uploadId: strin
           </table>
         </TableWrap>
       ) : (
-        <TableWrap>
+        <TableWrap stack label="Plot features preview">
           <table className="data">
             <thead>
               <tr>
@@ -354,7 +354,7 @@ function ExtractionPanel({ view, reload, onAccepted }: { view: View; reload: Rel
             <Badge cls={latest.provider === 'label-parser' ? 'neutral' : 'review'}>{latest.method}</Badge> on <strong className="break">{latest.filename}</strong>, {fmtDate(latest.createdAt)} · config {latest.configVersion}
           </p>
           {latest.error && <p className="callout amber small" style={{ margin: 0 }}>{latest.error}</p>}
-          <TableWrap>
+          <TableWrap stack label="Proposed fields">
             <table className="data">
               <thead>
                 <tr>
@@ -435,7 +435,7 @@ export function SourcesTab({ view, reload, focus }: { view: View; reload: Reload
       ) : (
         <>
           <ActiveFile upload={s.upload} label="source table" />
-          <TableWrap>
+          <TableWrap stack label="Source rows">
             <table className="data">
               <caption className="sr-only">Confirmed source rows</caption>
               <thead>
@@ -854,7 +854,7 @@ export function AllocationTab({ view, reload, goTo }: { view: View; reload: Relo
             )}
             {chain.data.jobs.some((j: any) => j.status === 'failed') && <p className="callout rust small">Anchoring stopped: {chain.data.jobs.find((j: any) => j.status === 'failed').error}. The ledger reservation is unaffected.</p>}
             {chain.data.transactions.length > 0 && (
-              <TableWrap>
+              <TableWrap stack label="Testnet transactions">
                 <table className="data">
                   <thead>
                     <tr>
@@ -957,7 +957,7 @@ export function DocumentsTab({ view, reload }: { view: View; reload: Reload }) {
         {view.documents.length === 0 ? (
           <p className="small muted">None yet.</p>
         ) : (
-          <TableWrap>
+          <TableWrap stack label="Generated documents">
             <table className="data">
               <thead>
                 <tr>
@@ -1003,7 +1003,7 @@ export function ActivityTab({ view }: { view: View }) {
   if (loading && !data) return <p>Loading activity…</p>;
   if (error) return <p role="alert">{error.message}</p>;
   return (
-    <TableWrap>
+    <TableWrap stack label="Activity">
       <table className="data">
         <caption className="sr-only">Append-only activity log</caption>
         <thead>
