@@ -11,7 +11,7 @@
 // same physical cocoa.
 import { existsSync, readFileSync } from 'node:fs';
 import { type Hex, type Hash } from 'viem';
-import { type DB, all, audit, get, id, now, run } from '../db.ts';
+import { type DB, EFFECTIVE_DECLARED_SQL, all, audit, get, id, now, run } from '../db.ts';
 import type { SessionUser } from '../security.ts';
 import { HttpError, computeState, getShipment } from '../service.ts';
 import {
@@ -80,7 +80,7 @@ export async function anchorAllocationJob(db: DB, payload: { allocationId: strin
   if (!ready || !declarant || !reserver) throw new Error('testnet anchoring is not configured');
   const a = get<{ id: string; org_id: string; shipment_id: string; source_lot_id: string; grams: number; status: string; sources_upload_id: string }>(db, 'SELECT * FROM allocations WHERE id = ?', payload.allocationId);
   if (!a || a.status !== 'reserved') return;
-  const lot = get<{ id: string; declared_grams: number; first_upload_id: string }>(db, 'SELECT id, declared_grams, first_upload_id FROM source_lots WHERE id = ?', a.source_lot_id)!;
+  const lot = get<{ id: string; declared_grams: number; first_upload_id: string }>(db, `SELECT id, ${EFFECTIVE_DECLARED_SQL} AS declared_grams, first_upload_id FROM source_lots WHERE id = ?`, a.source_lot_id)!;
   const evidence = get<{ sha256: string }>(db, 'SELECT sha256 FROM uploads WHERE id = ?', lot.first_upload_id)!;
   const allocEvidence = get<{ sha256: string }>(db, 'SELECT sha256 FROM uploads WHERE id = ?', a.sources_upload_id)!;
   const batchKey = batchKeyFor(a.org_id, lot.id);
@@ -100,8 +100,17 @@ export async function anchorAllocationJob(db: DB, payload: { allocationId: strin
   const okAuth = await step(db, cfg, auth, (onSubmitted) => writeRegistry({ cfg, account: declarant, functionName: 'authorizeReserver', args: [batchKey, reserver.address, BigInt(lot.declared_grams)], onSubmitted }), async () => false);
   if (!okAuth) throw new Error('reserver authorisation was rejected');
 
+  // Recheck after the asynchronous steps: never reserve on-chain an allocation the database no longer holds.
+  const still = get<{ status: string }>(db, 'SELECT status FROM allocations WHERE id = ?', a.id);
+  if (still?.status !== 'reserved') {
+    audit(db, { orgId: a.org_id, shipmentId: a.shipment_id, type: 'chain.reserve_skipped', data: { allocationId: a.id, reason: 'allocation no longer reserved' } });
+    return;
+  }
   const res = upsertTx(db, { ...base, id: id(), action: 'reserve', idempotency_key: `reserve:${cfg.chain.id}:${cfg.registryAddress}:${allocationKey}`, allocation_id: a.id, source_lot_id: lot.id, signer: reserver.address, args_json: JSON.stringify({ batchKey, allocationKey, amountGrams: a.grams, evidenceHash: `0x${allocEvidence.sha256}` }) });
-  const okRes = await step(db, cfg, res, (onSubmitted) => writeRegistry({ cfg, account: reserver, functionName: 'reserve', args: [batchKey, allocationKey, BigInt(a.grams), `0x${allocEvidence.sha256}` as Hex], onSubmitted }), async () => !!(await readReservation(cfg, allocationKey)));
+  const okRes = await step(db, cfg, res, (onSubmitted) => {
+    if (get<{ status: string }>(db, 'SELECT status FROM allocations WHERE id = ?', a.id)?.status !== 'reserved') throw new Error('allocation released before submission; reservation not sent');
+    return writeRegistry({ cfg, account: reserver, functionName: 'reserve', args: [batchKey, allocationKey, BigInt(a.grams), `0x${allocEvidence.sha256}` as Hex], onSubmitted });
+  }, async () => !!(await readReservation(cfg, allocationKey)));
   audit(db, { orgId: a.org_id, shipmentId: a.shipment_id, type: okRes ? 'chain.reserved' : 'chain.reserve_rejected', data: { allocationId: a.id, batchKey, allocationKey } });
   // A rejected reservation is a settled outcome (recorded), not a retryable job failure.
 }
