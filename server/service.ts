@@ -1,11 +1,12 @@
 // Business operations. Every protected function receives the acting user and scopes queries by org_id.
 import { createHash } from 'node:crypto';
-import { type DB, all, audit, get, id, now, run, tx } from './db.ts';
+import { type DB, EFFECTIVE_DECLARED_SQL, all, audit, get, id, now, run, tx } from './db.ts';
+import { enqueue } from './jobs.ts';
 import { readBytes, sha256Hex, storeBytes, sanitizeFilename, type SessionUser } from './security.ts';
 import { parsePlotsGeoJson, parseSourcesCsv, type PlotFeature, type SourceRow } from '../core/sources.ts';
 import { evaluate, type EnvState, type Evaluation, type EvaluationInput, type LedgerLot, type ReviewDecision, type ShipmentFields } from '../core/rules.ts';
 import { formatKg } from '../core/quantity.ts';
-import { ANALYSIS_METHOD_VERSION, DATASETS } from './env/forest.ts';
+import { ANALYSIS_METHOD_VERSION, DATASETS, LATEST_LOSS_YEAR } from './env/forest.ts';
 
 export class HttpError extends Error {
   status: number;
@@ -64,9 +65,13 @@ export function createShipment(db: DB, user: SessionUser, reference: string): Sh
   return s;
 }
 
-export function listShipments(db: DB, user: SessionUser) {
-  const rows = all<ShipmentRow>(db, 'SELECT * FROM shipments WHERE org_id = ? ORDER BY created_at DESC', user.orgId);
-  return rows.map((s) => {
+/** One page of the organisation's cases, newest first; full case state is computed only for the page shown. */
+export function listShipments(db: DB, user: SessionUser, page: { limit?: number; offset?: number } = {}) {
+  const limit = Math.min(Math.max(Math.trunc(page.limit ?? 50), 1), 200);
+  const offset = Math.max(Math.trunc(page.offset ?? 0), 0);
+  const total = get<{ n: number }>(db, 'SELECT COUNT(*) AS n FROM shipments WHERE org_id = ?', user.orgId)!.n;
+  const rows = all<ShipmentRow>(db, 'SELECT * FROM shipments WHERE org_id = ? ORDER BY created_at DESC, id LIMIT ? OFFSET ?', user.orgId, limit, offset);
+  const items = rows.map((s) => {
     const st = computeState(db, user, s.id);
     return {
       id: s.id,
@@ -81,6 +86,7 @@ export function listShipments(db: DB, user: SessionUser) {
       topReason: st.evaluation.findings.find((f) => f.severity === 'hold')?.title ?? st.evaluation.findings.find((f) => f.severity === 'review')?.title ?? null,
     };
   });
+  return { items, total, limit, offset };
 }
 
 export function setFields(db: DB, user: SessionUser, shipmentId: string, values: Partial<Record<ShipmentField, string | null>>, source: 'manual' | 'extraction' = 'manual', extractionId: string | null = null) {
@@ -208,7 +214,12 @@ export function confirmUpload(db: DB, user: SessionUser, uploadId: string, enque
   if (u.kind === 'sources_csv') {
     // The testnet registry has no release operation. Once a reservation is anchored (or anchoring is under way),
     // revising the source table would free database balance without freeing on-chain capacity, so it is refused.
-    const anchored = get<{ n: number }>(db, `SELECT COUNT(*) AS n FROM chain_txs t JOIN allocations a ON a.id = t.allocation_id WHERE a.shipment_id = ? AND a.status = 'reserved' AND t.action = 'reserve' AND t.status IN ('queued','pending','confirmed')`, u.shipment_id)!.n;
+    // The anchoring job row is written synchronously when anchoring is requested, so it acts as the lock for the
+    // whole registerBatch -> authorize -> reserve sequence; a reserve transaction in any state other than a
+    // definitive rejection (including rpc_error with an uncertain submission) also blocks revision.
+    const anchored = get<{ n: number }>(db, `SELECT
+        (SELECT COUNT(*) FROM jobs j JOIN allocations a ON a.id = json_extract(j.payload_json, '$.allocationId') WHERE j.type = 'chain_anchor' AND j.status IN ('queued','running') AND a.shipment_id = ? AND a.status = 'reserved')
+      + (SELECT COUNT(*) FROM chain_txs t JOIN allocations a ON a.id = t.allocation_id WHERE a.shipment_id = ? AND a.status = 'reserved' AND t.action = 'reserve' AND t.status NOT IN ('preflight_rejected','reverted')) AS n`, u.shipment_id, u.shipment_id)!.n;
     if (anchored > 0) throw new HttpError(409, 'anchored', 'This case has allocations recorded (or being recorded) on the testnet registry, which cannot release them. Its source table can no longer be revised; open a new case for the corrected shipment.');
   }
   tx(db, () => {
@@ -251,7 +262,7 @@ function envStateFor(db: DB, geometry: unknown): EnvState {
   }
   const j = get<{ status: string; last_error: string | null }>(db, 'SELECT status, last_error FROM jobs WHERE dedupe_key = ?', `forest:${gh}:${ANALYSIS_METHOD_VERSION}:${DATASETS_KEY}`);
   if (!j) return { state: 'not_started' };
-  if (j.status === 'failed') return { state: 'failed', error: j.last_error ?? 'unknown error' };
+  if (j.status === 'failed') return { state: 'failed', error: j.last_error ?? 'unknown error', failureKey: `failed:${gh}:${ANALYSIS_METHOD_VERSION}:${DATASETS_KEY}` };
   return { state: 'queued' };
 }
 
@@ -280,7 +291,7 @@ export function computeState(db: DB, user: SessionUser, shipmentId: string): Shi
     if (!r.supplierId || !r.sourceLotRef) continue;
     const k = `${r.supplierId}::${r.sourceLotRef}`;
     if (ledger[k]) continue;
-    const lot = get<{ id: string; declared_grams: number; first_upload_id: string }>(db, 'SELECT id, declared_grams, first_upload_id FROM source_lots WHERE org_id = ? AND supplier_id = ? AND source_lot_ref = ?', user.orgId, r.supplierId, r.sourceLotRef);
+    const lot = get<{ id: string; declared_grams: number; first_upload_id: string }>(db, `SELECT id, ${EFFECTIVE_DECLARED_SQL} AS declared_grams, first_upload_id FROM source_lots WHERE org_id = ? AND supplier_id = ? AND source_lot_ref = ?`, user.orgId, r.supplierId, r.sourceLotRef);
     const others = lot ? get<{ g: number | null }>(db, `SELECT SUM(grams) AS g FROM allocations WHERE source_lot_id = ? AND status = 'reserved' AND shipment_id <> ?`, lot.id, shipmentId)!.g ?? 0 : 0;
     const here = lot && sourcesUpload ? get<{ g: number | null }>(db, `SELECT SUM(grams) AS g FROM allocations WHERE source_lot_id = ? AND status = 'reserved' AND shipment_id = ? AND sources_upload_id = ?`, lot.id, shipmentId, sourcesUpload.id)!.g ?? 0 : 0;
     ledger[k] = { sourceLotKey: k, registeredDeclaredGrams: lot?.declared_grams ?? null, registeredFromUpload: lot?.first_upload_id ?? null, reservedByOtherShipmentsGrams: others, reservedByThisShipmentGrams: here };
@@ -297,10 +308,13 @@ export function computeState(db: DB, user: SessionUser, shipmentId: string): Shi
     const meta = get<{ snapshot_digest: string }>(db, 'SELECT snapshot_digest FROM review_decisions WHERE id = ?', d.id)!;
     const envNow = ref ? env[ref] : undefined;
     const bound = meta.snapshot_digest; // stores env result id for ENV decisions
-    if (ref && (!envNow || envNow.state !== 'done' || envNow.resultId !== bound)) continue;
+    // ENV decisions bind to the completed result they were made against, or to the identity of a failed run; a new
+    // result (e.g. after a successful retry) needs a fresh decision.
+    const envBinding = envNow?.state === 'done' ? envNow.resultId : envNow?.state === 'failed' ? envNow.failureKey : null;
+    if (ref && (!envBinding || envBinding !== bound)) continue;
     validDecisions.push({ findingKey: d.finding_key, decision: d.decision, rationale: d.rationale, evidenceUploadId: d.evidence_upload_id, reviewerName: d.name, createdAt: d.created_at });
   }
-  const input: EvaluationInput = { shipment: { id: shipment.id, reference: shipment.reference, fields: currentFields(db, shipmentId) }, sources, plots, env, ledger, decisions: validDecisions };
+  const input: EvaluationInput = { shipment: { id: shipment.id, reference: shipment.reference, fields: currentFields(db, shipmentId) }, sources, plots, env, ledger, decisions: validDecisions, recency: { latestObservationYear: LATEST_LOSS_YEAR, asOfYear: new Date().getUTCFullYear() } };
   const evaluation = evaluate(input);
   const snapshot = {
     rulesVersion: evaluation.rulesVersion,
@@ -373,7 +387,7 @@ export function recordDecision(db: DB, user: SessionUser, shipmentId: string, bo
   }
   const ref = finding.key.slice(4);
   const env = st.input.env[ref];
-  const boundTo = env && env.state === 'done' ? env.resultId : st.digest;
+  const boundTo = env && env.state === 'done' ? env.resultId : env && env.state === 'failed' ? env.failureKey : st.digest;
   tx(db, () => {
     run(db, 'INSERT INTO review_decisions (id, shipment_id, finding_key, decision, rationale, evidence_upload_id, reviewer_id, snapshot_digest, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', id(), shipmentId, finding.key, body.decision, rationale, body.evidenceUploadId, user.id, boundTo, now());
     audit(db, { orgId: user.orgId, shipmentId, actorId: user.id, type: 'review.decision', data: { findingKey: finding.key, decision: body.decision, evidenceUploadId: body.evidenceUploadId } });
@@ -388,5 +402,48 @@ export function approve(db: DB, user: SessionUser, shipmentId: string, expectedD
     run(db, 'INSERT INTO approvals (id, shipment_id, snapshot_digest, snapshot_json, approved_by, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', id(), shipmentId, st.digest, canonical(st.snapshot), user.id, note?.slice(0, 1000) ?? null, now());
     audit(db, { orgId: user.orgId, shipmentId, actorId: user.id, type: 'review.approved', data: { digest: st.digest } });
     return { digest: st.digest };
+  });
+}
+
+/** Re-runs a failed environmental analysis for one plot of this shipment. */
+export function retryAnalysis(db: DB, user: SessionUser, shipmentId: string, plotRef: string) {
+  const st = computeState(db, user, shipmentId);
+  const feat = st.input.plots?.features.find((f) => f.plotRef === plotRef);
+  if (!feat || !feat.report.valid || !feat.geometry) throw new HttpError(404, 'plot_not_found', 'No valid plot with that reference in the confirmed plot file.');
+  const e = st.input.env[plotRef];
+  if (e?.state !== 'failed') throw new HttpError(409, 'not_failed', 'Only a failed analysis can be retried.');
+  const gh = geometryHash(feat.geometry);
+  enqueue(db, 'forest_analysis', { geometryHash: gh, geometry: feat.geometry }, `forest:${gh}:${ANALYSIS_METHOD_VERSION}:${DATASETS_KEY}`);
+  audit(db, { orgId: user.orgId, shipmentId, actorId: user.id, type: 'environment.retry', data: { plotRef } });
+  return { queued: true };
+}
+
+/** Audited correction of a source lot's declared total to the value in the active source table. Refused when the
+ *  lot is on the testnet registry (whose declared total cannot change) or when other cases already hold more than
+ *  the corrected total. Other cases' sign-offs that relied on the old total become stale through their digest. */
+export function correctSourceLotTotal(db: DB, user: SessionUser, shipmentId: string, body: { supplierId: string; sourceLotRef: string; rationale: string; evidenceUploadId: string }) {
+  return tx(db, () => {
+    const st = computeState(db, user, shipmentId);
+    if (!st.sourcesUpload || !st.input.sources) throw new HttpError(409, 'no_sources', 'Confirm a source table first.');
+    const finding = st.evaluation.findings.find((f) => f.ruleId === 'ALLOC-REG-MISMATCH' && f.key === `ALLOC-REG-MISMATCH:${body.supplierId}::${body.sourceLotRef}`);
+    if (!finding) throw new HttpError(409, 'no_mismatch', 'There is no declared-total mismatch for that source lot in the current source table.');
+    const rows = st.input.sources.rows.filter((r) => r.supplierId === body.supplierId && r.sourceLotRef === body.sourceLotRef && r.declaredQuantity.ok);
+    const totals = [...new Set(rows.map((r) => (r.declaredQuantity as { grams: number }).grams))];
+    if (totals.length !== 1) throw new HttpError(409, 'ambiguous_total', 'The source table itself gives more than one total for this lot; correct the file first.');
+    const newGrams = totals[0]!;
+    const rationale = (body.rationale ?? '').trim();
+    if (rationale.length < MIN_RATIONALE) throw new HttpError(422, 'rationale', `Explain the correction in at least ${MIN_RATIONALE} characters.`);
+    const ev = getUpload(db, user, body.evidenceUploadId);
+    if (ev.shipment_id !== shipmentId || ev.kind !== 'review_evidence') throw new HttpError(422, 'evidence_invalid', 'Attach the supporting document as review evidence on this case.');
+    const lot = get<{ id: string; declared_grams: number; chain_batch_key: string | null }>(db, `SELECT id, ${EFFECTIVE_DECLARED_SQL} AS declared_grams, chain_batch_key FROM source_lots WHERE org_id = ? AND supplier_id = ? AND source_lot_ref = ?`, user.orgId, body.supplierId, body.sourceLotRef);
+    if (!lot) throw new HttpError(404, 'lot_not_found', 'Source lot not found.');
+    const onChain = get<{ n: number }>(db, `SELECT COUNT(*) AS n FROM chain_txs WHERE source_lot_id = ? AND status NOT IN ('preflight_rejected','reverted')`, lot.id)!.n;
+    if (lot.chain_batch_key || onChain > 0) throw new HttpError(409, 'anchored', 'This source lot is registered on the testnet registry, whose declared total cannot be changed. It cannot be corrected here.');
+    const heldElsewhere = get<{ g: number | null }>(db, `SELECT SUM(grams) AS g FROM allocations WHERE source_lot_id = ? AND status = 'reserved' AND shipment_id <> ?`, lot.id, shipmentId)!.g ?? 0;
+    if (newGrams < heldElsewhere) throw new HttpError(409, 'below_reserved', `Other cases already hold ${formatKg(heldElsewhere)} of this lot, more than the corrected total of ${formatKg(newGrams)}. Release those first.`);
+    const seq = (get<{ s: number | null }>(db, 'SELECT MAX(seq) AS s FROM source_lot_corrections WHERE source_lot_id = ?', lot.id)!.s ?? 0) + 1;
+    run(db, 'INSERT INTO source_lot_corrections (id, org_id, source_lot_id, seq, previous_grams, new_grams, from_upload_id, rationale, evidence_upload_id, corrected_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', id(), user.orgId, lot.id, seq, lot.declared_grams, newGrams, st.sourcesUpload.id, rationale, ev.id, user.id, now());
+    audit(db, { orgId: user.orgId, shipmentId, actorId: user.id, type: 'source_lot.corrected', data: { supplierId: body.supplierId, sourceLotRef: body.sourceLotRef, previousGrams: lot.declared_grams, newGrams, evidenceUploadId: ev.id } });
+    return { ok: true, previous: formatKg(lot.declared_grams), corrected: formatKg(newGrams) };
   });
 }
