@@ -32,6 +32,7 @@ export type Finding = {
   requestedAction?: string; // supplier-facing wording; null when the reviewer must act internally
   supplierActionable: boolean;
   resolvableByReview: boolean; // only environmental review items; hard holds need corrected source data
+  reviewedWithEvidence?: boolean; // a current reviewer decision with evidence covers it; no supplier action outstanding
   data?: Record<string, unknown>;
 };
 
@@ -317,12 +318,15 @@ export function evaluate(input: EvaluationInput): Evaluation {
   // --- Plots ---
   const features = input.plots?.features ?? [];
   const featureByRef = new Map(features.filter((x) => x.plotRef).map((x) => [x.plotRef!, x]));
-  const declaredRefs = new Map<string, { rows: number[]; country: string | null }>();
+  // Every row that references a plot contributes its producer country; none is silently preferred.
+  const declaredRefs = new Map<string, { rows: number[]; countries: Map<string, number[]> }>();
   for (const r of rows) for (const p of r.plotRefs) {
-    const e = declaredRefs.get(p) ?? { rows: [], country: r.producerCountry };
+    const e = declaredRefs.get(p) ?? { rows: [], countries: new Map<string, number[]>() };
     e.rows.push(r.row);
+    if (r.producerCountry) e.countries.set(r.producerCountry, [...(e.countries.get(r.producerCountry) ?? []), r.row]);
     declaredRefs.set(p, e);
   }
+  const describeCountries = (m: Map<string, number[]>) => [...m].map(([c, rs]) => `${c} (row${rs.length > 1 ? 's' : ''} ${rs.join(', ')})`).join(' vs ');
   const plotRef = (x: PlotFeature): SourceRef => ({ kind: 'plots_geojson', uploadId: input.plots?.uploadId, filename: input.plots?.filename, featureIndex: x.featureIndex, plotRef: x.plotRef ?? undefined });
   if (input.sources && !input.plots && declaredRefs.size > 0) {
     findings.push({ key: 'PLOT-NONE', ruleId: 'PLOT-NONE', severity: 'hold', dimension: 'record', title: 'No plot geometry file', message: `The source table lists ${declaredRefs.size} plot reference(s) but no plot GeoJSON has been confirmed.`, refs: [{ kind: 'plots_geojson' }], supplierActionable: true, requestedAction: `Provide a GeoJSON FeatureCollection with the boundary (or point and area, for plots of 4 ha or less) of plots ${[...declaredRefs.keys()].join(', ')}.`, resolvableByReview: false });
@@ -343,8 +347,24 @@ export function evaluate(input: EvaluationInput): Evaluation {
         resolvableByReview: false,
       });
     }
-    if (feat && feat.producerCountry && info.country && feat.producerCountry !== info.country) {
-      findings.push({ key: `PLOT-COUNTRY:${ref}`, ruleId: 'PLOT-COUNTRY', severity: 'hold', dimension: 'record', title: `Plot ${ref}: country mismatch`, message: `The GeoJSON gives ProducerCountry ${feat.producerCountry}; the source table gives ${info.country}.`, refs: [plotRef(feat), ...info.rows.map((row) => srcRef(row, 'producer_country'))], supplierActionable: true, requestedAction: `Confirm the country of production for plot ${ref} (${feat.producerCountry} in the geometry file vs ${info.country} in the source table).`, resolvableByReview: false });
+    if (info.countries.size > 1) {
+      findings.push({
+        key: `PLOT-COUNTRY-ROWS:${ref}`,
+        ruleId: 'PLOT-COUNTRY-ROWS',
+        severity: 'hold',
+        dimension: 'record',
+        title: `Plot ${ref}: rows give different producer countries`,
+        message: `Rows referencing plot ${ref} disagree on its country of production: ${describeCountries(info.countries)}. A plot has one country of production.`,
+        refs: info.rows.map((row) => srcRef(row, 'producer_country')),
+        supplierActionable: true,
+        requestedAction: `Confirm the single country of production for plot ${ref} and correct the rows that disagree (${describeCountries(info.countries)}).`,
+        resolvableByReview: false,
+      });
+    }
+    const otherCountries = feat?.producerCountry ? [...info.countries.keys()].filter((c) => c !== feat.producerCountry) : [];
+    if (feat && feat.producerCountry && otherCountries.length) {
+      const rowsDisagreeing = otherCountries.flatMap((c) => info.countries.get(c)!);
+      findings.push({ key: `PLOT-COUNTRY:${ref}`, ruleId: 'PLOT-COUNTRY', severity: 'hold', dimension: 'record', title: `Plot ${ref}: country mismatch`, message: `The GeoJSON gives ProducerCountry ${feat.producerCountry}; the source table gives ${describeCountries(new Map(otherCountries.map((c) => [c, info.countries.get(c)!])))}.`, refs: [plotRef(feat), ...rowsDisagreeing.map((row) => srcRef(row, 'producer_country'))], supplierActionable: true, requestedAction: `Confirm the country of production for plot ${ref} (${feat.producerCountry} in the geometry file vs ${otherCountries.join(', ')} in the source table).`, resolvableByReview: false });
     }
   }
   for (const feat of features) {
@@ -404,7 +424,10 @@ export function evaluate(input: EvaluationInput): Evaluation {
         title: `Plot ${ref}: land-change signal after 2020`,
         message: e.summary,
         refs: [plotRef(feat), { kind: 'environment', plotRef: ref }],
-        supplierActionable: true,
+        // Once a current decision with evidence covers the signal, nothing is outstanding from the supplier; if the
+        // decision becomes stale (new analysis or evidence), this flips back and the request reappears.
+        supplierActionable: !reviewed,
+        reviewedWithEvidence: reviewed || undefined,
         requestedAction: `Explain the tree-cover loss recorded on plot ${ref} in ${e.years ?? 'years after 2020'} (≈${e.postCutoffLossHa.toFixed(2)} ha) and provide dated evidence of land use on 31 December 2020 and since (for example field photos, land-use records, or farm establishment records).`,
         resolvableByReview: true,
         data: { postCutoffLossHa: e.postCutoffLossHa, years: e.years },
