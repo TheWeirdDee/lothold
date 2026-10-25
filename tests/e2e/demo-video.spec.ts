@@ -31,3 +31,18 @@ for (const width of [1440, 390]) {
     await expect(page.locator('.walkthrough-transcript')).toContainText('out of date');
   });
 }
+
+test('muted preview starts without a click, loops, and respects a deliberate pause', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const video = page.getByLabel('LotHold short walkthrough');
+  await page.locator('.demo').scrollIntoViewIfNeeded();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(.5);
+  expect(await video.evaluate((v: HTMLVideoElement) => v.muted && v.loop && !v.paused)).toBe(true);
+  await video.evaluate((v: HTMLVideoElement) => { v.currentTime = v.duration - .15; });
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(2);
+  await page.getByRole('button', { name: 'Pause preview' }).click();
+  await page.locator('h1').scrollIntoViewIfNeeded();
+  await page.locator('.demo').scrollIntoViewIfNeeded();
+  expect(await video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+});
