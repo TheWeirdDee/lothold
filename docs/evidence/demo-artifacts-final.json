@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-25T20:08:04.211Z",
+  "target": "https://lothold.vercel.app",
+  "caseReference": "ENG-DEMO-A",
+  "approvalState": "stale",
+  "xml": {
+    "filename": "LotHold_ENG-DEMO-A_DDS-V3_DRAFT_NOT_SUBMITTED_20261025T182153Z.xml",
+    "bytes": 2103,
+    "sha256": "11ce17423be1be540e2d9b8e79553eb40c3aadfe797fa5414583c43d6da0ad7c",
+    "originalValidation": {
+      "valid": true,
+      "schema": "EUDR DDS V3 (EUDRDueDiligenceStatementServiceV3 WSDL, retrieved 2026-10-23)",
+      "errors": [],
+      "validator": "libxml2 2.13.8 via xmllint-wasm 5.3.0",
+      "validatedAt": "2026-10-25T18:21:54.651Z",
+      "base64RoundTrip": true,
+      "producers": 2,
+      "draftStatus": "DRAFT_NOT_SUBMITTED",
+      "note": "Validated against the official XSD set only. Business rules applied by the EU Information System at submission (e.g. EORI, geolocation checks) are not executed here."
+    },
+    "independentValidation": {
+      "valid": true,
+      "schema": "EUDR DDS V3 (EUDRDueDiligenceStatementServiceV3 WSDL, retrieved 2026-10-23)",
+      "errors": [],
+      "validator": "libxml2 2.13.8 via xmllint-wasm 5.3.0",
+      "validatedAt": "2026-10-25T20:07:59.374Z"
+    },
+    "stale": true
+  },
+  "staleExportRefused": true,
+  "regulatorySubmissionPerformed": false,
+  "credentialsLogged": false
+}
