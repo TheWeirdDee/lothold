@@ -1,6 +1,6 @@
 # Submission materials (IEEE ClimateChain Global Hackathon 2026)
 
-**Nothing has been submitted, pushed or deployed.** These are prepared materials for the entrant to review.
+**Status on 25 October 2026.** Nothing has been submitted. The repository is public. A frontend-only copy of the site is published at https://lothold.vercel.app; it does **not** run the LotHold server (API, database, forest datasets), so sign-in, uploads and analysis do not work there. The site now says so on every page. The full application runs locally (README → Run it locally) or in the verified container (DEPLOYMENT.md). These are prepared materials for the entrant to review.
 
 ## Rules check (retrieved 23 October 2026)
 
@@ -11,7 +11,7 @@
   - The detailed rules mention country restrictions without listing them in the retrieved text. The entrant's country has not been checked against them.
   - To resolve: ask the organisers (Devpost Discussion tab or the contact in the rules) to confirm both points before submitting.
 - **Schedule oddity:** the overview shows *"October 25 at 10:00am EDT to deadline"*. 10:00 EDT is the same instant as the 17:00 +03 deadline. The organiser update of 5 October says submissions opened on 5 October. Submit well before the deadline.
-- **Required:** track alignment, a 3–5 minute demo video, and a public code repository link. Individual submissions are allowed; one person per team.
+- **Required:** track alignment, a 3–5 minute demo video, and a public code repository link. Individuals or teams of 2–5 may enter; a person may be on only one team.
 - **Judging criteria:** Climate Impact; Innovation & Creativity; Technical Execution; Practical Usefulness; Presentation & Storytelling.
 
 ## Mapping to judging criteria
@@ -45,7 +45,7 @@ Cocoa is one of seven commodities the EU names as associated with deforestation,
 - Official DDS V3 XSDs fetched from the EU WSDL and validated with libxml2 (WebAssembly).
 - pdfkit for the one-page request.
 - Solidity contract (Foundry) on Sepolia via viem, server-side keys only.
-- Field extraction: a deterministic label parser, plus provider adapters (Anthropic, OpenAI-compatible) whose output must quote the document. **No model call was verified, because no API key was available.**
+- Field extraction: a deterministic label parser, plus provider adapters (Anthropic, OpenAI-compatible) whose output must quote the document. A Gemini key is configured, but **live model extraction is unverified**: the provider returned 503 and then 429 (free-tier daily quota exhausted). The labelled label parser was verified.
 
 ## Challenges (real, from this build)
 
@@ -58,7 +58,7 @@ Cocoa is one of seven commodities the EU names as associated with deforestation,
 
 ## Accomplishments (with denominators)
 
-- 66/66 unit + integration tests, 18/18 contract tests (512-run conservation fuzz), 4/4 browser journeys; environmental results reproduced independently with GDAL/pyproj (pixel counts exact; areas within 0.02 %).
+- 93/93 unit + integration tests (4 of them need a local Anvil devnet and are skipped without Foundry), 18/18 contract tests (512-run conservation fuzz), 16/16 browser tests; environmental results reproduced independently with GDAL/pyproj (pixel counts exact; areas within 0.02 %).
 - Sepolia engineering run: 1 of 1 excess reservation rejected (preflight) and 1 of 1 mined revert with the balance unchanged. In 1 of 1 concurrent pair, exactly one reservation confirmed. Declared total = reserved total at the end.
 - In-app anchoring: 6 of 6 transactions confirmed, 2 of 2 reservations read back matching the ledger.
 - Environmental reads: real pixel analysis on engineering probe areas, e.g. a 1 km box in Taï National Park (100 % JRC 2020 forest, no 2021–2025 loss) and a box with loss recorded in 2021–2025.
@@ -76,7 +76,7 @@ Satellite tree-cover loss is a review trigger, not a legal verdict. A blockchain
 
 ## Limitations (state these in the video and on Devpost)
 
-No real shipment has been processed. Environmental coverage is one tile, with annual data only. XML passes the official schema but has not been submitted to any EU system. The registry cannot detect the same cocoa under another key. AI extraction against a live model is unverified. LotHold does not certify compliance, legality, land rights or origin.
+No real shipment has been processed. The public Vercel URL is a frontend-only preview without the server. Environmental coverage is one tile, with annual data only. XML passes the official schema but has not been submitted to any EU system. The registry cannot detect the same cocoa under another key. AI extraction against a live model is unverified. LotHold does not certify compliance, legality, land rights or origin.
 
 ---
 
