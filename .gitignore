@@ -14,3 +14,6 @@ playwright-report/
 *.log
 research/raw/
 research/totext.py
+
+# Host-only deployment secrets
+deploy/hosting.env
