@@ -6,11 +6,13 @@
 import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fromFile, type GeoTIFF, type GeoTIFFImage } from 'geotiff';
-import { pointInGeometry, type PlotGeometry } from '../../core/geometry.ts';
+import { interiorPoints, pointInGeometry, type PlotGeometry } from '../../core/geometry.ts';
 import { cellAreaM2 } from '../../core/ellipsoid.ts';
 
-export const ANALYSIS_METHOD_VERSION = 'forest-analysis/2026-10-25.1';
+export const ANALYSIS_METHOD_VERSION = 'forest-analysis/2026-10-25.2';
 export const CUTOFF_YEAR = 2020;
+/** Latest year of annual loss in the pinned Hansen GFC v1.13 tile (loss years 2001–2025). */
+export const LATEST_LOSS_YEAR = 2025;
 const MAX_BBOX_DEG = 0.25; // ~27 km; plots larger than this are refused rather than silently sampled.
 
 export type DatasetId = 'hansen_lossyear' | 'hansen_datamask' | 'jrc_gfc2020';
@@ -119,7 +121,7 @@ export type ForestAnalysis = {
   analysedAt: string;
   datasets: { id: DatasetId; version: string; sha256: string; file: string }[];
   geometryType: string;
-  sampling: 'pixel_centres_in_polygon' | 'single_pixel_containing_point' | 'single_pixel_containing_centroid';
+  sampling: 'pixel_centres_in_polygon' | 'single_pixel_containing_point' | 'pixels_containing_interior_points';
   bbox: [number, number, number, number];
   coveredFraction: number;
   hansenPixels: { total: number; land: number; water: number; noData: number };
@@ -209,12 +211,6 @@ function geometryBbox(g: PlotGeometry): [number, number, number, number] {
   return [a, b, c, d];
 }
 
-function centroid(g: PlotGeometry): [number, number] {
-  const ps = g.type === 'Point' ? [g.coordinates] : g.type === 'Polygon' ? g.coordinates[0]!.slice(0, -1) : g.coordinates[0]![0]!.slice(0, -1);
-  const x = ps.reduce((s, p) => s + p[0], 0) / ps.length;
-  const y = ps.reduce((s, p) => s + p[1], 0) / ps.length;
-  return [x, y];
-}
 
 async function readWindow(id: DatasetId, col0: number, row0: number, col1: number, row1: number): Promise<Uint8Array> {
   const { image } = await open(id);
@@ -300,16 +296,24 @@ export async function analysePlot(geometry: PlotGeometry, opts: { geometryValid:
       }
     }
     if (count === 0) {
-      const [px, py] = geometry.type === 'Point' ? geometry.coordinates : centroid(geometry);
-      sampling = geometry.type === 'Point' ? 'single_pixel_containing_point' : 'single_pixel_containing_centroid';
-      if (!inside(px, py)) {
+      // Plot smaller than the pixel grid: sample the pixel containing the point, or a point guaranteed to lie inside
+      // each polygon component (never the vertex mean, which can fall outside a concave plot).
+      const pts = geometry.type === 'Point' ? [geometry.coordinates] : interiorPoints(geometry);
+      sampling = geometry.type === 'Point' ? 'single_pixel_containing_point' : 'pixels_containing_interior_points';
+      if (pts.length === 0) {
+        return { ...base, sampling, status: 'UNAVAILABLE', summary: 'The plot is too thin to place a sample point inside it at this resolution. No conclusion is drawn.' };
+      }
+      const inTile = pts.filter(([px, py]) => inside(px!, py!));
+      if (inTile.length === 0) {
         return { ...base, sampling, status: 'PLOT_OUTSIDE_COVERAGE', summary: 'Not analysed: the sampled location lies outside the installed tile.' };
       }
-      const c = Math.floor((px - W) / hp) - col0;
-      const r = Math.floor((N - py) / hp) - row0;
-      if (c >= 0 && c < w && r >= 0 && r < h) {
-        sampled[r * w + c] = 1;
-        count = 1;
+      for (const [px, py] of inTile) {
+        const c = Math.floor((px! - W) / hp) - col0;
+        const r = Math.floor((N - py!) / hp) - row0;
+        if (c >= 0 && c < w && r >= 0 && r < h && !sampled[r * w + c]) {
+          sampled[r * w + c] = 1;
+          count++;
+        }
       }
     }
 
