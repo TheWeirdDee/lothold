@@ -1,6 +1,6 @@
 # Deployment reliability validation - 2026-10-25
 
-**This is not a validated free hosted deployment.** No cloud project, public deployment, push, purchase or operational-data migration was performed. Supabase service verification is blocked by missing project settings; `docs/evidence/supabase-live.json` records that preflight without making external requests.
+**This is not a validated free hosted deployment.** No cloud project, public deployment, push, purchase or operational-data migration was performed. Live Supabase verification was attempted with .env on 25 October. The project URL and private bucket name were saved at the user's request; legacy-key role/project metadata match the selected project, with no values logged. The actual claim RPC returns HTTP 404, before any checkpoint upload. Apply deploy/render/supabase.sql in SQL Editor and rerun; table/functions/bucket permissions and recovery remain unverified. `docs/evidence/supabase-live.json` records the actual failure stage and HTTP status.
 
 ## Final production image and resource measurements
 
@@ -46,6 +46,6 @@ See [CHECKPOINT_PROTOCOL.md](CHECKPOINT_PROTOCOL.md). Recovery checks database i
 
 ## Remaining manual actions
 
-1. Create a free Supabase project and run `deploy/render/supabase.sql` in SQL Editor. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` and optional `SUPABASE_STORAGE_BUCKET` in a private local environment. Never paste keys into chat or place server secrets in Vercel. Run `node scripts/verify-supabase.ts --live`; inspect the actual RPC/Storage, anonymous-denial, two fresh-cache restore and cleanup results. It uses an isolated engineering namespace only. Until it passes, live persistence is unverified.
+1. Create a free Supabase project and run `deploy/render/supabase.sql` in SQL Editor. Those Supabase settings are now present in .env; keep their values private. Never paste keys into chat or place server secrets in Vercel. Run `node scripts/verify-supabase.ts --live`; inspect the actual RPC/Storage, anonymous-denial, two fresh-cache restore and cleanup results. It uses an isolated engineering namespace only. Until it passes, live persistence is unverified.
 2. Review actual account eligibility, free-plan selections, remaining quotas and billing/spend controls. [FREE_TIER_USAGE.md](FREE_TIER_USAGE.md) gives measured payloads, conditional projections and current official references. Full snapshots can exhaust free egress; no reliable-free claim is justified by the memory result.
 3. When explicitly authorized to publish, connect the repository/image to Render and the frontend to Vercel following [FREE_HOSTING_SETUP.md](FREE_HOSTING_SETUP.md). Record deployed digest, cold/warm startup, API responsiveness during analysis and checkpoint latency. Verify the same engineering account/case/evidence after restart and a filesystem-replacing redeployment, including byte-identical decryption. No host-account or deployment action has been taken here.
