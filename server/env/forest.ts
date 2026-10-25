@@ -5,7 +5,7 @@
 // Results are investigation signals; they are not legal determinations of deforestation.
 import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fromFile, type GeoTIFF, type GeoTIFFImage } from 'geotiff';
+import type { GeoTIFF, GeoTIFFImage } from 'geotiff';
 import { interiorPoints, pointInGeometry, type PlotGeometry } from '../../core/geometry.ts';
 import { cellAreaM2 } from '../../core/ellipsoid.ts';
 
@@ -175,6 +175,7 @@ async function open(id: DatasetId) {
   const p = resolve(DATA_DIR, DATASETS[id].file);
   if (!existsSync(p)) throw new Error(`Dataset file missing: ${DATASETS[id].file}. Run "npm run data:fetch".`);
   if (statSync(p).size !== DATASETS[id].bytes) throw new Error(`Dataset file size mismatch: ${DATASETS[id].file}`);
+  const { fromFile } = await import('geotiff');
   const tiff = await fromFile(p);
   const image = await tiff.getImage();
   const keys = image.getGeoKeys() as { GeographicTypeGeoKey?: number; GTRasterTypeGeoKey?: number };
