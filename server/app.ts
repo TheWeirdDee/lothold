@@ -5,8 +5,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 import { type DB, all, audit, get, id, now, run, tx } from './db.ts';
 import {
-  PASSWORD_MIN, SESSION_COOKIE, SESSION_TTL_MS, createSession, csrfMatches, destroySession, hashPassword, rateLimit, sessionUser, signDownload, verifyDownload, verifyPassword, readBytes, type SessionUser,
-} from './security.ts';
+  PASSWORD_MIN, SESSION_COOKIE, SESSION_TTL_MS, createSession, csrfMatches, destroySession, hashPassword, rateLimit, sessionUser, signDownload, verifyDownload, verifyPassword, readBytes, type SessionUser } from './security.ts';
 import {
   HttpError, LIMITS, SHIPMENT_FIELDS, approve, computeState, confirmUpload, createShipment, getUpload, handleUpload, listShipments, recordDecision, reserveAllocations, retryAnalysis, correctSourceLotTotal, setFields, uploadBytes, getShipment, type UploadKind,
 } from './service.ts';
@@ -21,6 +20,7 @@ import { extractionStatus, runExtraction, acceptExtraction } from './ai/extract.
 import { chainStatus, queueAnchoring, publicVerify } from './chain/anchor.ts';
 import { swapAxesCorrection } from './corrections.ts';
 import { demoVideoFromEnv, contentSecurityPolicy } from './demo-video.ts';
+import { DurableCheckpoint, PersistenceError } from './durability.ts';
 
 type Env = { Variables: { user: SessionUser | null; db: DB } };
 
@@ -29,7 +29,7 @@ const PUBLIC_ANALYSIS_CONCURRENCY = Number(process.env.PUBLIC_ANALYSIS_CONCURREN
 const PUBLIC_MAX_VERTICES = 2_000;
 let publicAnalysesInFlight = 0;
 
-export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?: boolean } = {}) {
+export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?: boolean; durability?: DurableCheckpoint | null } = {}) {
   const app = new Hono<Env>();
   const secure = opts.secureCookies ?? process.env.NODE_ENV === 'production';
   const demoVideo = demoVideoFromEnv();
@@ -52,6 +52,21 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
     log({ event: 'http', method: c.req.method, path: c.req.routePath ?? c.req.path, status: c.res.status, ms: Date.now() - started, user: c.get('user')?.id ?? null });
   });
 
+  if (opts.durability) {
+    const durable = opts.durability;
+    app.use('/api/*', async (c, next) => {
+      if (c.req.path === '/api/health' || c.req.path === '/api/ready') return next();
+      await durable.assertOwner();
+      if (!['GET', 'HEAD'].includes(c.req.method)) {
+        durable.admit(Number(c.req.header('content-length') ?? (c.req.path.endsWith('/uploads') ? 1024 * 1024 : 0)));
+        await bodyLimit({ maxSize: 1024 * 1024, onError: (ctx) => ctx.json({ error: { code: 'free_pilot_limit', message: 'The free judging instance accepts request bodies up to 1 MB.' } }, 413) })(c, next);
+      } else await next();
+      try { await durable.flush(); }
+      catch (e) { c.res.headers.delete('set-cookie'); throw e; }
+    });
+  }
+
+
   // Request size limits: multipart uploads are bounded per kind in the handler (max 25 MB); everything else is JSON.
   const tooLarge = (c: Context<Env>) => c.json({ error: { code: 'too_large', message: 'Request body too large.' } }, 413);
   app.use('/api/shipments/:id/uploads', bodyLimit({ maxSize: 26 * 1024 * 1024, onError: tooLarge }));
@@ -73,6 +88,7 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   });
 
   app.onError((err, c) => {
+    if (err instanceof PersistenceError) return c.json({ error: { code: 'durability_unavailable', message: err.message } }, 503);
     if (err instanceof HttpError) return c.json({ error: { code: err.code, message: err.message } }, err.status as 400);
     // c.req.json() throws SyntaxError for a missing or malformed JSON body: a client error, not a server failure.
     if (err instanceof SyntaxError && c.req.path.startsWith('/api/')) return c.json({ error: { code: 'invalid_json', message: 'The request body is missing or is not valid JSON.' } }, 400);
@@ -93,9 +109,12 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
       // Prefer a single-value header set by the platform proxy (e.g. TRUST_PROXY_HEADER=fly-client-ip).
       const named = process.env.TRUST_PROXY_HEADER ? c.req.header(process.env.TRUST_PROXY_HEADER)?.trim() : undefined;
       if (named) return named;
-      // Otherwise use the LAST X-Forwarded-For entry: the one appended by our own proxy. Earlier entries are client-controlled.
+      // Otherwise use the X-Forwarded-For entry appended by the outermost trusted proxy: the last one by default
+      // (TRUST_PROXY_HOPS=1). Behind two proxies that each record the caller (e.g. Vercel rewrite -> Render), use 2.
+      // Entries further left are client-controlled.
       const xff = c.req.header('x-forwarded-for')?.split(',').map((s) => s.trim()).filter(Boolean);
-      if (xff?.length) return xff[xff.length - 1]!;
+      const hops = Math.max(1, Number(process.env.TRUST_PROXY_HOPS ?? 1) || 1);
+      if (xff?.length) return xff[Math.max(0, xff.length - hops)]!;
     }
     try {
       return getConnInfo(c).remote.address ?? 'unknown';
@@ -117,7 +136,12 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
   // Readiness: 200 once the startup dataset verification has finished (successfully or not).
   // Readiness: 200 once startup verification has finished. `datasetsVerified` says whether environmental analysis
   // is fully available; with ?strict=1 the endpoint returns 503 unless every raster passed verification.
-  app.get('/api/ready', (c) => {
+  app.get('/api/ready', async (c) => {
+    if (opts.durability) {
+      try { await opts.durability.assertOwner(); }
+      catch { return c.json({ ready: false, storage: 'unavailable' }, 503); }
+      if (!opts.durability.ready()) return c.json({ ready: false, storage: 'unconfirmed' }, 503);
+    }
     if (!isVerificationDone()) return c.json({ ready: false }, 503);
     const datasets = datasetAvailability();
     const datasetsVerified = datasets.every((d) => d.sha256 !== null && d.sha256 === DATASETS[d.id].sha256);
@@ -284,7 +308,7 @@ export function createApp(db: DB, opts: { publicOrigin?: string; secureCookies?:
     } else {
       const d = get<{ shipment_id: string; filename: string; storage_key: string; kind: string }>(db, 'SELECT d.shipment_id, d.filename, d.storage_key, d.kind FROM documents d JOIN shipments s ON s.id = d.shipment_id WHERE d.id = ? AND s.org_id = ?', t.objectId, u.orgId);
       if (!d) throw new HttpError(404, 'not_found', 'Document not found.');
-      bytes = readBytes(u.orgId, d.storage_key); filename = d.filename; type = d.kind === 'dds_xml' ? 'application/xml' : 'application/pdf';
+      bytes = readBytes(u.orgId, d.storage_key, db); filename = d.filename; type = d.kind === 'dds_xml' ? 'application/xml' : 'application/pdf';
     }
     audit(db, { orgId: u.orgId, actorId: u.id, type: 'download', data: { kind: t.kind, objectId: t.objectId } });
     c.header('Content-Type', type);
