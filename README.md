@@ -12,7 +12,9 @@ LotHold does **not** certify sourcing, legality, deforestation-free status, land
 
 The EU Deforestation Regulation names cocoa among seven “commodities associated with deforestation” and applies from **30 December 2026** for large and medium operators (European Commission, 13 July 2026). Due diligence depends on plot-level geolocation. If a plot is missing, a boundary is invalid, or a source lot is allocated twice, nobody can check what happened on that land. LotHold turns those gaps into concrete, source-referenced requests before shipment paperwork moves on.
 
-## Current status (24 October 2026)
+## Current status (25 October 2026)
+
+Deployment status: **not a validated free hosted deployment**. No Supabase/Render project has been provisioned in this session. Reliability preparation, local verification evidence and required account actions are in [FREE_HOSTING_VALIDATION.md](docs/FREE_HOSTING_VALIDATION.md) and [FREE_HOSTING_SETUP.md](docs/FREE_HOSTING_SETUP.md). Locally verified: 119 unit/integration tests and all 23 browser checks together against the compiled backend. The exact final image passed a 512 MiB / 0.1 CPU workflow at about 253 MiB peak memory, with its first readiness response at about 49 seconds; these are local measurements, not hosted validation. Raster work runs in a bounded child process; the public inspector enqueues a temporary job and polls status. Production startup measures imports, recovery, integrity, database initialization and raster verification before listening. [Checkpoint guarantees and failure semantics](docs/CHECKPOINT_PROTOCOL.md) and [free-tier traffic estimates](docs/FREE_TIER_USAGE.md) describe the limits.
 
 | Capability | Status | Evidence |
 |---|---|---|
