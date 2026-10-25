@@ -18,6 +18,7 @@ export type PlotGeometry =
 export type GeometryIssueCode =
   | 'missing_geometry'
   | 'unsupported_type'
+  | 'multipolygon_overlap'
   | 'malformed_coordinates'
   | 'out_of_bounds'
   | 'possible_lat_lon_swap'
@@ -300,6 +301,14 @@ export function validatePlotGeometry(
     if (!(a > 0) && k.features.length === 0) issues.push({ code: 'zero_area', severity: 'hold', message: 'The polygon encloses no area (all points on a line).', path: `${prefix}[0]` });
     total += a;
   });
+  // MultiPolygon components must not overlap or duplicate each other: the summed area would be inflated and would
+  // not match the area actually sampled.
+  if (geom.type === 'MultiPolygon' && !issues.some((i) => i.severity === 'hold')) {
+    for (let i = 0; i < polygons.length; i++)
+      for (let j = i + 1; j < polygons.length; j++)
+        if (ringsOverlap(polygons[i]![0]!, polygons[j]![0]!))
+          issues.push({ code: 'multipolygon_overlap', severity: 'hold', message: `Parts ${i + 1} and ${j + 1} of this MultiPolygon overlap or repeat each other. Each part must cover separate land.`, path: `coordinates[${j}]` });
+  }
   // Area of a self-intersecting or open ring is meaningless; report it as unknown rather than 0.
   areaHa = issues.some((i) => ['self_intersection', 'ring_not_closed', 'too_few_positions', 'malformed_coordinates'].includes(i.code)) ? null : Math.round(total * 10_000) / 10_000;
   return report(type, { vertexCount, bbox, areaHa, declaredAreaHa });
@@ -338,4 +347,55 @@ export function pointInGeometry(x: number, y: number, geom: PlotGeometry): boole
   if (geom.type === 'Point') return false;
   const polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
   return polys.some((rings) => pointInRing(x, y, rings[0]!) && !rings.slice(1).some((h) => pointInRing(x, y, h)));
+}
+
+function strictlyInsideRing(x: number, y: number, ring: Position[]): boolean {
+  for (let i = 0; i < ring.length - 1; i++) if (onSegment(x, y, ring[i]!, ring[i + 1]!)) return false;
+  return pointInRing(x, y, ring);
+}
+
+/**
+ * A point guaranteed to lie strictly inside a closed, non-self-intersecting ring: the midpoint of the widest interior
+ * span on a horizontal scanline. Unlike the vertex mean, it cannot fall outside a concave shape. Null if the ring is
+ * too thin to find one.
+ */
+export function pointOnSurface(ring: Position[]): Position | null {
+  const ys = ring.map((p) => p[1]);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  if (!(maxY > minY)) return null;
+  for (const f of [0.5, 0.37, 0.63, 0.25, 0.75, 0.13, 0.87, 0.05, 0.95]) {
+    const y = minY + (maxY - minY) * f;
+    const xs: number[] = [];
+    for (let i = 0; i < ring.length - 1; i++) {
+      const [x1, y1] = ring[i]!, [x2, y2] = ring[i + 1]!;
+      if (y1! > y !== y2! > y) xs.push(x1! + ((y - y1!) * (x2! - x1!)) / (y2! - y1!));
+    }
+    xs.sort((a, b) => a - b);
+    let best: Position | null = null, width = 0;
+    for (let i = 0; i + 1 < xs.length; i += 2) {
+      const w = xs[i + 1]! - xs[i]!;
+      if (w > width) { width = w; best = [(xs[i]! + xs[i + 1]!) / 2, y]; }
+    }
+    if (best && width > 0 && strictlyInsideRing(best[0]!, best[1]!, ring)) return best;
+  }
+  return null;
+}
+
+/** One interior point per polygon component (the outer ring of each); empty for points. */
+export function interiorPoints(geom: PlotGeometry): Position[] {
+  if (geom.type === 'Point') return [];
+  const polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
+  return polys.map((rings) => pointOnSurface(rings[0]!)).filter((p): p is Position => p !== null);
+}
+
+function properCross(a: Position, b: Position, c: Position, d: Position): boolean {
+  const o = (p: Position, q: Position, r: Position) => Math.sign((q[0]! - p[0]!) * (r[1]! - p[1]!) - (q[1]! - p[1]!) * (r[0]! - p[0]!));
+  return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+}
+
+/** True when two closed rings share interior area (crossing edges, containment or duplication); touching edges are allowed. */
+export function ringsOverlap(a: Position[], b: Position[]): boolean {
+  for (let i = 0; i < a.length - 1; i++) for (let j = 0; j < b.length - 1; j++) if (properCross(a[i]!, a[i + 1]!, b[j]!, b[j + 1]!)) return true;
+  const pa = pointOnSurface(a), pb = pointOnSurface(b);
+  return (!!pa && pointInRing(pa[0]!, pa[1]!, b)) || (!!pb && pointInRing(pb[0]!, pb[1]!, a));
 }
