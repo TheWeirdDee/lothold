@@ -1,3 +1,4 @@
+import { READY_EVENT } from '../api.ts';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 
 export const OVERALL: Record<string, { label: string; cls: string }> = {
@@ -72,7 +73,7 @@ export const useToast = () => useContext(ToastCtx);
 // ---------- tables ----------
 /** Horizontal scroll container for tables. Becomes a focusable, labelled region only while it actually overflows,
  *  so keyboard users can scroll it without adding a Tab stop to tables that fit. */
-export function TableWrap({ children, label = 'Table', style }: { children: ReactNode; label?: string; style?: CSSProperties }) {
+export function TableWrap({ children, label = 'Table', style, stack = false }: { children: ReactNode; label?: string; style?: CSSProperties; stack?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [scrolls, setScrolls] = useState(false);
   useEffect(() => {
@@ -85,8 +86,16 @@ export function TableWrap({ children, label = 'Table', style }: { children: Reac
     if (el.firstElementChild) ro.observe(el.firstElementChild);
     return () => ro.disconnect();
   }, []);
+  // With `stack`, phones show each row as a labelled block: label every cell with its column heading.
+  useEffect(() => {
+    if (!stack || !ref.current) return;
+    const heads = [...ref.current.querySelectorAll('thead th')].map((th) => th.textContent?.trim() ?? '');
+    ref.current.querySelectorAll('tbody tr').forEach((tr) => [...tr.children].forEach((td, i) => {
+      if (heads[i] && !td.hasAttribute('data-label')) td.setAttribute('data-label', heads[i]!);
+    }));
+  });
   return (
-    <div ref={ref} className="table-wrap" style={style} {...(scrolls ? { tabIndex: 0, role: 'region', 'aria-label': `${label} (scrolls sideways)` } : {})}>
+    <div ref={ref} className={`table-wrap${stack ? ' stack-wrap' : ''}`} style={style} {...(scrolls ? { tabIndex: 0, role: 'region', 'aria-label': `${label} (scrolls sideways)` } : {})}>
       {children}
     </div>
   );
@@ -182,6 +191,9 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   }, deps);
   useEffect(() => {
     void run();
+    const retryRead = () => { void run(); };
+    window.addEventListener(READY_EVENT, retryRead);
+    return () => window.removeEventListener(READY_EVENT, retryRead);
   }, [run]);
   return { ...state, reload: run };
 }
