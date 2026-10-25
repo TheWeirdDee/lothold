@@ -225,7 +225,9 @@ test('extraction discloses the plain parser when no model is configured and need
   const docForm = page.locator('form.file-drop').filter({ hasText: 'Shipping or supplier document' });
   await docForm.locator('input[type=file]').setInputFiles({ name: 'ENGINEERING_TEST_document.txt', mimeType: 'text/plain', buffer: Buffer.from('ENGINEERING TEST DOCUMENT\nHS code: 1801\nNet mass: 600 kg\n') });
   await docForm.getByRole('button', { name: 'Upload' }).click();
+  const proposed = page.waitForResponse(r => r.url().endsWith('/extract') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Propose fields' }).click();
+  expect((await proposed).status()).toBe(201);
   await expect(page.locator('.badge', { hasText: 'Label parser (deterministic, not AI)' })).toBeVisible();
   await expect(page.locator('#field-hsCode input')).toHaveValue('');
   await page.getByLabel('Accept hsCode').check();
