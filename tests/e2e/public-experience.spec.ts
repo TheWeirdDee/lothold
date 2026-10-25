@@ -1,5 +1,26 @@
 import { test, expect } from '@playwright/test';
 
+test('cold-start recovery preserves blurred, unsaved form values and never replays a mutation', async ({ page }) => {
+  let ready = false, mutations = 0, navigations = 0;
+  page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navigations++; });
+  await page.route('**/api/**', (r) => {
+    if (r.request().method() === 'POST') mutations++;
+    if (r.request().url().endsWith('/api/ready')) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ready }) });
+    return r.fulfill({ status: ready ? 200 : 503, contentType: ready ? 'application/json' : 'text/plain', body: ready ? '{"user":null}' : 'Waking up' });
+  });
+  await page.goto('/register');
+  await expect(page.getByText('The LotHold server is starting up.', { exact: true })).toBeVisible();
+  await page.getByLabel('Your name').fill('ENGINEERING UNSAVED NAME');
+  await page.getByLabel('Organisation').fill('ENGINEERING UNSAVED ORG');
+  await page.locator('h1').click(); // blurred values are still unsaved data
+  const settledNavigations = navigations;
+  ready = true;
+  await expect(page.getByText('The LotHold server is ready.', { exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByLabel('Your name')).toHaveValue('ENGINEERING UNSAVED NAME');
+  await expect(page.getByLabel('Organisation')).toHaveValue('ENGINEERING UNSAVED ORG');
+  expect(navigations).toBe(settledNavigations); expect(mutations).toBe(0);
+});
+
 test('mobile menu traps focus, closes on Escape and selection, restores focus and unlocks scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 640 });
   await page.goto('/');
