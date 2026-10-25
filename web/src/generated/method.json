@@ -1,0 +1,103 @@
+{
+  "rulesVersion": "lothold-rules/2026-10-25.1",
+  "analysisMethod": "forest-analysis/2026-10-25.2",
+  "coverageBbox": [
+    -10,
+    0,
+    0,
+    10
+  ],
+  "cutoffYear": 2020,
+  "datasets": [
+    {
+      "id": "hansen_lossyear",
+      "title": "Hansen/UMD/Google/USGS/NASA Global Forest Change — year of gross forest cover loss",
+      "version": "GFC-2025-v1.13, tile 10N_010W",
+      "sourceUrl": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_10N_010W.tif",
+      "sha256": "d481e6be9013093a1713e7a25f12f7b9e05e2666352216ad3b2269540f1d8b55",
+      "bytes": 127404260,
+      "pixelDeg": 0.00025,
+      "resolutionLabel": "1 arc-second (~30 m at the equator)",
+      "temporalCoverage": "Annual loss years 2001–2025",
+      "dateSemantics": "Value n = stand-replacement loss detected primarily in year 2000+n. Year-level only: no day, month or confidence. Not a near-real-time alert.",
+      "license": "CC BY 4.0",
+      "citation": "Hansen, M. C. et al. 2013. High-Resolution Global Maps of 21st-Century Forest Cover Change. Science 342: 850–53. Data: https://glad.earthengine.app/view/global-forest-change",
+      "credit": "Source: Hansen/UMD/Google/USGS/NASA",
+      "publishedOrModified": "Object last modified 2026-03-16 (Google Cloud Storage header)"
+    },
+    {
+      "id": "hansen_datamask",
+      "title": "Hansen/UMD Global Forest Change — data mask",
+      "version": "GFC-2025-v1.13, tile 10N_010W",
+      "sourceUrl": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_10N_010W.tif",
+      "sha256": "38278ad7de7f5bf7ab8121869b7a3aa061fa5dc3df6ee14578e545f540911b03",
+      "bytes": 15293782,
+      "pixelDeg": 0.00025,
+      "resolutionLabel": "1 arc-second (~30 m)",
+      "temporalCoverage": "Static mask based on 2000–2012",
+      "dateSemantics": "0 = no data, 1 = mapped land surface, 2 = persistent water.",
+      "license": "CC BY 4.0",
+      "citation": "Hansen et al. 2013 (as above).",
+      "credit": "Source: Hansen/UMD/Google/USGS/NASA",
+      "publishedOrModified": "GFC-2025-v1.13 release"
+    },
+    {
+      "id": "jrc_gfc2020",
+      "title": "JRC Global map of forest cover 2020",
+      "version": "Version 4 (metadata dated 2025-11-28), tile N10_W10",
+      "sourceUrl": "https://ies-ows.jrc.ec.europa.eu/iforce/gfc2020/download.py?version=v4&type=tile&lat=N10&lon=W10",
+      "sha256": "33547f277e30d957c58dae4c8ed1f81915eeb6feeaaed9fdccb4d7ece6bd53df",
+      "bytes": 288760743,
+      "pixelDeg": 0.00008333333333333333,
+      "resolutionLabel": "1/12000° (~9.3 m at the equator; product nominal 10 m)",
+      "temporalCoverage": "Forest presence circa 2020 (single epoch)",
+      "dateSemantics": "1 = forest, 0 = non-forest, as at 2020. Does not record when any change happened.",
+      "license": "Free of charge, without restriction of use; attribution required (JRC Forest Observatory licence statement).",
+      "citation": "Bourgoin, C. et al. (2026): Global map of forest cover 2020 – version 4. European Commission, Joint Research Centre. doi:10.2905/JRC.3KATEH8",
+      "credit": "Source: European Commission, Joint Research Centre — GFC2020 V4",
+      "publishedOrModified": "Metadata date 2025-11-28"
+    }
+  ],
+  "sourceColumns": [
+    {
+      "name": "supplier_id",
+      "required": true,
+      "description": "Identifier of the supplier, cooperative or producer group as used in your records."
+    },
+    {
+      "name": "supplier_name",
+      "required": false,
+      "description": "Supplier name (kept private; never written on-chain)."
+    },
+    {
+      "name": "source_lot_ref",
+      "required": true,
+      "description": "The supplier’s source lot / batch reference that this shipment draws from."
+    },
+    {
+      "name": "source_lot_declared_quantity",
+      "required": true,
+      "description": "Total quantity the supplier declared for that source lot."
+    },
+    {
+      "name": "allocated_quantity",
+      "required": true,
+      "description": "Quantity of that source lot allocated to this shipment."
+    },
+    {
+      "name": "quantity_unit",
+      "required": true,
+      "description": "Unit for both quantities: kg, t (metric tonnes) or g."
+    },
+    {
+      "name": "producer_country",
+      "required": true,
+      "description": "ISO 3166-1 alpha-2 country of production, e.g. CI or GH."
+    },
+    {
+      "name": "plot_refs",
+      "required": true,
+      "description": "Semicolon-separated plot references; each must match a plot_ref in the plots GeoJSON."
+    }
+  ]
+}
