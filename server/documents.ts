@@ -122,21 +122,36 @@ export async function supplierRequestPdf(st: ShipmentState, issuer: SessionUser)
   if (resolved.length) text(doc, 'r', 8.6, `Already investigated by the reviewer with supporting evidence (no action requested): ${resolved.map((f) => f.title).join('; ')}.`, { color: MUTED });
   doc.moveDown(0.3);
 
-  const bottomLimit = doc.page.height - doc.page.margins.bottom - 150;
+  // One-page contract: measure each item (and the fixed closing sections) before drawing, so long identifiers or
+  // text can never push the document onto a second page. Supplier-facing text is capped; the review draft keeps
+  // the full wording.
+  const fullW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const w = fullW - 16;
+  const cap = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
+  const measure = (font: 'r' | 'm' | 'b' | 'mono', size: number, t: string, width: number) => doc.font(font).fontSize(size).heightOfString(safe(doc, t), { width });
+  const aboutText = `These come from published satellite-derived datasets: annual tree-cover loss (${DATASETS.hansen_lossyear.credit}, ${DATASETS.hansen_lossyear.version}, ${DATASETS.hansen_lossyear.resolutionLabel}, loss years 2001–2025) compared with the ${DATASETS.jrc_gfc2020.title} (${DATASETS.jrc_gfc2020.version}). A recorded loss can reflect clearing, fire, replanting, plantation rotation or map error. It is a reason to ask for evidence, not a finding that deforestation occurred or that any law was broken.`;
+  const limitationsText = 'This request is generated from records supplied to the reviewer and has not been sent to any authority. A valid plot boundary does not establish land rights; a satellite observation does not establish legality; a shared-ledger reservation does not prove physical origin. Missing values are shown as missing.';
+  const creditsText = `Data credits: Hansen/UMD/Google/USGS/NASA (CC BY 4.0), https://glad.earthengine.app/view/global-forest-change; European Commission Joint Research Centre, GFC2020 V4, https://forobs.jrc.ec.europa.eu/GFC. Rules ${st.evaluation.rulesVersion}.`;
+  const tail = (env.length ? 24 + measure('b', 9.5, 'About', fullW) + measure('r', 8.2, aboutText, fullW) : 0) + 24 + measure('b', 8.8, 'Limitations', fullW) + measure('r', 7.8, limitationsText, fullW) + 8 + measure('r', 7, creditsText, fullW) + 16 /* omitted-items line */;
+  const bottomLimit = doc.page.height - doc.page.margins.bottom - tail;
   let listed = 0;
   const all = [...other, ...env];
   for (const [i, f] of all.entries()) {
-    if (doc.y > bottomLimit) break;
+    const title = cap(f.title, 160);
+    const action = cap(f.requestedAction!, 420);
+    const refs = f.refs.filter((r) => r.kind !== 'environment').map(refLabel);
+    const refLine = refs.length ? cap(`Source: ${refs.slice(0, 3).join('; ')}${refs.length > 3 ? `; +${refs.length - 3} more` : ''}`, 260) : null;
+    const valueLine = f.original !== undefined && f.original !== '' ? `Value as received: "${f.original.slice(0, 110)}"` : null;
+    const blockH = measure('m', 9.2, title, w) + measure('r', 8.8, action, w) + (refLine ? measure('r', 8, refLine, w) : 0) + (valueLine ? measure('mono', 7.6, valueLine, w) : 0) + 6;
+    if (doc.y + blockH > bottomLimit) break;
     const startY = doc.y;
     text(doc, 'b', 9, `${i + 1}.`, { width: 16 });
     doc.y = startY;
     doc.x = doc.page.margins.left + 16;
-    const w = doc.page.width - doc.page.margins.left - doc.page.margins.right - 16;
-    text(doc, 'm', 9.2, f.title, { width: w });
-    text(doc, 'r', 8.8, f.requestedAction!, { width: w });
-    const refs = f.refs.filter((r) => r.kind !== 'environment').map(refLabel);
-    if (refs.length) text(doc, 'r', 8, `Source: ${refs.slice(0, 3).join('; ')}${refs.length > 3 ? `; +${refs.length - 3} more` : ''}`, { width: w, color: MUTED });
-    if (f.original !== undefined && f.original !== '') text(doc, 'mono', 7.6, `Value as received: "${f.original.slice(0, 110)}"`, { width: w, color: MUTED });
+    text(doc, 'm', 9.2, title, { width: w });
+    text(doc, 'r', 8.8, action, { width: w });
+    if (refLine) text(doc, 'r', 8, refLine, { width: w, color: MUTED });
+    if (valueLine) text(doc, 'mono', 7.6, valueLine, { width: w, color: MUTED });
     doc.x = doc.page.margins.left;
     doc.moveDown(0.35);
     listed++;
@@ -147,13 +162,13 @@ export async function supplierRequestPdf(st: ShipmentState, issuer: SessionUser)
   if (env.length) {
     rule(doc);
     text(doc, 'b', 9.5, 'About the land-change observations');
-    text(doc, 'r', 8.2, `These come from published satellite-derived datasets: annual tree-cover loss (${DATASETS.hansen_lossyear.credit}, ${DATASETS.hansen_lossyear.version}, ${DATASETS.hansen_lossyear.resolutionLabel}, loss years 2001–2025) compared with the ${DATASETS.jrc_gfc2020.title} (${DATASETS.jrc_gfc2020.version}). A recorded loss can reflect clearing, fire, replanting, plantation rotation or map error. It is a reason to ask for evidence, not a finding that deforestation occurred or that any law was broken.`, { color: INK });
+    text(doc, 'r', 8.2, aboutText, { color: INK });
   }
   rule(doc);
   text(doc, 'b', 8.8, 'Limitations');
-  text(doc, 'r', 7.8, 'This request is generated from records supplied to the reviewer and has not been sent to any authority. A valid plot boundary does not establish land rights; a satellite observation does not establish legality; a shared-ledger reservation does not prove physical origin. Missing values are shown as missing.', { color: MUTED });
+  text(doc, 'r', 7.8, limitationsText, { color: MUTED });
   doc.moveDown(0.3);
-  text(doc, 'r', 7, `Data credits: Hansen/UMD/Google/USGS/NASA (CC BY 4.0); European Commission Joint Research Centre, GFC2020 V4. Rules ${st.evaluation.rulesVersion}.`, { color: MUTED });
+  text(doc, 'r', 7, creditsText, { color: MUTED });
 
   const pages = doc.bufferedPageRange().count;
   doc.end();
