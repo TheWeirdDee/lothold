@@ -1,3 +1,5 @@
+> Updated free-project preparation: see [FREE_HOSTING_SETUP.md](FREE_HOSTING_SETUP.md). Its checkpoint setup supersedes older hosting recommendations below. No cloud deployment has been verified.
+
 # Connection and persistent hosting handoff
 
 ## Observed public failure — 25 October 2026
