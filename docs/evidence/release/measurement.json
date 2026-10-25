@@ -1,0 +1,257 @@
+{
+  "scope": "LOCAL exact production image; disposable engineering SQLite; not a hosted deployment or live Supabase proof",
+  "containerStartedAt": "2026-10-25T11:57:16.951220064Z",
+  "firstReadinessResponseAt": "2026-10-25T11:58:06.314Z",
+  "containerToFirstReadinessResponseMs": 49363,
+  "appReadyMs": [
+    8502,
+    9801
+  ],
+  "preFirstJavaScriptMilestoneMs": 39265,
+  "preMilestoneAttribution": "Not instrumented within Node; includes native process/bootstrap, throttling/scheduling and a verifier sharing the container budget. Do not call this time application imports.",
+  "startupPhases": [
+    {
+      "event": "startup.phase",
+      "phase": "import.http",
+      "ms": 2800,
+      "cpuMicros": {
+        "user": 145725,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.static",
+      "ms": 101,
+      "cpuMicros": {
+        "user": 8567,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.database",
+      "ms": 103,
+      "cpuMicros": {
+        "user": 4629,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.security",
+      "ms": 5,
+      "cpuMicros": {
+        "user": 2778,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.checkpoint",
+      "ms": 204,
+      "cpuMicros": {
+        "user": 7873,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "checkpoint.recover",
+      "ms": 1,
+      "cpuMicros": {
+        "user": 757,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "database.initialize",
+      "ms": 306,
+      "cpuMicros": {
+        "user": 17688,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "checkpoint.integrity",
+      "ms": 95,
+      "cpuMicros": {
+        "user": 512,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "checkpoint.publish",
+      "ms": 0,
+      "cpuMicros": {
+        "user": 430,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.api",
+      "ms": 4399,
+      "cpuMicros": {
+        "user": 268134,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.handlers",
+      "ms": 5,
+      "cpuMicros": {
+        "user": 5268,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "rasters.verify",
+      "ms": 3,
+      "cpuMicros": {
+        "user": 2484,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.http",
+      "ms": 1500,
+      "cpuMicros": {
+        "user": 84925,
+        "system": 23528
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.static",
+      "ms": 5,
+      "cpuMicros": {
+        "user": 5234,
+        "system": 841
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.database",
+      "ms": 5,
+      "cpuMicros": {
+        "user": 4622,
+        "system": 535
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.security",
+      "ms": 195,
+      "cpuMicros": {
+        "user": 5218,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.checkpoint",
+      "ms": 3,
+      "cpuMicros": {
+        "user": 3156,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "checkpoint.recover",
+      "ms": 0,
+      "cpuMicros": {
+        "user": 113,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "database.initialize",
+      "ms": 1,
+      "cpuMicros": {
+        "user": 1159,
+        "system": 224
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "checkpoint.integrity",
+      "ms": 1,
+      "cpuMicros": {
+        "user": 494,
+        "system": 202
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "checkpoint.publish",
+      "ms": 0,
+      "cpuMicros": {
+        "user": 42,
+        "system": 18
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.api",
+      "ms": 6506,
+      "cpuMicros": {
+        "user": 268897,
+        "system": 28876
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "import.handlers",
+      "ms": 301,
+      "cpuMicros": {
+        "user": 15545,
+        "system": 0
+      }
+    },
+    {
+      "event": "startup.phase",
+      "phase": "rasters.verify",
+      "ms": 3,
+      "cpuMicros": {
+        "user": 3455,
+        "system": 0
+      }
+    }
+  ],
+  "workflow": {
+    "phase": "seed",
+    "result": "all checks passed",
+    "checks": 17
+  },
+  "restart": {
+    "phase": "after-restart",
+    "result": "all checks passed",
+    "checks": 10
+  },
+  "responsiveness": {
+    "samples": 31,
+    "healthP95ms": 394.2367279999962,
+    "healthMaxMs": 408.05128400000103,
+    "statusP95ms": 898.911871999997,
+    "statusMaxMs": 1384.9530410000007,
+    "analysisWaitMs": 46199.884925000006
+  },
+  "forestJobMs": [
+    46265
+  ],
+  "pdfRequestMs": [
+    15699
+  ],
+  "peakMemoryBytes": 265109504,
+  "oomKills": 0,
+  "liveRecoveryMeasured": false
+}
