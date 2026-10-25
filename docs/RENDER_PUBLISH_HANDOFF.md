@@ -2,6 +2,8 @@
 
 Selected backend: **Render, one Free Docker web service**, named `lothold-api` (Render may require a unique service name). Frontend: Vercel. Persistence: the private Supabase checkpoint bucket plus Postgres pointer/RPC functions; existing LotHold authentication remains inside the encrypted database. No Supabase Auth migration, paid Render database, persistent disk, external worker service or tunnel is needed for this bounded pilot. None of this is a validated hosted deployment yet.
 
+Live prerequisite completed: 22 Supabase checks passed on 25 October 2026, including direct SQL stale-writer/revision guards, private storage and fresh-cache restore. The isolated engineering namespace was removed; no app hosting has been published.
+
 ## Account and setup steps
 
 1. Sign up/sign in at https://dashboard.render.com/ using the account that may deploy this project. Choose a workspace whose billing/usage settings you can inspect. Keep the compute plan Free; do not approve paid add-ons. Record the account's remaining included bandwidth and build minutes before publishing.
