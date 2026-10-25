@@ -1,6 +1,16 @@
 ﻿# Recorded product walkthrough
 
-The landing page now uses recordings of the actual application, bundled with the frontend:
+## Finished narrated hackathon demo
+
+The completed local deliverable is `lothold-demo.mp4` at the repository root: **3:14.200**, **1920×1080**, H.264/AAC, with English narration and burned-in captions. It uses real hosted interactions in an isolated ENGINEERING TEST - DEMO workspace, including sign-off, an actual DDS XML draft and stale-sign-off detection. The large MP4 and production intermediates are intentionally outside Git; this file path is local, not a public video URL.
+
+Delivery: [final script](demo/FINAL_SCRIPT.md), [storyboard](demo/STORYBOARD.md), [captions](demo/CAPTIONS.srt), [thumbnail](demo/thumbnail.png), [claims and workflow checks](demo/CLAIMS_VERIFICATION.md), [QA](demo/VIDEO_QA.md), and [reproduction/publication guide](demo/RECORDING_GUIDE.md). Full decode, normal-speed Chrome playback, independent speech transcription, and a fresh download/XSD check of the recorded XML passed. No YouTube upload or hackathon submission was performed.
+
+The landing-page recordings below are separate assets. They retain their original local-engineering provenance and have not been replaced by this MP4.
+
+## Bundled landing-page recordings
+
+The landing page uses recordings of the actual application, bundled with the frontend:
 
 - `web/public/media/lothold-full.webm`: full real-interaction engineering journey.
 - `web/public/media/lothold-short.webm`: short muted review preview.
