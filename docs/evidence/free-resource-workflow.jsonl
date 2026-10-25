@@ -1,0 +1,17 @@
+{"check":"ready","ok":true}
+{"check":"engineering instance","ok":true,"detail":"engineering"}
+{"check":"datasets present and hash-verified at startup","ok":true,"detail":[{"id":"hansen_lossyear","present":true,"sizeMatches":true,"sha256":"d481e6be9013093a1713e7a25f12f7b9e05e2666352216ad3b2269540f1d8b55","pinned":"d481e6be9013093a1713e7a25f12f7b9e05e2666352216ad3b2269540f1d8b55"},{"id":"hansen_datamask","present":true,"sizeMatches":true,"sha256":"38278ad7de7f5bf7ab8121869b7a3aa061fa5dc3df6ee14578e545f540911b03","pinned":"38278ad7de7f5bf7ab8121869b7a3aa061fa5dc3df6ee14578e545f540911b03"},{"id":"jrc_gfc2020","present":true,"sizeMatches":true,"sha256":"33547f277e30d957c58dae4c8ed1f81915eeb6feeaaed9fdccb4d7ece6bd53df","pinned":"33547f277e30d957c58dae4c8ed1f81915eeb6feeaaed9fdccb4d7ece6bd53df"}]}
+{"check":"built frontend served","ok":true,"detail":200}
+{"check":"register","ok":true,"detail":201}
+{"check":"session","ok":true,"detail":200}
+{"check":"create shipment","ok":true,"detail":201}
+{"check":"fields","ok":true,"detail":200}
+{"check":"upload csv","ok":true,"detail":201}
+{"check":"confirm csv","ok":true,"detail":200}
+{"check":"upload geojson","ok":true,"detail":201}
+{"check":"confirm geojson","ok":true,"detail":200}
+{"check":"environmental analysis ran on real rasters","ok":true,"detail":[{"plot":"ENG-PLOT-A","status":"NEEDS_HUMAN_REVIEW","summary":"Annual tree-cover loss recorded in 2021–2025 on 47 of 1600 sampled 30 m pixels (≈3.59 ha; none of it on land mapped as forest in 2020 by JRC). This is a land-change signal after the cut-off that needs investigation, not a finding of deforestation."}]}
+{"check":"generate supplier request PDF","ok":true,"detail":201}
+{"check":"download PDF","ok":true,"detail":200}
+{"check":"uploaded evidence decrypts byte for byte","ok":true}
+{"phase":"seed","result":"all checks passed","checks":16}
