@@ -1,6 +1,5 @@
 // Generated outputs. Each document records the snapshot digest it was built from; when the shipment's
 // current digest differs the document is shown as stale. Already-downloaded copies cannot be recalled.
-import PDFDocument from 'pdfkit';
 import { createRequire } from 'node:module';
 import { type DB, all, audit, get, id, now, run } from './db.ts';
 import { sha256Hex, storeBytes, type SessionUser } from './security.ts';
@@ -42,7 +41,8 @@ export function refLabel(r: SourceRef): string {
 
 const INK = '#1D2924', MUTED = '#4F5A53', RULE = '#9AA39C';
 
-function newDoc(title: string) {
+async function newDoc(title: string) {
+  const { default: PDFDocument } = await import('pdfkit');
   const doc = new PDFDocument({ size: 'A4', margins: { top: 42, bottom: 40, left: 46, right: 46 }, info: { Title: title, Creator: 'LotHold', Producer: 'LotHold (pdfkit)' }, bufferPages: true });
   doc.registerFont('r', FONTS.regular);
   doc.registerFont('m', FONTS.medium);
@@ -99,7 +99,7 @@ function statusLine(st: ShipmentState): string {
 
 // ---------------- supplier evidence request (one page) ----------------
 export async function supplierRequestPdf(st: ShipmentState, issuer: SessionUser): Promise<{ bytes: Buffer; pages: number; itemsListed: number; itemsOmitted: number }> {
-  const { doc, done } = newDoc(`Shipment evidence request ${st.shipment.reference}`);
+  const { doc, done } = await newDoc(`Shipment evidence request ${st.shipment.reference}`);
   const generated = now();
   const items = st.evaluation.findings.filter((f) => f.supplierActionable && f.severity !== 'warning' && f.requestedAction);
   const env = items.filter((f) => f.dimension === 'environment');
@@ -177,7 +177,7 @@ export async function supplierRequestPdf(st: ShipmentState, issuer: SessionUser)
 
 // ---------------- human-readable review draft ----------------
 export async function reviewDraftPdf(st: ShipmentState, issuer: SessionUser, decisions: { finding_key: string; decision: string; rationale: string; name: string; created_at: string; evidence: string | null }[]): Promise<{ bytes: Buffer; pages: number }> {
-  const { doc, done } = newDoc(`Review draft ${st.shipment.reference} — DRAFT NOT SUBMITTED`);
+  const { doc, done } = await newDoc(`Review draft ${st.shipment.reference} — DRAFT NOT SUBMITTED`);
   const f = st.input.shipment.fields;
   const v = (k: keyof typeof f) => f[k]?.value ?? 'MISSING';
   const prov = (k: keyof typeof f) => (f[k] ? `${f[k]!.source === 'extraction' ? `confirmed from extraction${f[k]!.extractionRef ? ` of ${f[k]!.extractionRef!.filename}` : ''}` : 'entered manually'}, revision ${f[k]!.revision}` : 'not provided');
