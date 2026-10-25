@@ -13,9 +13,14 @@ export async function verifyDatasets(log: (o: object) => void = (o) => console.l
   const hashes: Partial<Record<DatasetId, string>> = {};
   for (const a of datasetAvailability()) {
     if (!a.present || !a.sizeMatches) continue;
-    const h = createHash('sha256');
-    await pipeline(createReadStream(`${process.env.DATA_DIR ?? 'data/snapshots'}/${DATASETS[a.id].file}`), h);
-    hashes[a.id] = h.digest('hex');
+    try {
+      const h = createHash('sha256');
+      await pipeline(createReadStream(`${process.env.DATA_DIR ?? 'data/snapshots'}/${DATASETS[a.id].file}`), h);
+      hashes[a.id] = h.digest('hex');
+    } catch (e) {
+      // An unreadable file counts as unverified (analysis reports unavailable); it must not stop startup.
+      log({ event: 'dataset.read_error', id: a.id, error: (e as Error).message });
+    }
   }
   setDatasetHashes(hashes);
   markVerificationDone();
