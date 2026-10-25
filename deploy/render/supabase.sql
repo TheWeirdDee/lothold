@@ -1,3 +1,5 @@
+begin;
+
 -- Run once in a FREE Supabase project. No app passwords or user records are
 -- placed in this table: it points to an encrypted private SQLite snapshot.
 create table if not exists public.lothold_checkpoint (
@@ -10,7 +12,8 @@ create table if not exists public.lothold_checkpoint (
   updated_at timestamptz not null default now()
 );
 alter table public.lothold_checkpoint enable row level security;
-revoke all on public.lothold_checkpoint from anon, authenticated;
+revoke all on public.lothold_checkpoint from public, anon, authenticated;
+grant all on public.lothold_checkpoint to service_role;
 
 -- A new process fences an old process before restoring. An old deployment can
 -- upload orphan objects, but it cannot advance the authoritative pointer/ack.
@@ -35,8 +38,8 @@ returns jsonb language plpgsql security definer set search_path = public, pg_tem
 declare r public.lothold_checkpoint; discarded text;
 begin
   select * into r from public.lothold_checkpoint where namespace = p_namespace for update;
-  if not found or r.owner <> p_owner or r.revision <> p_revision then raise exception 'writer fenced or revision changed'; end if;
-  if left(p_object_key, length(p_namespace)+1) <> p_namespace || '/' or p_sha256 !~ '^[0-9a-f]{64}$' then raise exception 'invalid checkpoint'; end if;
+  if not found or r.owner is distinct from p_owner or r.revision is distinct from p_revision then raise exception 'writer fenced or revision changed'; end if;
+  if p_object_key is null or p_sha256 is null or left(p_object_key, length(p_namespace)+1) <> p_namespace || '/' or p_sha256 !~ '^[0-9a-f]{64}$' then raise exception 'invalid checkpoint'; end if;
   discarded := r.previous_key;
   update public.lothold_checkpoint set previous_key = object_key, object_key = p_object_key,
     sha256 = p_sha256, revision = revision + 1, updated_at = now()
@@ -54,4 +57,7 @@ grant execute on function public.lothold_commit(text,uuid,bigint,text,text) to s
 -- Bucket stays private. The service-role secret is server-only.
 insert into storage.buckets(id, name, public, file_size_limit)
 values ('lothold-private', 'lothold-private', false, 41943040)
-on conflict(id) do nothing;
+on conflict(id) do update set public = false, file_size_limit = excluded.file_size_limit;
+
+notify pgrst, 'reload schema';
+commit;
