@@ -3,10 +3,10 @@
 // This preserves existing auth/SQL semantics without claiming async replication
 // is durable. It is intentionally limited to small judging workspaces.
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, renameSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { DB } from './db.ts';
-import { secrets } from './security.ts';
+import { secrets, readBytes } from './security.ts';
 
 export type Checkpoint = { owner: string; revision: number; object_key: string | null; sha256: string | null; discarded_key?: string | null };
 export interface CheckpointTransport {
@@ -84,10 +84,28 @@ export class DurableCheckpoint {
       // Only in explicit cloud mode, before the database is opened. Local files
       // are a disposable cache; the committed remote pointer is authoritative.
       for (const suffix of ['-wal', '-shm']) rmSync(this.path + suffix, { force: true });
-      writeFileSync(this.path, bytes, { mode: 0o600 });
+      const recovered = this.path + '.recovered';
+      writeFileSync(recovered, bytes, { mode: 0o600 }); renameSync(recovered, this.path);
     } else if (existsSync(this.path)) throw new PersistenceError('Refusing to initialise cloud storage from an existing local database. Use a fresh cache path or a separately verified migration.');
   }
-  attach(db: DB) { this.db = db; }
+  attach(db: DB) {
+    this.db = db;
+    if ((db.prepare('PRAGMA integrity_check').get() as { integrity_check: string }).integrity_check !== 'ok' || db.prepare('PRAGMA foreign_key_check').all().length) throw new PersistenceError('Recovered database integrity check failed.');
+    const evidence = hash(secrets.evidenceKey()), signing = hash(secrets.signingKey());
+    const identity = db.prepare('SELECT * FROM cloud_identity WHERE id=1').get() as { evidence_fingerprint: string; signing_fingerprint: string } | undefined;
+    if (identity && (identity.evidence_fingerprint !== evidence || identity.signing_fingerprint !== signing)) throw new PersistenceError('Cloud key continuity failed. Restore the original encryption and signing keys.');
+    if (!identity) db.prepare('INSERT INTO cloud_identity VALUES (1,?,?)').run(evidence, signing);
+    this.checkEvidence(true);
+  }
+  private checkEvidence(decrypt: boolean) {
+    const rows = this.db!.prepare(`SELECT u.org_id, u.storage_key, u.sha256, u.bytes FROM uploads u
+      UNION ALL SELECT s.org_id, d.storage_key, d.sha256, d.bytes FROM documents d JOIN shipments s ON s.id=d.shipment_id`).all() as { org_id: string; storage_key: string; sha256: string; bytes: number }[];
+    for (const r of rows) {
+      const blob = this.db!.prepare('SELECT org_id FROM evidence_blobs WHERE storage_key=?').get(r.storage_key) as {org_id:string}|undefined;
+      if (!blob || blob.org_id !== r.org_id) throw new PersistenceError('Checkpoint references missing or mismatched evidence.');
+      if (decrypt) { const bytes=readBytes(r.org_id,r.storage_key,this.db!); if (bytes.length !== r.bytes || hash(bytes) !== r.sha256) throw new PersistenceError('Recovered evidence failed decryption/hash verification.'); }
+    }
+  }
   ready() { return this.available; }
   async assertOwner() {
     const c = await this.transport.status();
@@ -110,13 +128,18 @@ export class DurableCheckpoint {
     if (this.savedChanges === changes()) return;
     const target = `${this.path}.checkpoint-${randomUUID()}`;
     try {
+      this.checkEvidence(false);
       db.prepare('VACUUM INTO ?').run(target);
       const savedAt = changes();
       const raw = readFileSync(target);
       if (raw.length > this.maxBytes) throw new PersistenceError('The free pilot checkpoint exceeds its bounded storage budget. This operation is not confirmed.');
       const bytes = seal(raw, this.namespace), sha = hash(bytes);
       const key = `${this.namespace}/${this.owner}-${this.revision + 1}-${randomUUID()}.bin`;
+      const began=performance.now();
       await this.transport.put(key, bytes);
+      // Immutable object must be readable with its exact encrypted digest BEFORE
+      // the Postgres pointer can make it authoritative. Interrupted uploads stay unpublished.
+      if (hash(await this.transport.read(key)) !== sha) throw new PersistenceError('Uploaded checkpoint could not be read back intact.');
       let committed: Checkpoint;
       try { committed = await this.transport.commit(this.owner, this.revision, key, sha); }
       catch {
@@ -127,6 +150,7 @@ export class DurableCheckpoint {
       }
       if (committed.owner !== this.owner || committed.object_key !== key || Number(committed.revision) !== this.revision + 1) throw new PersistenceError();
       this.revision = Number(committed.revision); this.savedChanges = savedAt; this.available = true;
+      console.log(JSON.stringify({event:'checkpoint.published',namespace:this.namespace,revision:this.revision,bytes:bytes.length,ms:Math.round(performance.now()-began)}));
       if (committed.discarded_key?.startsWith(this.namespace + '/')) void this.transport.remove(committed.discarded_key).catch(() => {});
     } catch (e) { this.available = false; throw e instanceof PersistenceError ? e : new PersistenceError(); }
     finally { rmSync(target, { force: true }); }
