@@ -32,3 +32,5 @@ The recorder starts and stops its own engineering backend on port 8804. It never
 `RECORD_FAST` is a developer-only debugging switch and must be unset for the final deliberately paced recording. Captions use actual chapter timestamps from the run. Rebuild after recording so static hosts receive the new media.
 
 Legacy `DEMO_VIDEO_*` environment configuration and its API remain for compatibility, but the landing page does not request or depend on them. To change the public walkthrough, replace/re-record the bundled assets and verify playback.
+
+Next presentation: [narration and shot list](DEMO_SCRIPT_AND_SHOTS.md), with a separate hosted-reliability appendix gated on actual verification.
