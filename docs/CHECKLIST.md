@@ -22,7 +22,8 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 | Ingestion | CSV + GeoJSON with validation, hashing, private storage, provenance, preview, confirmation | Verified | integration + browser tests |
 | | PDF/text extraction | Verified (text layer only; no OCR, stated) | tests |
 | | Idempotent duplicates; revisions never overwrite; approvals invalidated | Verified | tests |
-| Rules | Required fields, HS scope, ISO codes, quantity precision/conversion/positivity, allocation conservation, geometry validity/type/order/bounds/CRS/self-intersection/limits, relationships, coverage, freshness | Verified | unit tests |
+| Rules | Required fields, HS scope, ISO codes, quantity precision/conversion/positivity, allocation conservation, geometry validity/type/order/bounds/CRS/self-intersection/limits, relationships, coverage, snapshot staleness | Verified | unit and integration tests |
+| | Observation freshness (maximum acceptable data age) | **Not enforced**: annual data ends 2025; the gap is disclosed on every analysed case (`ENV-RECENCY` note), never used to block | rules; METHOD.md |
 | | Separate record / environment / allocation dimensions; transparent overall | Verified | status strip |
 | | No-data / outside / no-alert never the same green state | Verified | unit test |
 | | Material environmental finding needs rationale + evidence | Verified | unit + integration + browser |
