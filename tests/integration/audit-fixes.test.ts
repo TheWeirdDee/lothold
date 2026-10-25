@@ -72,6 +72,8 @@ describe('audit regressions', () => {
     expect(f.env.status).toBe('UNAVAILABLE');
     expect(v.evaluation.readiness.environment).not.toBe('NO_POST_2020_LOSS_OBSERVED');
     expect(v.evaluation.findings.map((x: any) => x.key)).toContain('ENV:ENG-WATER');
+    // Build audit finding 4: a completed analysis discloses the data's latest observation year, as a non-blocking note.
+    expect(v.evaluation.findings.find((x: any) => x.key === 'ENV-RECENCY')).toMatchObject({ severity: 'warning', data: { latestObservationYear: 2025 } });
     expect(v.evaluation.readiness.overall).not.toBe('READY_FOR_SIGN_OFF');
   });
 
