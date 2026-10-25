@@ -1,6 +1,6 @@
 # Free judging deployment ? setup handoff
 
-Status: prepared locally; no cloud projects, deployment, push, or paid resources created. The user selected ?No projects yet ? prepare setup.? Hosted persistence is **not verified**. This is a bounded engineering pilot, not an unlimited production service.
+Status: prepared locally; see [validation and remaining gaps](FREE_HOSTING_VALIDATION.md); no cloud projects, deployment, push, or paid resources created. The user selected ?No projects yet ? prepare setup.? Hosted persistence is **not verified**. This is a bounded engineering pilot, not an unlimited production service.
 
 ## Architecture and limits
 
@@ -70,4 +70,4 @@ Until these pass, describe the deployment as prepared, not verified or judge-rea
 
 `npm run typecheck`, `npm test`, `npm run test:e2e`, and `node scripts/responsive-sweep.ts docs/screenshots/responsive-final` cover local behavior. The responsive sweep checked ten widths from 320 to 1920 px and reported zero flagged overflow combinations. Full browser run: 20 passed; the cold-start check subsequently passed after fixing an initial-mount event race and measuring navigation after the page settled.
 
-On a Linux Docker host, run `sh scripts/free-resource-proof.sh lothold-free-verified:local` for the local proof image. Evidence is under `docs/evidence/free-resource-*`. The script currently targets the provided WSL workspace path; adjust `REPORT_DIR` for another machine. A 512 MiB / 0.1 CPU local budget tests a representative workflow, not provider uptime or concurrency capacity.
+On a Linux Docker host, run `sh scripts/free-resource-proof.sh lothold-free-verified:local` for the local proof image. Evidence is under `docs/evidence/free-resource-*`. The script currently targets the provided WSL workspace path; adjust `REPORT_DIR` for another machine. The 512 MiB / 0.1 CPU proof passed 16 sequential checks at about 275 MiB peak memory, with no OOM. Cold startup took roughly 324 seconds and raster analysis roughly 90 seconds. This tests a representative local workflow, not provider uptime, hosted persistence, responsiveness or concurrency capacity.
