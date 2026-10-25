@@ -1,0 +1,15 @@
+{
+  "label": "ENGINEERING TEST - prepared hosting stack (deploy/compose.yaml + deploy/Caddyfile.container) run locally with throwaway keys and engineering records only.",
+  "date": "2026-10-25",
+  "environment": "Docker Engine 29.1.3 with Compose, WSL2 Ubuntu 24.04 on Windows 11; LOTHOLD_HOST=localhost (Caddy local CA); LOTHOLD_INSTANCE=engineering; rasters copied to the lothold_data volume and SHA-256 verified at startup",
+  "checks": {
+    "composeConfig": "pass",
+    "readyStrict": "200, datasetsVerified true",
+    "bundleMatchesLocalBuild": "index-gMlGvUCH.js served by the container and produced by a fresh local build",
+    "throughHttpsProxy": "16/16 container-verify seed checks: readiness, datasets, frontend, registration, session, case, fields, CSV/GeoJSON upload and confirm, real raster analysis (ENG-PLOT-A 47 of 1600 pixels with 2021-2025 loss), supplier PDF generation and download, byte-identical decrypted upload",
+    "afterAppRestart": "10/10 after-restart checks: login, shipment, unchanged evaluation, identical stored PDF and upload, audit history",
+    "afterForceRecreateBothContainers": "10/10 after-restart checks",
+    "sessionCookieViaProxy": "HttpOnly; Secure; SameSite=Strict; Max-Age=43200"
+  },
+  "notCovered": ["public DNS and a publicly trusted certificate", "a real hosting provider", "Vercel external rewrites to a live backend"]
+}
