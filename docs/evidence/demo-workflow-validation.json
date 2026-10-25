@@ -1,0 +1,107 @@
+{
+  "checkedAt": "2026-10-25T18:03:03.863Z",
+  "target": "https://lothold.vercel.app",
+  "scope": "Isolated ENGINEERING TEST - DEMO workspace on the authorized live deployment; all inputs are labelled engineering test kit files, never real shipments or farms.",
+  "steps": [
+    {
+      "step": "register workspace (ENGINEERING TEST - DEMO)",
+      "ok": true,
+      "detail": "org=ENGINEERING TEST - DEMO",
+      "seconds": 8.8
+    },
+    {
+      "step": "create case ENG-DEMO-A",
+      "ok": true,
+      "detail": "https://lothold.vercel.app/app/shipments/a1516146-17e5-40f4-83d4-03d3dff29086",
+      "seconds": 4.5
+    },
+    {
+      "step": "upload shipping document + propose fields (label parser)",
+      "ok": true,
+      "detail": "proposed and accepted quoted fields",
+      "seconds": 10.8
+    },
+    {
+      "step": "enter remaining engineering details",
+      "ok": true,
+      "detail": "countryOfActivity=BE, operatorEori=BE0000000000",
+      "seconds": 1.6
+    },
+    {
+      "step": "upload source CSV + preview/confirm",
+      "ok": true,
+      "detail": "A1_ENGINEERING_TEST_sources.csv -> 201 parsed",
+      "seconds": 11.1
+    },
+    {
+      "step": "upload partial plots -> missing-boundary finding",
+      "ok": true,
+      "detail": "ENG-DEMO_missing_boundary.geojson -> 201 parsed",
+      "seconds": 10.2
+    },
+    {
+      "step": "finding links to exact source row",
+      "ok": true,
+      "detail": "source row 2 highlighted",
+      "seconds": 1
+    },
+    {
+      "step": "upload full plots + run satellite analysis",
+      "ok": true,
+      "detail": "A2_ENGINEERING_TEST_plots.geojson -> 201 parsed",
+      "seconds": 10.5
+    },
+    {
+      "step": "open plot -> tree-cover-loss observations",
+      "ok": true,
+      "detail": "tree-cover loss recorded in 2021–2025 on 47 of 1600 sampled 30 m pixels (≈3.59 ha; none of it on land mapped as forest in 2020 by JRC). This is a land-change signal after the cut-off that needs investigation, not a ",
+      "seconds": 2.6
+    },
+    {
+      "step": "generate supplier-request PDF (real download)",
+      "ok": true,
+      "detail": "LotHold_ENG-DEMO-A_evidence-request_20261025T180157Z.pdf 16525 bytes",
+      "seconds": 25.7
+    },
+    {
+      "step": "record investigation with labelled evidence",
+      "ok": true,
+      "detail": "investigation recorded",
+      "seconds": 9.6
+    },
+    {
+      "step": "reserve allocations in ledger",
+      "ok": true,
+      "detail": "reserved (no blockchain transaction)",
+      "seconds": 5.2
+    },
+    {
+      "step": "sign off snapshot -> REVIEWED DRAFT",
+      "ok": true,
+      "detail": "status strip = REVIEWED DRAFT",
+      "seconds": 5.1
+    },
+    {
+      "step": "generate DDS XML draft (DRAFT_NOT_SUBMITTED)",
+      "ok": true,
+      "detail": "LotHold_ENG-DEMO-A_DDS-V3_DRAFT_NOT_SUBMITTED_20261025T180242Z.xml 2103 bytes",
+      "seconds": 9.6
+    },
+    {
+      "step": "evidence change invalidates sign-off (XML blocked)",
+      "ok": true,
+      "detail": "XML export disabled; Out of date badge shown",
+      "seconds": 5.2
+    },
+    {
+      "step": "fresh-context login sees the same case",
+      "ok": true,
+      "detail": "case visible after fresh sign-in",
+      "seconds": 7.2
+    }
+  ],
+  "passed": 16,
+  "failed": [],
+  "consoleErrors": [],
+  "caseUrl": "https://lothold.vercel.app/app/shipments/a1516146-17e5-40f4-83d4-03d3dff29086"
+}
