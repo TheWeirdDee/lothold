@@ -2,6 +2,8 @@
 
 Target: **3-5 minutes**, honest throughout. Current status (25 October 2026): Vercel is connected to Render. Isolated hosted workflow, login, PDF exports and recovery after reported restart/redeployment passed. Provider resource capacity and reliably free operation remain unverified. See the [README status table](../README.md#current-status) and [hosted evidence](evidence/hosted-workflow.json). The existing bundled recording is a local engineering run; do not relabel it as hosted footage.
 
+The finished narrated export follows the revised eight-scene story: [final narration](demo/FINAL_SCRIPT.md), [final storyboard](demo/STORYBOARD.md), and [video QA](demo/VIDEO_QA.md). The local MP4 is `lothold-demo.mp4` (3:14.200, 1080p). The earlier technical shot plan below remains as production context; the final script is the narration actually used. Hosted sign-off, XML draft generation and stale-sign-off detection were verified for this recording, including [independent validation of the stored XML](evidence/demo-artifacts-final.json).
+
 ## Brief (the video is judged on this)
 
 | Requirement | What it means for this recording |
