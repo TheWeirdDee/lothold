@@ -7,7 +7,7 @@ Last full run: **24 October 2026**, Windows 11, Node 24.13.1, pnpm 11.5.0, Chrom
 | Command | Result | Scope |
 |---|---|---|
 | `npm run typecheck` | 0 errors | server, core, web, scripts, tests (TypeScript 7.0.2, strict) |
-| `npm test` | **93 / 93 passed** (Foundry installed; without Anvil, 4 chain tests are skipped) | `tests/unit` (57, incl. water-only coverage, runtime-dependency guard and demo-video configuration) + `tests/integration` audit regressions (6) + test kit (4) + `tests/integration` (26, incl. 4 against a local Anvil devnet and 1 backup/restore) |
+| `npm test` | **110 / 110 passed** (Foundry installed; without Anvil, 4 chain tests are skipped) | `tests/unit` (64, incl. build-audit geometry/ingestion regressions, water-only coverage, runtime-dependency guard and demo-video configuration) + `tests/integration` build-audit regressions (10) + audit regressions (6) + test kit (4) + `tests/integration` (26, incl. 4 against a local Anvil devnet and 1 backup/restore) |
 | `python scripts/gis-crosscheck.py` | 0 failures (6 polygons) | Independent GDAL 3.12.2 / pyproj 3.8.0 recomputation; see METHOD.md |
 | `npm run test:contracts` | **18 / 18 passed** (fuzz: 512 runs) | `contracts/test/BatchReservations.t.sol` |
 | `npm run test:e2e` | **16 / 16 passed** | Playwright + Chrome, real server, throwaway database: 8 workflow journeys (incl. test-kit downloads and the server-unavailable state) + 3 demo-video states (file playback with captions at 1440/390 px, YouTube facade) + 5 accessibility checks (axe WCAG 2.2 A/AA, keyboard-only, dialog focus, live regions; see `docs/ACCESSIBILITY.md`) |
