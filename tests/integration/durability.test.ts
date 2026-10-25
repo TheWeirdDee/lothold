@@ -79,4 +79,45 @@ describe('free pilot durable acknowledgements', () => {
     const bytes = remote.objects.get(remote.row.object_key!)!; bytes[bytes.length - 1]! ^= 1;
     await expect(instance(remote)).rejects.toThrow('integrity');
   });
+  it('rejects changed signing keys and an interrupted upload never becomes authoritative', async () => {
+    const remote = new Remote(), a = await instance(remote);
+    const original=process.env.DOWNLOAD_SIGNING_KEY;
+    try { process.env.DOWNLOAD_SIGNING_KEY='ab'.repeat(32); await expect(instance(remote)).rejects.toThrow('continuity'); }
+    finally { process.env.DOWNLOAD_SIGNING_KEY=original; }
+    const b=await instance(remote); const pointer=remote.row.object_key;
+    const put=remote.put.bind(remote);
+    remote.put=async(key,bytes) => { await put(key,bytes); throw new Error('interrupted response'); };
+    b.db.prepare("INSERT INTO orgs(id,name,created_at) VALUES ('ENG-INTERRUPTED','ENGINEERING',datetime('now'))").run();
+    await expect(b.store.flush()).rejects.toThrow(); expect(remote.row.object_key).toBe(pointer);
+    remote.put=put;
+    const c=await instance(remote);
+    expect(get(c.db,"SELECT 1 FROM orgs WHERE id='ENG-INTERRUPTED'")).toBeUndefined();
+  });
+  it('refuses publication of a database referencing missing evidence', async () => {
+    const remote=new Remote(), a=await instance(remote), c=client(a.app); await c.register('ENG CONSISTENCY');
+    const shipment=await c.req('POST','/api/shipments',{reference:'ENG-CONSISTENCY'});
+    await c.upload(shipment.json.id,'sources_csv','ENGINEERING.csv',CSV_HEADER+'\nENG-S,ENGINEERING,ENG-L,100,10,kg,CI,ENG-P','text/csv');
+    const pointer=remote.row.object_key; a.db.exec('DELETE FROM evidence_blobs');
+    await expect(a.store.flush()).rejects.toThrow('evidence'); expect(remote.row.object_key).toBe(pointer);
+  });
+  it('fences a writer replaced while its upload is in flight', async () => {
+    const remote=new Remote(), a=await instance(remote);
+    let reached!:()=>void, resume!:()=>void;
+    const atUpload=new Promise<void>(r=>{reached=r;}), gate=new Promise<void>(r=>{resume=r;});
+    const put=remote.put.bind(remote); let pause=true;
+    remote.put=async(key,bytes)=>{await put(key,bytes); if(pause){pause=false; reached(); await gate;}};
+    a.db.prepare("INSERT INTO orgs(id,name,created_at) VALUES ('ENG-STALE','ENGINEERING',datetime('now'))").run();
+    const old=a.store.flush(); await atUpload;
+    const winner=await instance(remote); resume();
+    await expect(old).rejects.toThrow();
+    expect(get(winner.db,"SELECT 1 FROM orgs WHERE id='ENG-STALE'")).toBeUndefined();
+    await expect(a.store.assertOwner()).rejects.toThrow('replaced');
+  });
+  it('rejects encrypted snapshots restored with a different encryption key', async () => {
+    const remote=new Remote(); await instance(remote);
+    const original=process.env.EVIDENCE_ENCRYPTION_KEY;
+    try { process.env.EVIDENCE_ENCRYPTION_KEY='cd'.repeat(32); await expect(instance(remote)).rejects.toThrow(); }
+    finally {process.env.EVIDENCE_ENCRYPTION_KEY=original;}
+  });
+
 });
