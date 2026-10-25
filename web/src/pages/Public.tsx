@@ -272,8 +272,8 @@ export function VerifyPage() {
       {loading && <p>Loading registry details…</p>}
       {error && <p className="callout" role="status">Live registry service unavailable. The public engineering record below is a historical snapshot, not a current balance. <Link to="/docs#troubleshooting">Connection help</Link>.</p>}
       {data && (
-        <div className="split">
-          <div className="stack">
+        <div className="registry-layout">
+          <div className="registry-top">
             <div className="panel">
               <dl className="kv small">
                 <dt>Network</dt>
@@ -332,8 +332,8 @@ export function VerifyPage() {
               </ul>
             </div>
           </div>
-          <div className="stack">
-            <h2>Engineering verification run</h2>
+          <section className="stack" aria-labelledby="eng-run-title">
+            <h2 id="eng-run-title">Engineering verification run</h2>
             {!eng ? (
               <p className="small muted">No engineering verification record is present on this server.</p>
             ) : (
@@ -375,7 +375,7 @@ export function VerifyPage() {
                 </TableWrap>
               </>
             )}
-          </div>
+          </section>
         </div>
       )}
     </div>
