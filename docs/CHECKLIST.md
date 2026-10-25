@@ -30,7 +30,7 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 | Environment | CRS, units, intersection, no-data, date semantics, coverage, observation vs retrieval, caveats | Verified | METHOD.md; independent GDAL/pyproj cross-check |
 | | Near-real-time alerts | **Blocked / deferred** | GFW requires API key; annual loss used and labelled |
 | AI | Strict schema, span check, human confirmation, no model authority, adversarial tests | Verified (with injected model output) | tests |
-| | Live model call | **Blocked** | no credentials |
+| | Live model call | **Blocked** | key configured and authenticating, but no successful model extraction through the app (503, then 429 quota, then 90 s timeout on 25 Oct); label parser verified and labelled |
 | Blockchain | Registration authority, authorised reservers, positive integers, unique IDs, conservation, events, evidence commitments | Verified | forge tests |
 | | Two-actor shared-state behaviour on public testnet | Verified | CHAIN.md |
 | | Lifecycle: preflight vs mined revert, pending, confirmation, reconciliation, no double allocation | Verified | Anvil integration test, Sepolia runs |
@@ -40,7 +40,7 @@ Status: **Verified** (tested, with evidence) · **Implemented** (built, not inde
 | | Review draft with provenance | Verified | rendered |
 | | DDS XML only after official-schema validation; draft marker outside envelope | Verified | tests |
 | Testing | Unit, integration, contract, browser, real-data, testnet | Verified | VERIFICATION.md |
-| Docs | README, .env.example, architecture, sources/licences, method, AI, chain, verification, submission, recording script | Verified | this folder |
+| Docs | README, .env.example, architecture, sources/licences, method, AI, chain, verification, submission, recording script, contributor/maintenance checklist | Verified | this folder; `npm run docs:check` asserts every local link and image resolves |
 | Delivery | Production start path, persistent storage, dataset provisioning, backup/restore, deployment plan with costs | Verified (container built and recovery-tested locally) | DEPLOYMENT.md; `docs/evidence/container-verification.json`; backup test |
 | | Local commits, one file per commit, no co-author trailers | Done | `git log` |
 | | Push | Done for commits up to `a9abd0d` (authorised 24 Oct); later commits local until authorised | `git log` |
