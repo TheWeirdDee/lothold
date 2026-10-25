@@ -8,7 +8,7 @@ The landing page now uses recordings of the actual application, bundled with the
 - `web/public/media/lothold.en.vtt`: timed English captions.
 - A readable transcript is included in the landing page itself.
 
-No video settings API or external embed is needed. The short preview and full recording use `preload="none"`; the recording starts through an explicit user action. Preview motion has a visible pause control, pauses offscreen, and never starts automatically under reduced motion. The full player exposes native playback and fullscreen controls. The public media can be served by a static host while account/work routes remain unavailable.
+No video settings API or external embed is needed. The short preview and full recording use `preload="none"`; the muted short preview starts automatically when visible and loops continuously. The full recording starts through an explicit user action. Preview motion has a visible pause control, pauses offscreen, and never starts automatically under reduced motion or data-saving preferences. A deliberate pause stays paused. The full player exposes native playback and fullscreen controls. The public media can be served by a static host while account/work routes remain unavailable.
 
 ## What was recorded
 
