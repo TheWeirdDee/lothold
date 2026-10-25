@@ -2,7 +2,7 @@
 
 Last run: 24 October 2026, Chrome via Playwright, `tests/e2e/accessibility.spec.ts` (part of `npm run test:e2e`).
 
-## Public-experience follow-up ? 25 October 2026
+## Public-experience follow-up — 25 October 2026
 
 The final Chrome Playwright run passed all 18 browser tests. It adds Docs to the public axe scans at 1440 and 390 px; verifies the new FAQ with Enter/Space; checks mobile modal navigation focus confinement, Escape, selection, focus restoration and scroll unlocking; and plays the actual bundled recording without the API on desktop and mobile, including captions, pause and fullscreen.
 
