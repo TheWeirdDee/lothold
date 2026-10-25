@@ -104,6 +104,18 @@ describe.skipIf(!haveData)('environmental analysis on real pinned rasters (engin
     expect(postPixels > 0).toBe(r.status === 'NEEDS_HUMAN_REVIEW');
     expect(Object.keys(r.lossByYear).every((y) => Number(y) >= 2001 && Number(y) <= 2025)).toBe(true);
   });
+  it('a sample with only water is no land observation, never a clear result', async () => {
+    const r = await analysePlot({ type: 'Point', coordinates: [-4, 5.2] }, { geometryValid: true });
+    expect(r.hansenPixels).toMatchObject({ total: 1, land: 0, water: 1 });
+    expect(r.status).toBe('UNAVAILABLE');
+    expect(r.summary).toMatch(/No land observation/);
+  });
+  it('any water or no-data inside a plot is partial coverage, never clear', async () => {
+    for (const g of [box(-4.005, 5.195, 0.01), box(-4.005, 4.495, 0.01)]) {
+      const r = await analysePlot(g, { geometryValid: true });
+      if (r.hansenPixels.water + r.hansenPixels.noData > 0) expect(r.status).not.toBe('NO_POST_2020_LOSS_OBSERVED');
+    }
+  });
   it('a point samples exactly one pixel and says so', async () => {
     const r = await analysePlot({ type: 'Point', coordinates: [-7.2, 5.75] }, { geometryValid: true });
     expect(r.sampling).toBe('single_pixel_containing_point');
