@@ -52,7 +52,7 @@ export type ShipmentFields = {
 export type EnvState =
   | { state: 'not_started' }
   | { state: 'queued' }
-  | { state: 'failed'; error: string }
+  | { state: 'failed'; error: string; failureKey: string } // failureKey: stable identity of the failed run (geometry, method, datasets)
   | {
       state: 'done';
       status: 'UNAVAILABLE' | 'PLOT_GEOMETRY_INVALID' | 'PLOT_OUTSIDE_COVERAGE' | 'PARTIAL_COVERAGE' | 'NEEDS_HUMAN_REVIEW' | 'NO_POST_2020_LOSS_OBSERVED';
@@ -87,6 +87,8 @@ export type EvaluationInput = {
   env: Record<string, EnvState>; // keyed by plotRef
   ledger: Record<string, LedgerLot>;
   decisions: ReviewDecision[];
+  // Observation recency (optional, for disclosure): latest year of annual loss in the datasets, and today's year.
+  recency?: { latestObservationYear: number; asOfYear: number };
 };
 
 export type Readiness = {
@@ -434,6 +436,25 @@ export function evaluate(input: EvaluationInput): Evaluation {
       });
     } else if (e.status === 'NO_POST_2020_LOSS_OBSERVED') envClear++;
     else if (e.status === 'PLOT_GEOMETRY_INVALID') envBlocked++;
+  }
+
+  // Observation recency is disclosed, not used to block: annual data cannot show change after its latest year.
+  // (Snapshot staleness, i.e. evidence changing after sign-off, is enforced separately through the digest.)
+  if (input.recency && Object.values(input.env).some((e) => e.state === 'done')) {
+    const { latestObservationYear: y, asOfYear: now } = input.recency;
+    const gap = Math.max(0, now - y);
+    findings.push({
+      key: 'ENV-RECENCY',
+      ruleId: 'ENV-RECENCY',
+      severity: 'warning',
+      dimension: 'environment',
+      title: `Forest data observes change up to ${y}`,
+      message: `The annual tree-cover loss data ends with ${y}${gap > 0 ? `, ${gap} year${gap === 1 ? '' : 's'} before ${now}` : ''}. Land change after ${y} is not observed by this analysis; ask the supplier about recent land use if it matters for this shipment.`,
+      refs: [{ kind: 'environment' }],
+      supplierActionable: false,
+      resolvableByReview: false,
+      data: { latestObservationYear: y, asOfYear: now, gapYears: gap },
+    });
   }
 
   // Attach "keep on hold" decisions as holds.
