@@ -1,6 +1,6 @@
 # Free-tier usage assessment - 2026-10-25
 
-No hosted traffic has been measured. No claim of reliable or permanently free deployment is made. Numbers below are byte measurements from an isolated local checkpoint scenario, plus explicitly conditional projections.
+No hosted application traffic has been measured. An isolated live Supabase run now passed 22 checks and confirmed eight checkpoint uploads totaling 2,310,400 payload bytes, plus 2,900,288 downloaded payload bytes for verification/restores. These are application counters, not provider billing telemetry. No claim of reliable or permanently free deployment is made. Numbers below are byte measurements from an isolated local checkpoint scenario, plus explicitly conditional projections.
 
 ## Measured checkpoint traffic
 
