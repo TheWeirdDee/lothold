@@ -1,0 +1,199 @@
+{
+  "recordedAt": "2026-10-25T18:22:34.939Z",
+  "target": "https://lothold.vercel.app",
+  "organisation": "ENGINEERING TEST - DEMO",
+  "caseRef": "ENG-DEMO-A",
+  "caseUrl": "https://lothold.vercel.app/app/shipments/4eb10933-86b9-435a-9040-c99a29693ded",
+  "viewport": "1440x900",
+  "scenes": [
+    {
+      "scene": "scene-01-problem",
+      "file": "scene-01-problem.webm",
+      "events": [
+        {
+          "t": 25.62,
+          "label": "landing hero visible"
+        },
+        {
+          "t": 29.24,
+          "label": "scrolled to how-it-works / problem framing"
+        }
+      ]
+    },
+    {
+      "scene": "scene-02-introduce",
+      "file": "scene-02-introduce.webm",
+      "events": [
+        {
+          "t": 0.79,
+          "label": "organisation set to ENGINEERING TEST - DEMO"
+        },
+        {
+          "t": 9,
+          "label": "workspace created (isolated engineering org)"
+        },
+        {
+          "t": 15.5,
+          "label": "case ENG-DEMO-A created"
+        }
+      ]
+    },
+    {
+      "scene": "scene-03-uploads",
+      "file": "scene-03-uploads.webm",
+      "events": [
+        {
+          "t": 2.17,
+          "label": "shipping document uploaded"
+        },
+        {
+          "t": 11.58,
+          "label": "label parser proposed quoted fields"
+        },
+        {
+          "t": 14,
+          "label": "accepted quoted fields"
+        },
+        {
+          "t": 15.68,
+          "label": "engineering details saved"
+        },
+        {
+          "t": 20.62,
+          "label": "A1_ENGINEERING_TEST_sources.csv uploaded (201 parsed)"
+        },
+        {
+          "t": 20.67,
+          "label": "preview opened"
+        },
+        {
+          "t": 26,
+          "label": "confirmed as active version"
+        },
+        {
+          "t": 32.4,
+          "label": "ENG-DEMO_missing_boundary.geojson uploaded (201 parsed)"
+        },
+        {
+          "t": 33.77,
+          "label": "preview opened"
+        },
+        {
+          "t": 39.57,
+          "label": "confirmed as active version"
+        },
+        {
+          "t": 41.74,
+          "label": "missing plot boundary finding linked to source row 2"
+        }
+      ]
+    },
+    {
+      "scene": "scene-04-analysis",
+      "file": "scene-04-analysis.webm",
+      "events": [
+        {
+          "t": 6,
+          "label": "A2_ENGINEERING_TEST_plots.geojson uploaded (201 parsed)"
+        },
+        {
+          "t": 6.86,
+          "label": "preview opened"
+        },
+        {
+          "t": 13.32,
+          "label": "confirmed as active version"
+        },
+        {
+          "t": 13.32,
+          "label": "analysis job started (processing state visible)"
+        },
+        {
+          "t": 13.32,
+          "label": "satellite map rendered"
+        },
+        {
+          "t": 15.89,
+          "label": "plot ENG-KIT-A-P1 opened: tree-cover-loss observations"
+        }
+      ]
+    },
+    {
+      "scene": "scene-05-findings-pdf",
+      "file": "scene-05-findings-pdf.webm",
+      "events": [
+        {
+          "t": 4.56,
+          "label": "finding opened with its source reference"
+        },
+        {
+          "t": 22,
+          "label": "supplier request PDF generated (16570 bytes)"
+        },
+        {
+          "t": 22.14,
+          "label": "generated supplier request opened on screen"
+        }
+      ]
+    },
+    {
+      "scene": "scene-06-review",
+      "file": "scene-06-review.webm",
+      "events": [
+        {
+          "t": 2.75,
+          "label": "labelled engineering evidence attached with rationale"
+        },
+        {
+          "t": 13.39,
+          "label": "investigation recorded against the case"
+        },
+        {
+          "t": 18.02,
+          "label": "declared allocation reserved in the ledger (no chain transaction)"
+        },
+        {
+          "t": 22.56,
+          "label": "snapshot signed off: status REVIEWED DRAFT"
+        }
+      ]
+    },
+    {
+      "scene": "scene-07-export",
+      "file": "scene-07-export.webm",
+      "events": [
+        {
+          "t": 13.77,
+          "label": "DDS draft generated (LotHold_ENG-DEMO-A_DDS-V3_DRAFT_NOT_SUBMITTED_20261025T182153Z.xml, 2103 bytes)"
+        },
+        {
+          "t": 13.85,
+          "label": "DDS draft opened: DRAFT_NOT_SUBMITTED label visible in filename/content"
+        },
+        {
+          "t": 23.71,
+          "label": "evidence changed after sign-off"
+        },
+        {
+          "t": 26.76,
+          "label": "earlier sign-off invalidated: export blocked, Out of date badge"
+        }
+      ]
+    },
+    {
+      "scene": "scene-08-closing",
+      "file": "scene-08-closing.webm",
+      "events": [
+        {
+          "t": 3.48,
+          "label": "completed engineering case (ENG-DEMO-A)"
+        },
+        {
+          "t": 8.06,
+          "label": "landing page with live URL and repository links"
+        }
+      ]
+    }
+  ],
+  "consoleErrors": []
+}
