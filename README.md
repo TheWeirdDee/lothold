@@ -66,7 +66,7 @@ The landing page's **Product walkthrough** shows "Demo video coming soon" until 
 
 ```bash
 npm run typecheck        # TypeScript (tsc 7) over server, core, web, scripts, tests
-npm test                 # vitest: unit + integration (93 tests; 4 need Foundry's Anvil and are skipped without it)
+npm test                 # vitest: unit + integration (110 tests; 4 need Foundry's Anvil and are skipped without it)
 npm run test:contracts   # forge: 18 contract tests incl. 512-run fuzz (first: cd contracts && forge install foundry-rs/forge-std --no-git)
 npm run test:e2e         # Playwright (Chrome): 16 browser tests (journeys, accessibility, demo video, server-unavailable state) on a throwaway database
 npm run data:verify      # re-hashes the raster snapshots against the pinned SHA-256 values
