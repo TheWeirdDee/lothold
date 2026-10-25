@@ -89,6 +89,7 @@ function EvidenceTrace() {
 
 type DemoVideoState =
   | { status: 'coming_soon' }
+  | { status: 'unavailable'; message: string }
   | { status: 'ready'; kind: 'youtube' | 'vimeo'; provider: string; embedUrl: string; poster: string | null }
   | { status: 'ready'; kind: 'file'; src: string; type: string; poster: string | null; captions: string | null };
 
@@ -115,7 +116,8 @@ function DemoVideo() {
   useEffect(() => {
     api<DemoVideoState>('GET', '/api/public/demo-video')
       .then(setCfg)
-      .catch(() => setCfg({ status: 'coming_soon' }));
+      // A failed request is reported as such, never disguised as "no video configured".
+      .catch((e: Error) => setCfg({ status: 'unavailable', message: e.message }));
   }, []);
   useEffect(() => {
     if (playing) frameRef.current?.focus();
@@ -123,6 +125,21 @@ function DemoVideo() {
 
   let stage: ReactNode;
   if (!cfg) stage = <div className="video-frame skeleton" aria-busy="true" aria-label="Loading the demo video" />;
+  else if (cfg.status === 'unavailable')
+    stage = (
+      <div className="video-frame soon">
+        <DesignedPoster soon={false} />
+        <div className="video-soon-card" role="status">
+          <h3>The demo video settings could not be loaded</h3>
+          <p>{cfg.message} Whether a recording is configured is unknown from here.</p>
+          <div className="row">
+            <Link className="btn light small" to="/test-kit">
+              Get the engineering test kit
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   else if (cfg.status === 'coming_soon')
     stage = (
       <div className="video-frame soon">
@@ -308,33 +325,36 @@ function RegistryLedger() {
 export function Landing() {
   const { user } = useAuth();
   useReveal();
-  const primary = user ? { to: '/app', label: 'Open your workspace' } : { to: '/register', label: 'Open the review desk' };
+  const primary = user ? { to: '/app', label: 'Open your workspace' } : { to: '/register', label: 'Create a review case' };
   return (
     <>
       {/* ---------------- hero ---------------- */}
       <section className="band-dark hero">
         <div className="wrap">
-          <p className="who enter">For cocoa export &amp; import compliance reviewers</p>
+          <p className="who enter">For cocoa exporters and EU importers who review shipment evidence</p>
           <h1 className="enter d1">
-            Catch missing plot evidence <span className="soft">before the paperwork moves.</span>
+            Find missing evidence <span className="soft">before you prepare cocoa shipment paperwork.</span>
           </h1>
           <div className="hero-grid">
             <div>
               <p className="lede enter d2">
-                Upload a shipment’s source-lot table and plot boundaries. LotHold points to every missing or contradictory record, checks each plot against published forest-loss data, and holds the case until a reviewer signs off.
+                Missing or conflicting supplier records stop you from checking where a shipment’s cocoa was grown. Upload your supplier spreadsheet and plot boundary file: LotHold shows what is missing or contradictory, flags published forest-change evidence for review, and prepares a clear correction request for your supplier.
               </p>
               <div className="btn-row enter d3">
                 <Link className="btn light" to={primary.to}>
                   {primary.label} <span className="arrow" aria-hidden="true">→</span>
                 </Link>
-                <Link className="btn ghost-dark" to="/inspect">
-                  Read a real forest dataset
+                <Link className="btn ghost-dark" to="/test-kit">
+                  Try it with labelled test files
                 </Link>
               </div>
+              <p className="scope-line enter d3">
+                <strong>Scope:</strong> cocoa beans (HS 1801) only · forest data covers Côte d’Ivoire and western Ghana · annual historical data, not live monitoring · a review aid: nothing is submitted to the EU.
+              </p>
               <ul className="hero-receives enter d4" aria-label="What a reviewer receives">
-                <li>The exact file, row or plot behind every hold</li>
-                <li>A one-page evidence request for the supplier</li>
-                <li>A review draft and, after sign-off, a schema-validated EUDR DDS XML draft</li>
+                <li>The exact spreadsheet row or plot behind every issue</li>
+                <li>A one-page correction request for your supplier</li>
+                <li>A review draft and, after sign-off, an EU-format due-diligence draft that passes the official file-format check</li>
               </ul>
             </div>
             <EvidenceTrace />
@@ -343,53 +363,30 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ---------------- sources (instead of a logo strip) ---------------- */}
-      <section className="band-dark sources-strip" aria-label="Sources and standards used">
-        <div className="wrap">
-          <p className="eyebrow">Built on published sources and standards</p>
-          <ul>
-            <li>Hansen Global Forest Change<span>v1.13 · annual loss 2001–2025</span></li>
-            <li>JRC Global Forest Cover 2020<span>V4 · 10 m</span></li>
-            <li>EUDR DDS V3 schema<span>EU Information System</span></li>
-            <li>Regulation (EU) 2023/1115<span>as amended by 2025/2650</span></li>
-            <li>Ethereum Sepolia<span>testnet</span></li>
-          </ul>
-        </div>
-      </section>
-
-      {/* ---------------- four kinds of evidence ---------------- */}
-      <section className="band-light">
+      {/* ---------------- three steps ---------------- */}
+      <section className="band-light" aria-labelledby="steps-title">
         <div className="wrap">
           <div className="section-head reveal">
-            <h2>Four kinds of evidence. Never one standing in for another.</h2>
-            <p>A satellite reading does not make a supplier’s declaration true, and a testnet receipt does not prove cocoa exists. LotHold keeps them apart and says what each cannot show.</p>
+            <h2 id="steps-title">How it works</h2>
+            <p>Your workspace starts empty. Everything in a case comes from files you upload.</p>
           </div>
-          <div className="kinds reveal">
-            <div>
-              <span className="k-num">01 · DECLARED</span>
-              <h3>Shipment information</h3>
-              <p>Your source-lot table, plot file and shipping documents, stored encrypted with their hashes and row references.</p>
-              <p className="cannot">Cannot show that the declaration is true.</p>
-            </div>
-            <div>
-              <span className="k-num">02 · OBSERVED</span>
-              <h3>Published environmental data</h3>
-              <p>Annual tree-cover loss and 2020 forest cover read pixel by pixel inside each plot, with dates and coverage.</p>
-              <p className="cannot">Cannot show legality. A loss signal is not a deforestation finding.</p>
-            </div>
-            <div>
-              <span className="k-num">03 · DECIDED</span>
-              <h3>Human review</h3>
-              <p>A reviewer’s investigation, rationale and evidence file, bound to the exact snapshot they looked at.</p>
-              <p className="cannot">Lapses automatically when any source, plot or quantity changes.</p>
-            </div>
-            <div>
-              <span className="k-num">04 · COMMITTED</span>
-              <h3>Allocation receipts</h3>
-              <p>Ledger reservations, optionally anchored on a public testnet registry that rejects over-allocation.</p>
-              <p className="cannot">Cannot show physical origin, or allocations made elsewhere.</p>
-            </div>
-          </div>
+          <ol className="workflow three reveal">
+            <li>
+              <span className="w-num">01</span>
+              <h3>Upload your records</h3>
+              <p>The supplier spreadsheet (which batches and plots supply the shipment, as CSV) and the plot boundary file (GeoJSON). Check the parsed preview before anything counts.</p>
+            </li>
+            <li>
+              <span className="w-num">02</span>
+              <h3>Review the issues</h3>
+              <p>Each issue links to the row or plot that causes it. Plots with forest loss recorded after 2020 need your investigation and an evidence file.</p>
+            </li>
+            <li>
+              <span className="w-num">03</span>
+              <h3>Request corrections, then sign off</h3>
+              <p>Download a one-page request for your supplier. When nothing is outstanding, sign off the exact version you reviewed and download the drafts.</p>
+            </li>
+          </ol>
         </div>
       </section>
 
@@ -397,8 +394,8 @@ export function Landing() {
       <section className="band-white" id="how" aria-labelledby="how-title">
         <div className="wrap">
           <div className="section-head reveal">
-            <h2 id="how-title">What a reviewer gets from one upload</h2>
-            <p>Five outcomes, each tied to the record that produced it.</p>
+            <h2 id="how-title">What you get back</h2>
+            <p>From one supplier spreadsheet and one plot file, each result tied to the record that produced it.</p>
           </div>
 
           <article className="feature reveal">
@@ -528,6 +525,52 @@ export function Landing() {
         </div>
       </section>
 
+      {/* ---------------- principle statement ---------------- */}
+      <section className="band-light statement">
+        <div className="wrap reveal">
+          <blockquote>
+            A loss signal is a reason to ask. <span className="soft">A clean result is not proof.</span>
+          </blockquote>
+          <p className="attrib">How LotHold reads satellite data</p>
+        </div>
+      </section>
+
+      {/* ---------------- four kinds of evidence ---------------- */}
+      <section className="band-light">
+        <div className="wrap">
+          <div className="section-head reveal">
+            <h2>How LotHold keeps evidence honest</h2>
+            <p>A satellite reading does not make a supplier’s declaration true, and a testnet receipt does not prove cocoa exists. LotHold keeps them apart and says what each cannot show.</p>
+          </div>
+          <div className="kinds reveal">
+            <div>
+              <span className="k-num">01 · DECLARED</span>
+              <h3>Shipment information</h3>
+              <p>Your source-lot table, plot file and shipping documents, stored encrypted with their hashes and row references.</p>
+              <p className="cannot">Cannot show that the declaration is true.</p>
+            </div>
+            <div>
+              <span className="k-num">02 · OBSERVED</span>
+              <h3>Published environmental data</h3>
+              <p>Annual tree-cover loss and 2020 forest cover read pixel by pixel inside each plot, with dates and coverage.</p>
+              <p className="cannot">Cannot show legality. A loss signal is not a deforestation finding.</p>
+            </div>
+            <div>
+              <span className="k-num">03 · DECIDED</span>
+              <h3>Human review</h3>
+              <p>A reviewer’s investigation, rationale and evidence file, bound to the exact snapshot they looked at.</p>
+              <p className="cannot">Lapses automatically when any source, plot or quantity changes.</p>
+            </div>
+            <div>
+              <span className="k-num">04 · COMMITTED</span>
+              <h3>Allocation receipts</h3>
+              <p>Ledger reservations, optionally anchored on a public testnet registry that rejects over-allocation.</p>
+              <p className="cannot">Cannot show physical origin, or allocations made elsewhere.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ---------------- registry (dark rhythm break) ---------------- */}
       <section className="band-dark">
         <div className="wrap registry reveal">
@@ -546,50 +589,17 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ---------------- principle statement ---------------- */}
-      <section className="band-light statement">
-        <div className="wrap reveal">
-          <blockquote>
-            A loss signal is a reason to ask. <span className="soft">A clean result is not proof.</span>
-          </blockquote>
-          <p className="attrib">How LotHold reads satellite data</p>
-        </div>
-      </section>
-
-      {/* ---------------- workflow ---------------- */}
-      <section className="band-light">
-        <div className="wrap" style={{ paddingTop: 0 }}>
-          <div className="section-head reveal">
-            <h2>From upload to sign-off</h2>
-            <p>The workspace starts empty. Everything in a case comes from your own files.</p>
-          </div>
-          <ol className="workflow reveal">
-            <li>
-              <span className="w-num">01</span>
-              <h3>Upload</h3>
-              <p>CSV source table, GeoJSON plots, optional shipping document.</p>
-            </li>
-            <li>
-              <span className="w-num">02</span>
-              <h3>Confirm</h3>
-              <p>Preview the parsed rows and features before they count.</p>
-            </li>
-            <li>
-              <span className="w-num">03</span>
-              <h3>Investigate</h3>
-              <p>Work through holds and land-change signals, with sources linked.</p>
-            </li>
-            <li>
-              <span className="w-num">04</span>
-              <h3>Request</h3>
-              <p>Send the supplier a one-page request for what is missing.</p>
-            </li>
-            <li>
-              <span className="w-num">05</span>
-              <h3>Sign off</h3>
-              <p>Reserve allocations, sign the snapshot, export the drafts.</p>
-            </li>
-          </ol>
+      {/* ---------------- sources (instead of a logo strip) ---------------- */}
+      <section className="band-dark sources-strip" aria-label="Sources and standards used">
+        <div className="wrap">
+          <p className="eyebrow">Built on published sources and standards</p>
+          <ul>
+            <li>Hansen Global Forest Change<span>v1.13 · annual loss 2001–2025</span></li>
+            <li>JRC Global Forest Cover 2020<span>V4 · 10 m</span></li>
+            <li>EUDR DDS V3 schema<span>EU Information System</span></li>
+            <li>Regulation (EU) 2023/1115<span>as amended by 2025/2650</span></li>
+            <li>Ethereum Sepolia<span>testnet</span></li>
+          </ul>
         </div>
       </section>
 
@@ -598,15 +608,18 @@ export function Landing() {
         <div className="wrap" style={{ paddingTop: 0 }}>
           <div className="closing reveal">
             <div>
-              <h2>Start with an empty desk and your own files.</h2>
-              <p>No sample shipments, no invented suppliers. Create a case, upload what you already have, and see exactly what is missing.</p>
+              <h2>Start a review case with your own files.</h2>
+              <p>Your workspace starts empty: no sample shipments. An optional, clearly labelled engineering test kit is available if you want to try it first.</p>
               <div className="btn-row" style={{ marginTop: 22 }}>
                 <Link className="btn light" to={primary.to}>
                   {primary.label} <span className="arrow" aria-hidden="true">→</span>
                 </Link>
                 <a className="btn ghost-dark" href="/api/templates/sources.csv">
-                  Download the CSV template
+                  Download the spreadsheet template
                 </a>
+                <Link className="btn ghost-dark" to="/test-kit">
+                  Engineering test kit
+                </Link>
               </div>
             </div>
             <div className="stamp" aria-hidden="true">
